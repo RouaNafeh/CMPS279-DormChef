@@ -5,17 +5,57 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".activities.LandingActivity">
+    tools:context=".activities.LandingActivity"
+    android:background="@color/secondary">
+
+    <ImageView
+        android:id="@+id/logoImg"
+        android:src="@drawable/logo"
+        android:layout_width="180dp"
+        android:layout_height="180dp"
+        android:contentDescription="@string/app_name"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/slogan"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"
+        />
+
+    <TextView
+        android:id="@+id/slogan"
+        android:text="@string/slogan"
+        android:fontFamily="@font/genty_sans_regular"
+        android:textSize="18sp"
+        android:textColor="@color/textDark"
+        android:gravity="center"
+        android:textStyle="italic"
+        android:layout_marginEnd="24dp"
+        android:layout_marginStart="24dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/startBtn"
+        app:layout_constraintTop_toBottomOf="@+id/logoImg"
+        />
 
     <Button
         android:id="@+id/startBtn"
-        android:text="Start Cooking"
+        android:text="Get Cooking"
+        android:backgroundTint="@color/primary"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginTop="32dp"
+        app:layout_constraintTop_toBottomOf="@+id/slogan"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:paddingBottom="16sp"
+        android:paddingTop="16sp"
+        android:textStyle="bold"
+        android:textSize="20sp"
+        android:fontFamily="@font/genty_sans_regular"
         />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
