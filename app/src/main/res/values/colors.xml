@@ -5,4 +5,6 @@
     <color name="primary">#AC6F62</color>
     <color name="secondary">#FFF3E0</color>
     <color name="textDark">#333333</color>
+    <color name="textGrey">#888888</color>
+    <color name="tag_none">#9A9A9A</color>
 </resources>
