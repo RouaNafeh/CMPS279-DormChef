@@ -1,4 +1,13 @@
 <resources>
     <string name="app_name">DormChef</string>
     <string name="slogan">What\'s in your fridge today?</string>
+    <string name="favorites_title">Favorites</string>
+    <string name="favorites_subtitle">Your favorite recipes are here!</string>
+    <string name="recipe_burger">Smashed Burger</string>
+    <string name="recipe_pasta">Pasta Alfredo</string>
+    <string name="recipe_wrap">Chicken Wrap</string>
+    <string name="recipe_salad">Caesar Salad</string>
+    <string name="low">Low</string>
+    <string name="medium">Medium</string>
+    <string name="high">High</string>
 </resources>
