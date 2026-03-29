@@ -50,21 +50,33 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
         app:queryHint="Search for recipes"
         app:iconifiedByDefault="false"
         app:layout_constraintStart_toStartOf="@+id/title"
         app:layout_constraintTop_toBottomOf="@id/sloganHome"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/filter_btn"
         android:background="@drawable/search_background"
         app:queryBackground="@android:color/transparent"
+        />
+
+    <ImageView
+        android:id="@+id/filter_btn"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:src="@drawable/filter"
+        android:layout_marginEnd="16dp"
+        android:layout_marginStart="8dp"
+        app:layout_constraintBottom_toBottomOf="@+id/search_bar"
+        app:layout_constraintTop_toTopOf="@+id/search_bar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/search_bar"
         />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerCards"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintEnd_toEndOf="@id/search_bar"
+        app:layout_constraintEnd_toEndOf="@id/filter_btn"
         app:layout_constraintStart_toStartOf="@+id/search_bar"
         app:layout_constraintTop_toBottomOf="@+id/search_bar"
         app:layout_constraintBottom_toBottomOf="parent"
