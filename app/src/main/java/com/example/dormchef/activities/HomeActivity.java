@@ -1,5 +1,6 @@
 package com.example.dormchef.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -24,6 +25,11 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityHomeBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        binding.filterBtn.setOnClickListener(v -> {
+            Intent intent = new Intent(this, FilterActivity.class);
+            startActivity(intent);
+        });
 
         recipeList = new ArrayList<>();
         recipeList.add(new Recipe(R.drawable.salad, "Greek Salad", "15 min", "Low", Arrays.asList("Vegetarian")));
