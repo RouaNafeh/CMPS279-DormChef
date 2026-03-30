@@ -1,0 +1,24 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="Base.Theme.DormChef" parent="Theme.Material3.DayNight.NoActionBar">
+    </style>
+
+    <style name="Theme.DormChef" parent="Base.Theme.DormChef" />
+
+    <style name="RoundedImageView" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+
+
+    <style name="IngredientChip" parent="Widget.MaterialComponents.Chip.Filter">
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/chip_text_selector</item>
+        <item name="chipBackgroundColor">@color/chip_bg_selector</item>
+        <item name="chipStrokeColor">@color/chip_stroke_selector</item>
+        <item name="chipStrokeWidth">1.5dp</item>
+        <item name="chipCornerRadius">100dp</item>
+        <item name="chipMinHeight">36dp</item>
+    </style>
+
+</resources>
