@@ -1,6 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <style name="Base.Theme.DormChef" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/red</item>
+        <item name="colorPrimaryVariant">@color/primary</item>
+        <item name="colorAccent">@color/red</item>
     </style>
 
     <style name="Theme.DormChef" parent="Base.Theme.DormChef" />
@@ -9,7 +13,6 @@
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">12dp</item>
     </style>
-
 
     <style name="IngredientChip" parent="Widget.MaterialComponents.Chip.Filter">
         <item name="android:textSize">13sp</item>

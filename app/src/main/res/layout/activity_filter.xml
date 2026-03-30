@@ -157,7 +157,7 @@
                         android:layout_marginEnd="6dp"
                         android:text="Under 15 min"
                         android:textSize="13sp"
-                        android:textColor="@color/textGrey"
+                        android:textColor="@color/black"
                         android:background="@drawable/bg_time_button_default" />
 
                     <Button
@@ -168,7 +168,7 @@
                         android:layout_marginStart="6dp"
                         android:text="Under 30 min"
                         android:textSize="13sp"
-                        android:textColor="@color/textGrey"
+                        android:textColor="@color/black"
                         android:background="@drawable/bg_time_button_default" />
 
                 </LinearLayout>
@@ -180,7 +180,7 @@
                     android:max="60"
                     android:progress="60"
                     android:progressTint="@color/primary"
-                    android:thumbTint="@color/primary" />
+                    android:thumbTint="@color/black" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -194,7 +194,7 @@
                         android:layout_weight="1"
                         android:text="0 min"
                         android:textSize="11sp"
-                        android:textColor="@color/textGrey" />
+                        android:textColor="@color/black" />
 
                     <TextView
                         android:id="@+id/tvSliderValue"
@@ -202,7 +202,7 @@
                         android:layout_height="wrap_content"
                         android:text="60 min"
                         android:textSize="13sp"
-                        android:textColor="@color/primary"
+                        android:textColor="@color/red"
                         android:textStyle="bold" />
 
                     <TextView

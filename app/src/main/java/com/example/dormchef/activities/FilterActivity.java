@@ -129,6 +129,10 @@ public class FilterActivity extends AppCompatActivity {
 
     // ── Time filter ───────────────────────────────────────────
     private void setupTimeFilter() {
+        seekBarTime.setOnTouchListener((v, event) -> {
+            v.getParent().requestDisallowInterceptTouchEvent(true);
+            return false;
+        });
         seekBarTime.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {

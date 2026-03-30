@@ -7,4 +7,5 @@
     <color name="textDark">#333333</color>
     <color name="textGrey">#888888</color>
     <color name="tag_none">#9A9A9A</color>
+    <color name="red">#d1001F</color>
 </resources>
