@@ -5,6 +5,10 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.content.ContentValues;
 import com.example.dormchef.models.Recipe;
+import android.database.Cursor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import androidx.annotation.Nullable;
 
@@ -51,6 +55,32 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         long result = db.insert(TABLE_RECIPES, null, values);
         db.close();
         return result;
+    }
+
+    public List<Recipe> getAllRecipes(){
+        List<Recipe> recipeList = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_RECIPES, null);
+
+        if(cursor.moveToFirst()){
+            do{
+                int id = cursor.getInt(cursor.getColumnIndexOrThrow(COL_ID));
+                int imageResId = cursor.getInt(cursor.getColumnIndexOrThrow(COL_IMAGE));
+                String name = cursor.getString(cursor.getColumnIndexOrThrow(COL_NAME));
+                String time = cursor.getString(cursor.getColumnIndexOrThrow(COL_TIME));
+                String budget = cursor.getString(cursor.getColumnIndexOrThrow(COL_BUDGET));
+                String equipment = cursor.getString(cursor.getColumnIndexOrThrow(COL_EQUIPMENT));
+                boolean isFavourite = cursor.getInt(cursor.getColumnIndexOrThrow(COL_IS_FAVOURITE)) == 1;
+
+                Recipe recipe = new Recipe(id, imageResId, name, time, budget, equipment, isFavourite);
+                recipeList.add(recipe);
+            }while(cursor.moveToNext());
+        }
+
+        cursor.close();
+        db.close();
+        return recipeList;
     }
 
     @Override
