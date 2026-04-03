@@ -1,0 +1,61 @@
+package database;
+
+import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.content.ContentValues;
+import com.example.dormchef.models.Recipe;
+
+import androidx.annotation.Nullable;
+
+public class DatabaseHelper extends SQLiteOpenHelper {
+    private static final String DB_NAME = "dormchef.db";
+    private static final int DB_VERSION = 1;
+    public static final String TABLE_RECIPES = "recipes";
+    public static final String COL_NAME = "name";
+    public static final String COL_ID = "id";
+    public static final String COL_TIME = "time";
+    public static final String COL_BUDGET = "budget";
+    public static final String COL_EQUIPMENT = "equipment";
+    public static final String COL_IMAGE = "image";
+    public static final String COL_IS_FAVOURITE = "isFavourite";
+
+    public DatabaseHelper(@Nullable Context context){
+        super(context, DB_NAME, null, DB_VERSION);
+    }
+
+    public void onCreate(SQLiteDatabase db){
+        String createTable = "CREATE TABLE " + TABLE_RECIPES + " ( " +
+                COL_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COL_NAME + " TEXT, " +
+                COL_TIME + " TEXT, " +
+                COL_IMAGE + " INTEGER, " +
+                COL_BUDGET + " TEXT, " +
+                COL_EQUIPMENT + " TEXT, " +
+                COL_IS_FAVOURITE + " INTEGER DEFAULT 0)";
+
+        db.execSQL(createTable);
+    }
+
+    public long insertRecipe(Recipe recipe){
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+
+        values.put(COL_NAME, recipe.getName());
+        values.put(COL_TIME, recipe.getTime());
+        values.put(COL_BUDGET, recipe.getBudget());
+        values.put(COL_EQUIPMENT, recipe.getEquipment());
+        values.put(COL_IMAGE, recipe.getImageResId());
+        values.put(COL_IS_FAVOURITE, recipe.isFavourite() ? 1 : 0);
+
+        long result = db.insert(TABLE_RECIPES, null, values);
+        db.close();
+        return result;
+    }
+
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        db.execSQL("DROP TABLE IF EXISTS " +TABLE_RECIPES);
+        onCreate(db);
+    }
+}
