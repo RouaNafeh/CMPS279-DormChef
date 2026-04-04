@@ -3,20 +3,34 @@ package com.example.dormchef.models;
 import java.util.List;
 
 public class Recipe {
+    private int id;
     private int imageResId;
     private String name;
     private String time;
     private String budget;
-    private List<String> tags;
+    private String equipment;
+    private boolean isFavourite;
 
-    public Recipe(int imageResId, String name, String time, String budget, List<String> tags){
+    public Recipe(int id, int imageResId, String name, String time, String budget, String equipment, boolean isFavourite){
+        this.id = id;
         this.imageResId = imageResId;
         this.name = name;
         this.time = time;
         this.budget = budget;
-        this.tags = tags;
+        this.equipment = equipment;
+        this.isFavourite = isFavourite;
     }
 
+    public Recipe(int imageResId, String name, String time, String budget, String equipment, boolean isFavourite){
+        this.imageResId = imageResId;
+        this.name = name;
+        this.time = time;
+        this.budget = budget;
+        this.equipment = equipment;
+        this.isFavourite = isFavourite;
+    }
+
+    public int getId(){ return id; }
     public int getImageResId(){
         return imageResId;
     }
@@ -33,7 +47,9 @@ public class Recipe {
         return budget;
     }
 
-    public List<String> getTags(){
-        return tags;
+    public String getEquipment(){
+        return equipment;
     }
+
+    public boolean isFavourite(){ return isFavourite; }
 }

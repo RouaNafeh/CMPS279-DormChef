@@ -34,7 +34,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         holder.binding.recipeName.setText(recipe.getName());
         holder.binding.recipeTime.setText(recipe.getTime());
         holder.binding.recipeBudget.setText(recipe.getBudget());
-        holder.binding.tag.setText(formatEquipment(recipe.getTags()));
+        holder.binding.tag.setText(recipe.getEquipment());
     }
 
     @Override
@@ -42,21 +42,6 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         return recipeList.size();
     }
 
-    private String formatEquipment(List<String> tags){
-        if(tags==null || tags.isEmpty()){
-            return "None";
-        }
-
-        if(tags.size()==1){
-            return tags.get(0);
-        }
-
-        if(tags.size()==2){
-            return tags.get(0) + ", " + tags.get(1);
-        }
-
-        return tags.get(0) + ", " + tags.get(1) + "...";
-    }
     public static class RecipeViewHolder extends RecyclerView.ViewHolder {
         final ItemRecipeBinding binding;
 

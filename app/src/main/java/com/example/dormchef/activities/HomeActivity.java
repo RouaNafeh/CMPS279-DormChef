@@ -15,10 +15,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import database.DatabaseHelper;
+
 public class HomeActivity extends AppCompatActivity {
     private ActivityHomeBinding binding;
     private List<Recipe> recipeList;
     private RecipeAdapter recipeAdapter;
+    private DatabaseHelper dbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,15 +29,17 @@ public class HomeActivity extends AppCompatActivity {
         binding = ActivityHomeBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        dbHelper = new DatabaseHelper(this);
+        if(dbHelper.isRecipesTableEmpty()){
+            dbHelper.insertSampleRecipes();
+        }
+
+        recipeList = dbHelper.getAllRecipes();
+
         binding.filterBtn.setOnClickListener(v -> {
             Intent intent = new Intent(this, FilterActivity.class);
             startActivity(intent);
         });
-
-        recipeList = new ArrayList<>();
-        recipeList.add(new Recipe(R.drawable.salad, "Greek Salad", "15 min", "Low", Arrays.asList("Vegetarian")));
-        recipeList.add(new Recipe(R.drawable.sandwich, "Dorm Sandwich", "10 min", "Cheap", Arrays.asList("Quick")));
-        recipeList.add(new Recipe(R.drawable.pasta, "Easy Pasta", "20 min", "Low", Arrays.asList("Pasta")));
 
         recipeAdapter = new RecipeAdapter(recipeList);
         
