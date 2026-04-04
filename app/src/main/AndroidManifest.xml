@@ -24,7 +24,14 @@
         <activity android:name=".activities.FavoritesActivity" />
         <activity android:name=".activities.FilterActivity" />
         <activity android:name=".activities.RecipeDetailActivity" />
-        <activity android:name=".activities.TimerActivity" />
+        <activity
+            android:name=".activities.TimerActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>
