@@ -93,6 +93,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         insertRecipe(new Recipe(R.drawable.omelette, "Omelette", "12 min", "Low", "Pan, Stove", false));
     }
 
+    public boolean isRecipesTableEmpty(){
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_RECIPES, null);
+
+        boolean isEmpty = true;
+
+        if(cursor.moveToFirst()){
+            isEmpty = cursor.getInt(0) == 0;
+        }
+
+        cursor.close();
+        db.close();
+        return isEmpty;
+    }
+
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS " +TABLE_RECIPES);
