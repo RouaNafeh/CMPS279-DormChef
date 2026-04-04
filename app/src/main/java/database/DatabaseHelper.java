@@ -4,6 +4,8 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.content.ContentValues;
+
+import com.example.dormchef.R;
 import com.example.dormchef.models.Recipe;
 import android.database.Cursor;
 
@@ -81,6 +83,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cursor.close();
         db.close();
         return recipeList;
+    }
+
+    public void insertSampleRecipes(){
+        insertRecipe(new Recipe(R.drawable.salad, "Greek Salad", "15 min", "Low", "Bowl, Knife", false));
+        insertRecipe(new Recipe(R.drawable.pasta, "Easy Pasta", "20 min", "Low", "Pot, Stove", false));
+        insertRecipe(new Recipe(R.drawable.sandwich, "Dorm Sandwich", "10 min", "Low", "Knife", false));
+        insertRecipe(new Recipe(R.drawable.cake, "Mug Cake", "8 min", "Low", "Microwave, Mug", false));
+        insertRecipe(new Recipe(R.drawable.omelette, "Omelette", "12 min", "Low", "Pan, Stove", false));
     }
 
     @Override
