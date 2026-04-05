@@ -52,4 +52,7 @@ public class Recipe {
     }
 
     public boolean isFavourite(){ return isFavourite; }
+    public void setFavourite(boolean favourite) {
+        this.isFavourite = favourite;
+    }
 }
