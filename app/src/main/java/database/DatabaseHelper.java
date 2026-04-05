@@ -113,4 +113,46 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " +TABLE_RECIPES);
         onCreate(db);
     }
+    public void updateFavourite(int recipeId, boolean isFavourite){
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+
+        values.put(COL_IS_FAVOURITE, isFavourite ? 1 : 0);
+
+        db.update(
+                TABLE_RECIPES,
+                values,
+                COL_ID + "=?",
+                new String[]{String.valueOf(recipeId)}
+        );
+
+        db.close();
+    }
+    public List<Recipe> getFavouriteRecipes(){
+        List<Recipe> list = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        Cursor cursor = db.rawQuery(
+                "SELECT * FROM " + TABLE_RECIPES + " WHERE " + COL_IS_FAVOURITE + " = 1",
+                null
+        );
+
+        if(cursor.moveToFirst()){
+            do{
+                int id = cursor.getInt(cursor.getColumnIndexOrThrow(COL_ID));
+                int image = cursor.getInt(cursor.getColumnIndexOrThrow(COL_IMAGE));
+                String name = cursor.getString(cursor.getColumnIndexOrThrow(COL_NAME));
+                String time = cursor.getString(cursor.getColumnIndexOrThrow(COL_TIME));
+                String budget = cursor.getString(cursor.getColumnIndexOrThrow(COL_BUDGET));
+                String equipment = cursor.getString(cursor.getColumnIndexOrThrow(COL_EQUIPMENT));
+
+                Recipe r = new Recipe(id, image, name, time, budget, equipment, true);
+                list.add(r);
+            } while(cursor.moveToNext());
+        }
+
+        cursor.close();
+        db.close();
+        return list;
+    }
 }
