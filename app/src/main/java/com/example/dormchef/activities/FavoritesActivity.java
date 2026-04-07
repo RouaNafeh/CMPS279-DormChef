@@ -1,5 +1,7 @@
 package com.example.dormchef.activities;
+
 import android.os.Bundle;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -28,5 +30,7 @@ public class FavoritesActivity extends AppCompatActivity {
         List<Recipe> favList = db.getFavouriteRecipes();
 
         RecipeAdapter adapter = new RecipeAdapter(favList);
+        binding.recyclerFavorites.setLayoutManager(new LinearLayoutManager(this));
+        binding.recyclerFavorites.setAdapter(adapter);
     }
 }
