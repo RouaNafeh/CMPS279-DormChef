@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DormChef</string>
+    <string name="recipes_title">Recipes</string>
+    <string name="filter_all">All</string>
+    <string name="search_hint">Search recipes...</string>
+    <string name="search_icon_desc">Search recipes</string>
+    <string name="start_cooking">Start Cooking</string>
+    <string name="recipe_name">Recipe name</string>
+    <string name="under_60_mins">Under 60 mins</string>
+</resources>
