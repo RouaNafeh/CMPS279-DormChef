@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-    <color name="primary">#AC6F62</color>
-    <color name="secondary">#FFF3E0</color>
-    <color name="textDark">#333333</color>
-    <color name="textGrey">#888888</color>
-    <color name="tag_none">#9A9A9A</color>
-    <color name="red">#d1001F</color>
+    <color name="background_peach">#F7E6DE</color>
+    <color name="card_white">#FFFFFF</color>
+    <color name="white">#FFFFFF</color>
+    <color name="title_blue">#083D6C</color>
+    <color name="accent_pink">#C96F6D</color>
+    <color name="chip_peach">#F9E6DE</color>
+    <color name="chip_text">#8A5A57</color>
+    <color name="separator_line">#EDE6E3</color>
+    <color name="text_primary">#2B3A4A</color>
 </resources>
