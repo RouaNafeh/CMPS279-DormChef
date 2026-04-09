@@ -9,4 +9,5 @@
     <color name="chip_text">#8A5A57</color>
     <color name="separator_line">#EDE6E3</color>
     <color name="text_primary">#2B3A4A</color>
+    <color name="textGrey">#9E9E9E</color>
 </resources>

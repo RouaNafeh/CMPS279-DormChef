@@ -15,7 +15,6 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 
-import com.example.dormchef.R;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 
@@ -115,7 +114,7 @@ public class FilterActivity extends AppCompatActivity {
         chip.setText(name);
         chip.setCheckable(false);
         chip.setCloseIconVisible(true);
-        chip.setChipBackgroundColorResource(R.color.primary);
+        chip.setChipBackgroundColorResource(R.color.chip_text);
         chip.setTextColor(getColor(R.color.white));
         chip.setCloseIconTintResource(R.color.white);
 
@@ -161,7 +160,7 @@ public class FilterActivity extends AppCompatActivity {
 
     private void setTimeButtonSelected(Button selected, Button unselected) {
         selected.setBackgroundResource(R.drawable.bg_time_button_selected);
-        selected.setTextColor(getColor(R.color.primary));
+        selected.setTextColor(getColor(R.color.chip_text));
         unselected.setBackgroundResource(R.drawable.bg_time_button_default);
         unselected.setTextColor(getColor(R.color.textGrey));
     }
@@ -188,7 +187,7 @@ public class FilterActivity extends AppCompatActivity {
     private void selectBudget(Button selected, Button other1, Button other2, String budget) {
         selectedBudget = budget;
         selected.setBackgroundResource(R.drawable.bg_toggle_selected);
-        selected.setTextColor(getColor(R.color.textDark));
+        selected.setTextColor(getColor(R.color.textGrey));
         other1.setBackgroundResource(R.drawable.bg_toggle_unselected);
         other1.setTextColor(getColor(R.color.textGrey));
         other2.setBackgroundResource(R.drawable.bg_toggle_unselected);
@@ -210,7 +209,7 @@ public class FilterActivity extends AppCompatActivity {
             if (switchStove.isChecked())     equipment.add("stove");
             if (switchAirFryer.isChecked())  equipment.add("air fryer");
 
-            Intent intent = new Intent(this, RecipeDetailActivity.class);
+            Intent intent = new Intent(this, RecipeListActivity.class);
             intent.putStringArrayListExtra("ingredients", selectedIngredients);
             intent.putExtra("maxTime", selectedMaxTime);
             intent.putExtra("budget", selectedBudget);
