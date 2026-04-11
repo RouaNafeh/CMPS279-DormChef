@@ -155,6 +155,9 @@ public class FilterActivity extends AppCompatActivity {
 
     // ── Time filter ───────────────────────────────────────────
     private void setupTimeFilter() {
+        resetTimeButtons();
+        tvSliderValue.setText(selectedMaxTime + " min");
+
         seekBarTime.setOnTouchListener((v, event) -> {
             v.getParent().requestDisallowInterceptTouchEvent(true);
             return false;
@@ -190,7 +193,7 @@ public class FilterActivity extends AppCompatActivity {
         unselected.setBackgroundTintList(null);
 
         selected.setBackgroundResource(R.drawable.bg_time_button_selected);
-        selected.setTextColor(getColor(R.color.primary));
+        selected.setTextColor(getColor(R.color.white));
 
         unselected.setBackgroundResource(R.drawable.bg_time_button_default);
         unselected.setTextColor(getColor(R.color.textGrey));

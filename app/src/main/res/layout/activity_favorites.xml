@@ -89,7 +89,7 @@
         app:layout_constraintBottom_toTopOf="@+id/bottomNavigation"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="4dp"
         android:padding="8dp"
         android:clipToPadding="false"/>
 

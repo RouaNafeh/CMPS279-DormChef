@@ -4,8 +4,11 @@
     <color name="white">#FFFFFFFF</color>
     <color name="primary">#E07A5F</color>
     <color name="secondary">#FFF3E0</color>
+    <color name="surfaceWarm">#FFF8F3</color>
+    <color name="borderSoft">#E6D6CC</color>
     <color name="textDark">#333333</color>
     <color name="textGrey">#888888</color>
+    <color name="textMuted">#6F6A64</color>
     <color name="tag_none">#9A9A9A</color>
     <color name="red">#d1001F</color>
 </resources>
