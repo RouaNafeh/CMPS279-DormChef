@@ -1,53 +1,56 @@
 package com.example.dormchef.adapters;
 
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.dormchef.R;
-import com.example.dormchef.databinding.ItemRecipeBinding;
 import com.example.dormchef.models.Recipe;
-import database.DatabaseHelper;
+
 import java.util.List;
+
+import database.DatabaseHelper;
 
 public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeViewHolder> {
 
     private List<Recipe> recipeList;
 
-    public RecipeAdapter(List<Recipe> recipeList){
+    public RecipeAdapter(List<Recipe> recipeList) {
         this.recipeList = recipeList;
+    }
+
+    public void updateData(List<Recipe> newList) {
+        this.recipeList = newList;
+        notifyDataSetChanged();
     }
 
     @NonNull
     @Override
-    public RecipeViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType){
-        LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-        ItemRecipeBinding binding = ItemRecipeBinding.inflate(inflater, parent, false);
-        return new RecipeViewHolder(binding);
+    public RecipeViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_recipe, parent, false);
+        return new RecipeViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull RecipeViewHolder holder, int position){
-
+    public void onBindViewHolder(@NonNull RecipeViewHolder holder, int position) {
         Recipe recipe = recipeList.get(position);
+        holder.recipeName.setText(recipe.getName());
+        holder.recipeTime.setText(recipe.getTime());
+        holder.recipeBudget.setText(recipe.getBudget());
+        holder.recipeTag.setText(recipe.getEquipment());
+        holder.recipeImage.setImageResource(recipe.getImageResId());
+        holder.heartButton.setImageResource(
+                recipe.isFavourite() ? R.drawable.heart_filled : R.drawable.heart
+        );
 
-        holder.binding.foodImg.setImageResource(recipe.getImageResId());
-        holder.binding.recipeName.setText(recipe.getName());
-        holder.binding.recipeTime.setText(recipe.getTime());
-        holder.binding.recipeBudget.setText(recipe.getBudget());
-        holder.binding.tag.setText(recipe.getEquipment());
-
-        // set correct heart icon
-        if (recipe.isFavourite()) {
-            holder.binding.heart.setImageResource(R.drawable.heart_filled);
-        } else {
-            holder.binding.heart.setImageResource(R.drawable.heart);
-        }
-
-        // click toggle favorite
-        holder.binding.heart.setOnClickListener(v -> {
+        holder.heartButton.setOnClickListener(v -> {
             boolean newState = !recipe.isFavourite();
             recipe.setFavourite(newState);
 
@@ -67,29 +70,32 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                                 .setDuration(150);
                     });
 
-            // Update icon
-            if (newState) {
-                holder.binding.heart.setImageResource(R.drawable.heart_filled);
-            } else {
-                holder.binding.heart.setImageResource(R.drawable.heart);
-            }
+            holder.heartButton.setImageResource(
+                    newState ? R.drawable.heart_filled : R.drawable.heart
+            );
 
             notifyItemChanged(position);
         });
     }
 
     @Override
-    public int getItemCount(){
+    public int getItemCount() {
         return recipeList.size();
     }
 
-    public static class RecipeViewHolder extends RecyclerView.ViewHolder {
+    static class RecipeViewHolder extends RecyclerView.ViewHolder {
+        TextView recipeName, recipeTime, recipeBudget, recipeTag;
+        ImageView recipeImage;
+        ImageButton heartButton;
 
-        final ItemRecipeBinding binding;
-
-        public RecipeViewHolder(ItemRecipeBinding binding){
-            super(binding.getRoot());
-            this.binding = binding;
+        RecipeViewHolder(@NonNull View itemView) {
+            super(itemView);
+            recipeName = itemView.findViewById(R.id.recipe_name);
+            recipeTime = itemView.findViewById(R.id.recipe_time);
+            recipeBudget = itemView.findViewById(R.id.recipe_budget);
+            recipeTag = itemView.findViewById(R.id.tag);
+            recipeImage = itemView.findViewById(R.id.food_img);
+            heartButton = itemView.findViewById(R.id.heart);
         }
     }
 }
