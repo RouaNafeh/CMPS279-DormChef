@@ -32,6 +32,8 @@ public class FavoritesActivity extends AppCompatActivity {
         db = new DatabaseHelper(this);
 
         List<Recipe> favList = db.getFavouriteRecipes();
+        int listSize = favList.size();
+        binding.favCount.setText(listSize + (listSize==1 ?" recipe" : " recipes"));
 
         if (favList.isEmpty()) {
             binding.emptyState.setVisibility(View.VISIBLE);

@@ -30,6 +30,20 @@
         app:layout_constraintStart_toStartOf="@id/favTitle"
         app:layout_constraintTop_toBottomOf="@id/favTitle"/>
 
+    <TextView
+        android:id="@+id/favCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="3 recipes"
+        android:textSize="12sp"
+        android:textColor="@color/primary"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="4dp"
+        android:background="@drawable/bg_fav_count"
+        app:layout_constraintTop_toTopOf="@id/favTitle"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginEnd="16dp"/>
+
     <LinearLayout
         android:id="@+id/emptyState"
         android:layout_width="0dp"
@@ -55,7 +69,6 @@
             android:text="No favorites yet"
             android:textSize="16sp"
             android:textColor="@color/textDark"
-            android:fontFamily="@font/poppins_medium"
             android:layout_marginTop="12dp"/>
 
         <TextView
