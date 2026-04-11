@@ -10,6 +10,7 @@ import com.example.dormchef.R;
 import com.example.dormchef.adapters.RecipeAdapter;
 import com.example.dormchef.databinding.ActivityHomeBinding;
 import com.example.dormchef.models.Recipe;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,6 +43,27 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         recipeAdapter = new RecipeAdapter(recipeList);
+
+        BottomNavigationView bottomNavigation = binding.bottomNavigation.bottomNavigation;
+        bottomNavigation.setSelectedItemId(R.id.nav_home);
+
+        bottomNavigation.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if(id == R.id.nav_home){
+                return true;
+            }
+            else if(id==R.id.nav_favorites){
+                startActivity(new Intent(HomeActivity.this, FavoritesActivity.class));
+                overridePendingTransition(0, 0);
+                return true;
+            }
+            else if(id == R.id.nav_filter){
+                startActivity(new Intent(HomeActivity.this, FilterActivity.class));
+                overridePendingTransition(0, 0);
+                return true;
+            }
+            return false;
+        });
         
         binding.recyclerCards.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerCards.setHasFixedSize(true);
