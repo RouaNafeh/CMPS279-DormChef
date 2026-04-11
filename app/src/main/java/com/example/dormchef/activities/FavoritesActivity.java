@@ -34,14 +34,24 @@ public class FavoritesActivity extends AppCompatActivity {
         List<Recipe> favList = db.getFavouriteRecipes();
         int listSize = favList.size();
         binding.favCount.setText(listSize + (listSize==1 ?" recipe" : " recipes"));
+        binding.favCount.setScaleX(0.8f);
+        binding.favCount.setScaleY(0.8f);
+        binding.favCount.animate().scaleX(1f).scaleY(1f).setDuration(200);
 
         if (favList.isEmpty()) {
+            binding.emptyState.setAlpha(0f);
             binding.emptyState.setVisibility(View.VISIBLE);
+            binding.emptyState.animate().alpha(1f).setDuration(300);
+
             binding.recyclerFavorites.setVisibility(View.GONE);
         } else {
-            binding.emptyState.setVisibility(View.GONE);
+            binding.recyclerFavorites.setAlpha(0f);
             binding.recyclerFavorites.setVisibility(View.VISIBLE);
-        }
+            binding.recyclerFavorites.animate().alpha(1f).setDuration(300);
+
+            binding.emptyState.setVisibility(View.GONE);
+        }  binding.recyclerFavorites.setVisibility(View.VISIBLE);
+
 
         RecipeAdapter adapter = new RecipeAdapter(favList);
         binding.recyclerFavorites.setLayoutManager(new LinearLayoutManager(this));

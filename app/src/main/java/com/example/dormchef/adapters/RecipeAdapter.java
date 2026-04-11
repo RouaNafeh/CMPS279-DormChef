@@ -54,6 +54,26 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
             DatabaseHelper db = new DatabaseHelper(v.getContext());
             db.updateFavourite(recipe.getId(), newState);
 
+            v.animate()
+                    .scaleX(1.3f)
+                    .scaleY(1.3f)
+                    .rotation(15f)
+                    .setDuration(150)
+                    .withEndAction(() -> {
+                        v.animate()
+                                .scaleX(1f)
+                                .scaleY(1f)
+                                .rotation(0f)
+                                .setDuration(150);
+                    });
+
+            // Update icon
+            if (newState) {
+                holder.binding.heart.setImageResource(R.drawable.heart_filled);
+            } else {
+                holder.binding.heart.setImageResource(R.drawable.heart);
+            }
+
             notifyItemChanged(position);
         });
     }
