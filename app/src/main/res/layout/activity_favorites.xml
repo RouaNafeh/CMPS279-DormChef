@@ -25,11 +25,48 @@
         android:layout_height="wrap_content"
         android:text="@string/favorites_subtitle"
         android:textSize="14sp"
-        android:textColor="@color/textDark"
-        android:fontFamily="@font/poppins_medium"
+        android:textColor="@color/textGrey"
         android:layout_marginTop="8dp"
         app:layout_constraintStart_toStartOf="@id/favTitle"
         app:layout_constraintTop_toBottomOf="@id/favTitle"/>
+
+    <LinearLayout
+        android:id="@+id/emptyState"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/favSubtitle"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageView
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:src="@drawable/heart"
+            android:tint="@color/textGrey"
+            android:alpha="0.6"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No favorites yet"
+            android:textSize="16sp"
+            android:textColor="@color/textDark"
+            android:fontFamily="@font/poppins_medium"
+            android:layout_marginTop="12dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Save recipes you like to find them here"
+            android:textSize="13sp"
+            android:textColor="@color/textGrey"
+            android:layout_marginTop="4dp"/>
+
+    </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerFavorites"

@@ -2,6 +2,7 @@ package com.example.dormchef.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -31,6 +32,14 @@ public class FavoritesActivity extends AppCompatActivity {
         db = new DatabaseHelper(this);
 
         List<Recipe> favList = db.getFavouriteRecipes();
+
+        if (favList.isEmpty()) {
+            binding.emptyState.setVisibility(View.VISIBLE);
+            binding.recyclerFavorites.setVisibility(View.GONE);
+        } else {
+            binding.emptyState.setVisibility(View.GONE);
+            binding.recyclerFavorites.setVisibility(View.VISIBLE);
+        }
 
         RecipeAdapter adapter = new RecipeAdapter(favList);
         binding.recyclerFavorites.setLayoutManager(new LinearLayoutManager(this));
