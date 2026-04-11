@@ -26,7 +26,6 @@
         android:layout_height="wrap_content"
         android:text="@string/slogan"
         android:textColor="@color/textDark"
-        android:fontFamily="@font/nunito_variablefont_wght"
         android:textStyle="bold"
         android:textSize="16sp"
         android:layout_marginTop="10dp"
@@ -79,7 +78,15 @@
         app:layout_constraintEnd_toEndOf="@id/filter_btn"
         app:layout_constraintStart_toStartOf="@+id/search_bar"
         app:layout_constraintTop_toBottomOf="@+id/search_bar"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/bottomNavigation"
         android:layout_marginTop="16dp"
         />
+    <include
+        android:id="@+id/bottomNavigation"
+        layout="@layout/bottom_nav"
+        android:layout_height="wrap_content"
+        android:layout_width="0dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

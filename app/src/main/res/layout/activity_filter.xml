@@ -1,410 +1,434 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/secondary"
-    android:fillViewport="false">
+    android:background="@color/secondary">
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:layout_height="0dp"
+        android:fillViewport="false"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/bottom_navigation">
 
-        <!-- Header -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="20dp">
+            android:orientation="vertical"
+            android:padding="16dp">
 
-            <ImageButton
-                android:id="@+id/btnBack"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:src="@android:drawable/ic_menu_revert"
-                android:background="@drawable/bg_back_button"
-                android:contentDescription="Back" />
-
-            <TextView
-                android:layout_width="0dp"
+            <!-- Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Filters"
-                android:textSize="22sp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="20dp"
+                android:layout_marginTop="34dp">
+
+                <ImageButton
+                    android:id="@+id/btnBack"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@android:drawable/ic_menu_revert"
+                    android:background="@drawable/bg_back_button"
+                    android:contentDescription="Back" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Filters"
+                    android:textSize="24sp"
+                    android:textColor="@color/textDark"
+                    android:layout_marginStart="12dp"
+                    android:fontFamily="@font/genty_sans_regular" />
+
+            </LinearLayout>
+
+            <!-- ───── Ingredient Section ───── -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="@color/white">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🥕 Ingredient-Based Filter"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/textDark"
+                        android:layout_marginBottom="12dp" />
+
+                    <!-- Search bar -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:orientation="horizontal"
+                        android:background="@drawable/search_background"
+                        android:gravity="center_vertical"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="8dp"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🔍"
+                            android:textSize="16sp"
+                            android:layout_marginEnd="8dp" />
+
+                        <EditText
+                            android:id="@+id/etIngredientSearch"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:hint="Type an ingredient..."
+                            android:textColor="@color/textDark"
+                            android:textSize="14sp"
+                            android:background="@android:color/transparent"
+                            android:imeOptions="actionDone"
+                            android:inputType="text"
+                            android:maxLines="1" />
+
+                    </LinearLayout>
+
+                    <!-- Added ingredient chips appear here -->
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chipGroupIngredients"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:chipSpacingHorizontal="8dp"
+                        app:chipSpacingVertical="8dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tap ✕ on a chip to remove an ingredient"
+                        android:textSize="11sp"
+                        android:textColor="@color/textGrey"
+                        android:layout_marginTop="6dp" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ───── Time Filter Section ───── -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="@color/white">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⏱ Time Filter"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/textDark"
+                        android:layout_marginBottom="12dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="16dp">
+
+                        <Button
+                            android:id="@+id/btnUnder15"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="6dp"
+                            android:text="Under 15 min"
+                            android:textSize="13sp"
+                            android:textColor="@color/textGrey"
+                            android:background="@drawable/bg_time_button_default"
+                            android:backgroundTint="@null"
+                            android:textAllCaps="false" />
+
+                        <Button
+                            android:id="@+id/btnUnder30"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="6dp"
+                            android:text="Under 30 min"
+                            android:textSize="13sp"
+                            android:textColor="@color/textGrey"
+                            android:background="@drawable/bg_time_button_default"
+                            android:backgroundTint="@null"
+                            android:textAllCaps="false" />
+
+                    </LinearLayout>
+
+                    <SeekBar
+                        android:id="@+id/seekBarTime"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:max="60"
+                        android:progress="60"
+                        android:progressTint="@color/primary"
+                        android:thumbTint="@color/primary" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="4dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="0 min"
+                            android:textSize="11sp"
+                            android:textColor="@color/textGrey" />
+
+                        <TextView
+                            android:id="@+id/tvSliderValue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="60 min"
+                            android:textSize="13sp"
+                            android:textColor="@color/primary"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="60 min"
+                            android:textSize="11sp"
+                            android:textColor="@color/textGrey"
+                            android:gravity="end" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ───── Budget Filter Section ───── -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="@color/white">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="💰 Budget Filter"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/textDark"
+                        android:layout_marginBottom="12dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:orientation="horizontal"
+                        android:background="@drawable/bg_toggle_group"
+                        android:padding="4dp">
+
+                        <Button
+                            android:id="@+id/btnBudgetLow"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:text="Low"
+                            android:backgroundTint="@null"
+                            android:textSize="13sp"
+                            android:textColor="@color/textGrey"
+                            android:background="@drawable/bg_toggle_unselected"
+                            android:textAllCaps="false" />
+
+                        <Button
+                            android:id="@+id/btnBudgetMedium"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:text="Medium"
+                            android:backgroundTint="@null"
+                            android:textSize="13sp"
+                            android:textColor="@color/white"
+                            android:background="@drawable/bg_toggle_selected"
+                            android:textAllCaps="false" />
+
+                        <Button
+                            android:id="@+id/btnBudgetHigh"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:text="High"
+                            android:backgroundTint="@null"
+                            android:textSize="13sp"
+                            android:textColor="@color/textGrey"
+                            android:background="@drawable/bg_toggle_unselected"
+                            android:textAllCaps="false" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ───── Equipment Filter Section ───── -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="@color/white">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🔥 Equipment Filter"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/textDark"
+                        android:layout_marginBottom="12dp" />
+
+                    <!-- Microwave -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:background="@drawable/bg_equip_item"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:layout_marginBottom="10dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="📡  Microwave"
+                            android:textSize="14sp"
+                            android:textColor="@color/textDark" />
+
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/switchMicrowave"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="true" />
+
+                    </LinearLayout>
+
+                    <!-- Stove -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:background="@drawable/bg_equip_item"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:layout_marginBottom="10dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="🍳  Stove"
+                            android:textSize="14sp"
+                            android:textColor="@color/textDark" />
+
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/switchStove"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="true" />
+
+                    </LinearLayout>
+
+                    <!-- Air Fryer -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:background="@drawable/bg_equip_item"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="🌀  Air Fryer"
+                            android:textSize="14sp"
+                            android:textColor="@color/textDark" />
+
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/switchAirFryer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="false" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Apply Button -->
+            <Button
+                android:id="@+id/btnApplyFilters"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="Apply Filters"
+                android:textSize="18sp"
+                android:textColor="@color/white"
                 android:textStyle="bold"
-                android:textColor="@color/textDark"
-                android:layout_marginStart="12dp"
-                android:fontFamily="serif" />
+                android:backgroundTint="@color/primary"
+                android:layout_marginBottom="16dp"
+                android:textAllCaps="false" />
 
         </LinearLayout>
+    </ScrollView>
 
-        <!-- ───── Ingredient Section ───── -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="4dp"
-            app:cardBackgroundColor="@color/white">
+    <include
+        android:id="@+id/bottomNavigation"
+        layout="@layout/bottom_nav"
+        android:layout_height="wrap_content"
+        android:layout_width="0dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="18dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🥕 Ingredient-Based Filter"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/textDark"
-                    android:layout_marginBottom="12dp"
-                    android:fontFamily="serif" />
-
-                <!-- Search bar -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:orientation="horizontal"
-                    android:background="@drawable/bg_search_bar"
-                    android:gravity="center_vertical"
-                    android:paddingStart="12dp"
-                    android:paddingEnd="8dp"
-                    android:layout_marginBottom="12dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="🔍"
-                        android:textSize="16sp"
-                        android:layout_marginEnd="8dp" />
-
-                    <EditText
-                        android:id="@+id/etIngredientSearch"
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1"
-                        android:hint="Type an ingredient and press Enter..."
-                        android:textColor="@color/textDark"
-                        android:textSize="14sp"
-                        android:background="@android:color/transparent"
-                        android:imeOptions="actionDone"
-                        android:inputType="text"
-                        android:maxLines="1" />
-
-                </LinearLayout>
-
-                <!-- Added ingredient chips appear here -->
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/chipGroupIngredients"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:chipSpacingHorizontal="8dp"
-                    app:chipSpacingVertical="8dp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Tap ✕ on a chip to remove an ingredient"
-                    android:textSize="11sp"
-                    android:textColor="@color/textGrey"
-                    android:layout_marginTop="6dp" />
-
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- ───── Time Filter Section ───── -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="4dp"
-            app:cardBackgroundColor="@color/white">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="18dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="⏱ Time Filter"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/textDark"
-                    android:layout_marginBottom="12dp"
-                    android:fontFamily="serif" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginBottom="16dp">
-
-                    <Button
-                        android:id="@+id/btnUnder15"
-                        android:layout_width="0dp"
-                        android:layout_height="40dp"
-                        android:layout_weight="1"
-                        android:layout_marginEnd="6dp"
-                        android:text="Under 15 min"
-                        android:textSize="13sp"
-                        android:textColor="@color/black"
-                        android:background="@drawable/bg_time_button_default" />
-
-                    <Button
-                        android:id="@+id/btnUnder30"
-                        android:layout_width="0dp"
-                        android:layout_height="40dp"
-                        android:layout_weight="1"
-                        android:layout_marginStart="6dp"
-                        android:text="Under 30 min"
-                        android:textSize="13sp"
-                        android:textColor="@color/black"
-                        android:background="@drawable/bg_time_button_default" />
-
-                </LinearLayout>
-
-                <SeekBar
-                    android:id="@+id/seekBarTime"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:max="60"
-                    android:progress="60"
-                    android:progressTint="@color/primary"
-                    android:thumbTint="@color/black" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="4dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="0 min"
-                        android:textSize="11sp"
-                        android:textColor="@color/black" />
-
-                    <TextView
-                        android:id="@+id/tvSliderValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="60 min"
-                        android:textSize="13sp"
-                        android:textColor="@color/red"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="60 min"
-                        android:textSize="11sp"
-                        android:textColor="@color/textGrey"
-                        android:gravity="end" />
-
-                </LinearLayout>
-
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- ───── Budget Filter Section ───── -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="4dp"
-            app:cardBackgroundColor="@color/white">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="18dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="💰 Budget Filter"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/textDark"
-                    android:layout_marginBottom="12dp"
-                    android:fontFamily="serif" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:orientation="horizontal"
-                    android:background="@drawable/bg_toggle_group"
-                    android:padding="4dp">
-
-                    <Button
-                        android:id="@+id/btnBudgetLow"
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1"
-                        android:text="Low"
-                        android:textSize="13sp"
-                        android:textColor="@color/textGrey"
-                        android:background="@drawable/bg_toggle_unselected" />
-
-                    <Button
-                        android:id="@+id/btnBudgetMedium"
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1"
-                        android:text="Medium"
-                        android:textSize="13sp"
-                        android:textColor="@color/textDark"
-                        android:background="@drawable/bg_toggle_selected" />
-
-                    <Button
-                        android:id="@+id/btnBudgetHigh"
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1"
-                        android:text="High"
-                        android:textSize="13sp"
-                        android:textColor="@color/textGrey"
-                        android:background="@drawable/bg_toggle_unselected" />
-
-                </LinearLayout>
-
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- ───── Equipment Filter Section ───── -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="4dp"
-            app:cardBackgroundColor="@color/white">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="18dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🔥 Equipment Filter"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/textDark"
-                    android:layout_marginBottom="12dp"
-                    android:fontFamily="serif" />
-
-                <!-- Microwave -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="52dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:background="@drawable/bg_equip_item"
-                    android:paddingStart="12dp"
-                    android:paddingEnd="12dp"
-                    android:layout_marginBottom="10dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="📡  Microwave"
-                        android:textSize="14sp"
-                        android:textColor="@color/textDark" />
-
-                    <androidx.appcompat.widget.SwitchCompat
-                        android:id="@+id/switchMicrowave"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="true" />
-
-                </LinearLayout>
-
-                <!-- Stove -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="52dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:background="@drawable/bg_equip_item"
-                    android:paddingStart="12dp"
-                    android:paddingEnd="12dp"
-                    android:layout_marginBottom="10dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="🍳  Stove"
-                        android:textSize="14sp"
-                        android:textColor="@color/textDark" />
-
-                    <androidx.appcompat.widget.SwitchCompat
-                        android:id="@+id/switchStove"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="true" />
-
-                </LinearLayout>
-
-                <!-- Air Fryer -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="52dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:background="@drawable/bg_equip_item"
-                    android:paddingStart="12dp"
-                    android:paddingEnd="12dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="🌀  Air Fryer"
-                        android:textSize="14sp"
-                        android:textColor="@color/textDark" />
-
-                    <androidx.appcompat.widget.SwitchCompat
-                        android:id="@+id/switchAirFryer"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="false" />
-
-                </LinearLayout>
-
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- Apply Button -->
-        <Button
-            android:id="@+id/btnApplyFilters"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="Apply Filters"
-            android:textSize="16sp"
-            android:textColor="@color/white"
-            android:textStyle="bold"
-            android:background="@drawable/bg_apply_button"
-            android:layout_marginBottom="16dp" />
-
-    </LinearLayout>
-</ScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>

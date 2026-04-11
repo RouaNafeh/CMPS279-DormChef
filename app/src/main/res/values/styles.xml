@@ -14,6 +14,10 @@
         <item name="cornerSize">12dp</item>
     </style>
 
+    <style name="BottomNavText" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:textSize">11sp</item>
+    </style>
+
     <style name="IngredientChip" parent="Widget.MaterialComponents.Chip.Filter">
         <item name="android:textSize">13sp</item>
         <item name="android:textColor">@color/chip_text_selector</item>

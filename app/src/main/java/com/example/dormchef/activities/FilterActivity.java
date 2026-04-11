@@ -1,6 +1,5 @@
 package com.example.dormchef.activities;
 
-import com.example.dormchef.R;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.KeyEvent;
@@ -16,12 +15,16 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 
 import com.example.dormchef.R;
+import com.example.dormchef.databinding.ActivityFilterBinding;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 
 import java.util.ArrayList;
 
 public class FilterActivity extends AppCompatActivity {
+
+    private ActivityFilterBinding binding;
 
     // Ingredients
     private EditText etIngredientSearch;
@@ -47,7 +50,8 @@ public class FilterActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_filter);
+        binding = ActivityFilterBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
 
         initViews();
         setupBackButton();
@@ -55,32 +59,54 @@ public class FilterActivity extends AppCompatActivity {
         setupTimeFilter();
         setupBudgetToggle();
         setupApplyButton();
+
+        BottomNavigationView bottomNavigation = binding.bottomNavigation.bottomNavigation;
+        bottomNavigation.setSelectedItemId(R.id.nav_filter);
+
+        bottomNavigation.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if(id == R.id.nav_filter){
+                return true;
+            }
+            else if(id==R.id.nav_favorites){
+                startActivity(new Intent(FilterActivity.this, FavoritesActivity.class));
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            }
+            else if(id == R.id.nav_home){
+                startActivity(new Intent(FilterActivity.this, HomeActivity.class));
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            }
+            return false;
+        });
     }
 
     private void initViews() {
-        etIngredientSearch   = findViewById(R.id.etIngredientSearch);
-        chipGroupIngredients = findViewById(R.id.chipGroupIngredients);
+        etIngredientSearch   = binding.etIngredientSearch;
+        chipGroupIngredients = binding.chipGroupIngredients;
 
-        seekBarTime    = findViewById(R.id.seekBarTime);
-        tvSliderValue  = findViewById(R.id.tvSliderValue);
-        btnUnder15     = findViewById(R.id.btnUnder15);
-        btnUnder30     = findViewById(R.id.btnUnder30);
+        seekBarTime    = binding.seekBarTime;
+        tvSliderValue  = binding.tvSliderValue;
+        btnUnder15     = binding.btnUnder15;
+        btnUnder30     = binding.btnUnder30;
 
-        btnBudgetLow    = findViewById(R.id.btnBudgetLow);
-        btnBudgetMedium = findViewById(R.id.btnBudgetMedium);
-        btnBudgetHigh   = findViewById(R.id.btnBudgetHigh);
+        btnBudgetLow    = binding.btnBudgetLow;
+        btnBudgetMedium = binding.btnBudgetMedium;
+        btnBudgetHigh   = binding.btnBudgetHigh;
 
-        switchMicrowave = findViewById(R.id.switchMicrowave);
-        switchStove     = findViewById(R.id.switchStove);
-        switchAirFryer  = findViewById(R.id.switchAirFryer);
+        switchMicrowave = binding.switchMicrowave;
+        switchStove     = binding.switchStove;
+        switchAirFryer  = binding.switchAirFryer;
 
-        btnApplyFilters = findViewById(R.id.btnApplyFilters);
+        btnApplyFilters = binding.btnApplyFilters;
     }
 
     // ── Back button ───────────────────────────────────────────
     private void setupBackButton() {
-        ImageButton btnBack = findViewById(R.id.btnBack);
-        btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
+        binding.btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
     }
 
     // ── Ingredient search ─────────────────────────────────────
@@ -160,13 +186,20 @@ public class FilterActivity extends AppCompatActivity {
     }
 
     private void setTimeButtonSelected(Button selected, Button unselected) {
+        selected.setBackgroundTintList(null);
+        unselected.setBackgroundTintList(null);
+
         selected.setBackgroundResource(R.drawable.bg_time_button_selected);
         selected.setTextColor(getColor(R.color.primary));
+
         unselected.setBackgroundResource(R.drawable.bg_time_button_default);
         unselected.setTextColor(getColor(R.color.textGrey));
     }
 
     private void resetTimeButtons() {
+        btnUnder15.setBackgroundTintList(null);
+        btnUnder30.setBackgroundTintList(null);
+
         btnUnder15.setBackgroundResource(R.drawable.bg_time_button_default);
         btnUnder15.setTextColor(getColor(R.color.textGrey));
         btnUnder30.setBackgroundResource(R.drawable.bg_time_button_default);
@@ -187,6 +220,11 @@ public class FilterActivity extends AppCompatActivity {
 
     private void selectBudget(Button selected, Button other1, Button other2, String budget) {
         selectedBudget = budget;
+
+        selected.setBackgroundTintList(null);
+        other1.setBackgroundTintList(null);
+        other2.setBackgroundTintList(null);
+
         selected.setBackgroundResource(R.drawable.bg_toggle_selected);
         selected.setTextColor(getColor(R.color.textDark));
         other1.setBackgroundResource(R.drawable.bg_toggle_unselected);
