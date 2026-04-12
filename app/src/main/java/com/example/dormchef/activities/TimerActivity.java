@@ -4,6 +4,7 @@ import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.widget.EditText;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -29,10 +30,13 @@ public class TimerActivity extends AppCompatActivity {
     private Button btnStart;
     private Button btnPause;
     private Button btnReset;
+    private Button btnApplyCustomTime;
     private ImageButton btnBack;
+    private EditText etTimerMinutes;
 
     private CountDownTimer countDownTimer;
-    private long timeLeftInMillis = 600000;
+    private long timeLeftInMillis = 300000;
+    private long selectedDurationInMillis = 300000;
     private boolean timerRunning = false;
 
     private String recipeTitle = "Recipe";
@@ -63,7 +67,9 @@ public class TimerActivity extends AppCompatActivity {
         btnStart = findViewById(R.id.btnStart);
         btnPause = findViewById(R.id.btnPause);
         btnReset = findViewById(R.id.btnReset);
+        btnApplyCustomTime = findViewById(R.id.btnApplyCustomTime);
         btnBack = findViewById(R.id.btnBack);
+        etTimerMinutes = findViewById(R.id.etTimerMinutes);
     }
 
     private void loadRecipeData() {
@@ -83,6 +89,8 @@ public class TimerActivity extends AppCompatActivity {
         btnPause.setOnClickListener(v -> pauseTimer());
         btnReset.setOnClickListener(v -> resetTimer());
         btnNextStep.setOnClickListener(v -> nextStep());
+        btnApplyCustomTime.setOnClickListener(v -> applyCustomTime());
+        etTimerMinutes.setText(String.valueOf(selectedDurationInMillis / 60000L));
     }
 
     private void startTimer() {
@@ -133,7 +141,7 @@ public class TimerActivity extends AppCompatActivity {
             countDownTimer.cancel();
         }
 
-        timeLeftInMillis = 600000;
+        timeLeftInMillis = selectedDurationInMillis;
         updateTimerDisplay();
         btnPause.setText("Pause");
         btnPause.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#D59493")));
@@ -163,8 +171,44 @@ public class TimerActivity extends AppCompatActivity {
     private void updateTimerDisplay() {
         int minutes = (int) (timeLeftInMillis / 1000) / 60;
         int seconds = (int) (timeLeftInMillis / 1000) % 60;
-        String timeFormatted = String.format("%02d:%02d:00", minutes, seconds);
+        String timeFormatted = String.format("%02d:%02d", minutes, seconds);
         tvTimer.setText(timeFormatted);
+    }
+
+    private void applyCustomTime() {
+        if (timerRunning) {
+            Toast.makeText(this, "Pause or reset the timer before changing it.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String input = etTimerMinutes.getText().toString().trim();
+        if (input.isEmpty()) {
+            Toast.makeText(this, "Enter the number of minutes you need.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        int minutes;
+        try {
+            minutes = Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            Toast.makeText(this, "Enter a valid number of minutes.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (minutes < 1) {
+            Toast.makeText(this, "Timer must be at least 1 minute.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (minutes > 60) {
+            Toast.makeText(this, "Timer cannot be more than 60 minutes.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        selectedDurationInMillis = minutes * 60000L;
+        timeLeftInMillis = selectedDurationInMillis;
+        updateTimerDisplay();
+        Toast.makeText(this, "Timer set to " + minutes + " minute" + (minutes == 1 ? "" : "s") + ".", Toast.LENGTH_SHORT).show();
     }
 
     @Override
