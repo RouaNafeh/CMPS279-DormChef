@@ -1,6 +1,7 @@
 package com.example.dormchef.activities;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -21,6 +22,9 @@ public class RecipeDetailActivity extends AppCompatActivity {
     public static final String EXTRA_RECIPE_BUDGET = "recipe_budget";
     public static final String EXTRA_RECIPE_EQUIPMENT = "recipe_equipment";
     public static final String EXTRA_RECIPE_IMAGE = "recipe_image";
+    public static final String EXTRA_RECIPE_IMAGE_URI = "recipe_image_uri";
+    public static final String EXTRA_RECIPE_INGREDIENTS = "recipe_ingredients";
+    public static final String EXTRA_RECIPE_STEPS = "recipe_steps";
 
     private ActivityRecipeDetailBinding binding;
 
@@ -37,18 +41,36 @@ public class RecipeDetailActivity extends AppCompatActivity {
         String recipeBudget = getIntent().getStringExtra(EXTRA_RECIPE_BUDGET);
         String recipeEquipment = getIntent().getStringExtra(EXTRA_RECIPE_EQUIPMENT);
         int recipeImage = getIntent().getIntExtra(EXTRA_RECIPE_IMAGE, 0);
+        String recipeImageUri = getIntent().getStringExtra(EXTRA_RECIPE_IMAGE_URI);
+        String customIngredients = getIntent().getStringExtra(EXTRA_RECIPE_INGREDIENTS);
+        String customSteps = getIntent().getStringExtra(EXTRA_RECIPE_STEPS);
 
+        List<String> ingredients = splitMultiline(customIngredients);
+        List<String> steps = splitMultiline(customSteps);
         RecipeContent.Details details = RecipeContent.getDetails(recipeName);
+
+        if (!ingredients.isEmpty() || !steps.isEmpty()) {
+            details = new RecipeContent.Details(
+                    ingredients.isEmpty() ? details.getIngredients() : ingredients,
+                    steps.isEmpty() ? details.getSteps() : steps
+            );
+        }
 
         binding.tvRecipeTitle.setText(recipeName);
         binding.tvRecipeTime.setText(recipeTime);
         binding.tvRecipeBudget.setText(recipeBudget);
         binding.tvRecipeEquipment.setText(recipeEquipment);
-        binding.ivRecipeImage.setImageResource(recipeImage);
+        binding.ivRecipeImage.setImageURI(null);
+        if (recipeImageUri != null && !recipeImageUri.trim().isEmpty()) {
+            binding.ivRecipeImage.setImageURI(Uri.parse(recipeImageUri));
+        } else {
+            binding.ivRecipeImage.setImageResource(recipeImage);
+        }
 
         binding.btnCookingMode.setOnClickListener(v -> {
             Intent intent = new Intent(this, TimerActivity.class);
             intent.putExtra(TimerActivity.EXTRA_RECIPE_NAME, recipeName);
+            intent.putExtra(TimerActivity.EXTRA_RECIPE_STEPS, customSteps);
             startActivity(intent);
         });
 
@@ -96,6 +118,21 @@ public class RecipeDetailActivity extends AppCompatActivity {
     private int dpToPx(int dp) {
         float density = getResources().getDisplayMetrics().density;
         return Math.round(dp * density);
+    }
+
+    private List<String> splitMultiline(String rawValue) {
+        java.util.ArrayList<String> values = new java.util.ArrayList<>();
+        if (rawValue == null || rawValue.trim().isEmpty()) {
+            return values;
+        }
+        String[] lines = rawValue.split("\\r?\\n");
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (!trimmed.isEmpty()) {
+                values.add(trimmed);
+            }
+        }
+        return values;
     }
 
 }

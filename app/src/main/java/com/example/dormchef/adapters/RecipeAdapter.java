@@ -1,6 +1,7 @@
 package com.example.dormchef.adapters;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,9 +23,15 @@ import database.DatabaseHelper;
 public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeViewHolder> {
 
     private List<Recipe> recipeList;
+    private final boolean showFavouriteButton;
 
     public RecipeAdapter(List<Recipe> recipeList) {
+        this(recipeList, true);
+    }
+
+    public RecipeAdapter(List<Recipe> recipeList, boolean showFavouriteButton) {
         this.recipeList = recipeList;
+        this.showFavouriteButton = showFavouriteButton;
     }
 
     public void updateData(List<Recipe> newList) {
@@ -47,10 +54,16 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         holder.recipeTime.setText(recipe.getTime());
         holder.recipeBudget.setText(recipe.getBudget());
         holder.recipeTag.setText(recipe.getEquipment());
-        holder.recipeImage.setImageResource(recipe.getImageResId());
+        holder.recipeImage.setImageURI(null);
+        if (recipe.getImageUri() != null && !recipe.getImageUri().trim().isEmpty()) {
+            holder.recipeImage.setImageURI(Uri.parse(recipe.getImageUri()));
+        } else {
+            holder.recipeImage.setImageResource(recipe.getImageResId());
+        }
         holder.heartButton.setImageResource(
                 recipe.isFavourite() ? R.drawable.heart_filled : R.drawable.heart
         );
+        holder.heartButton.setVisibility(showFavouriteButton ? View.VISIBLE : View.GONE);
 
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(v.getContext(), RecipeDetailActivity.class);
@@ -59,6 +72,9 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
             intent.putExtra(RecipeDetailActivity.EXTRA_RECIPE_BUDGET, recipe.getBudget());
             intent.putExtra(RecipeDetailActivity.EXTRA_RECIPE_EQUIPMENT, recipe.getEquipment());
             intent.putExtra(RecipeDetailActivity.EXTRA_RECIPE_IMAGE, recipe.getImageResId());
+            intent.putExtra(RecipeDetailActivity.EXTRA_RECIPE_IMAGE_URI, recipe.getImageUri());
+            intent.putExtra(RecipeDetailActivity.EXTRA_RECIPE_INGREDIENTS, recipe.getIngredients());
+            intent.putExtra(RecipeDetailActivity.EXTRA_RECIPE_STEPS, recipe.getSteps());
             v.getContext().startActivity(intent);
         });
 
@@ -86,6 +102,10 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                     newState ? R.drawable.heart_filled : R.drawable.heart
             );
         });
+
+        if (!showFavouriteButton) {
+            holder.heartButton.setOnClickListener(null);
+        }
     }
 
     @Override

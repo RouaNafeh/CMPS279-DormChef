@@ -21,6 +21,7 @@ import java.util.List;
 public class TimerActivity extends AppCompatActivity {
 
     public static final String EXTRA_RECIPE_NAME = "recipe_name";
+    public static final String EXTRA_RECIPE_STEPS = "recipe_steps";
 
     private TextView tvRecipeTitle;
     private TextView tvStepIndicator;
@@ -79,7 +80,11 @@ public class TimerActivity extends AppCompatActivity {
         }
 
         tvRecipeTitle.setText(recipeTitle);
-        steps = new ArrayList<>(RecipeContent.getDetails(recipeTitle).getSteps());
+        String customSteps = getIntent().getStringExtra(EXTRA_RECIPE_STEPS);
+        steps = splitMultiline(customSteps);
+        if (steps.isEmpty()) {
+            steps = new ArrayList<>(RecipeContent.getDetails(recipeTitle).getSteps());
+        }
         totalSteps = steps.size();
     }
 
@@ -217,5 +222,20 @@ public class TimerActivity extends AppCompatActivity {
         if (countDownTimer != null) {
             countDownTimer.cancel();
         }
+    }
+
+    private ArrayList<String> splitMultiline(String rawValue) {
+        ArrayList<String> values = new ArrayList<>();
+        if (rawValue == null || rawValue.trim().isEmpty()) {
+            return values;
+        }
+        String[] lines = rawValue.split("\\r?\\n");
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (!trimmed.isEmpty()) {
+                values.add(trimmed);
+            }
+        }
+        return values;
     }
 }

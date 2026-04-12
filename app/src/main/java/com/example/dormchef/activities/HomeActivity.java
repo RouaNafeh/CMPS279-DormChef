@@ -42,6 +42,11 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        binding.btnQuickAddRecipe.setOnClickListener(v -> {
+            Intent intent = new Intent(this, AddRecipeActivity.class);
+            startActivity(intent);
+        });
+
         recipeAdapter = new RecipeAdapter(recipeList);
 
         BottomNavigationView bottomNavigation = binding.bottomNavigation.bottomNavigation;
@@ -57,8 +62,8 @@ public class HomeActivity extends AppCompatActivity {
                 overridePendingTransition(0, 0);
                 return true;
             }
-            else if(id == R.id.nav_filter){
-                startActivity(new Intent(HomeActivity.this, FilterActivity.class));
+            else if(id == R.id.nav_my_recipes){
+                startActivity(new Intent(HomeActivity.this, MyRecipesActivity.class));
                 overridePendingTransition(0, 0);
                 return true;
             }
