@@ -16,15 +16,19 @@ import androidx.annotation.Nullable;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DB_NAME = "dormchef.db";
-    private static final int DB_VERSION = 1;
+    private static final int DB_VERSION = 4;
     public static final String TABLE_RECIPES    = "recipes";
     public static final String COL_ID           = "id";
     public static final String COL_NAME         = "name";
     public static final String COL_TIME         = "time";
     public static final String COL_BUDGET       = "budget";
     public static final String COL_EQUIPMENT    = "equipment";
+    public static final String COL_INGREDIENTS  = "ingredients";
+    public static final String COL_STEPS        = "steps";
+    public static final String COL_IMAGE_URI    = "imageUri";
     public static final String COL_IMAGE        = "image";
     public static final String COL_IS_FAVOURITE = "isFavourite";
+    public static final String COL_IS_USER_CREATED = "isUserCreated";
 
     public DatabaseHelper(@Nullable Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -39,7 +43,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 COL_IMAGE        + " INTEGER, " +
                 COL_BUDGET       + " TEXT, " +
                 COL_EQUIPMENT    + " TEXT, " +
-                COL_IS_FAVOURITE + " INTEGER DEFAULT 0)";
+                COL_INGREDIENTS  + " TEXT DEFAULT '', " +
+                COL_STEPS        + " TEXT DEFAULT '', " +
+                COL_IMAGE_URI    + " TEXT DEFAULT '', " +
+                COL_IS_FAVOURITE + " INTEGER DEFAULT 0, " +
+                COL_IS_USER_CREATED + " INTEGER DEFAULT 0)";
         db.execSQL(createTable);
     }
 
@@ -51,6 +59,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 cursor.getString(cursor.getColumnIndexOrThrow(COL_TIME)),
                 cursor.getString(cursor.getColumnIndexOrThrow(COL_BUDGET)),
                 cursor.getString(cursor.getColumnIndexOrThrow(COL_EQUIPMENT)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COL_INGREDIENTS)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COL_STEPS)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COL_IMAGE_URI)),
                 cursor.getInt(cursor.getColumnIndexOrThrow(COL_IS_FAVOURITE)) == 1
         );
     }
@@ -62,8 +73,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COL_TIME,         recipe.getTime());
         values.put(COL_BUDGET,       recipe.getBudget());
         values.put(COL_EQUIPMENT,    recipe.getEquipment());
+        values.put(COL_INGREDIENTS,  recipe.getIngredients());
+        values.put(COL_STEPS,        recipe.getSteps());
+        values.put(COL_IMAGE_URI,    recipe.getImageUri());
         values.put(COL_IMAGE,        recipe.getImageResId());
         values.put(COL_IS_FAVOURITE, recipe.isFavourite() ? 1 : 0);
+        values.put(COL_IS_USER_CREATED, 0);
         long result = db.insert(TABLE_RECIPES, null, values);
         db.close();
         return result;
@@ -72,7 +87,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public List<Recipe> getAllRecipes() {
         List<Recipe> list = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_RECIPES, null);
+        Cursor cursor = db.rawQuery(
+                "SELECT * FROM " + TABLE_RECIPES + " WHERE " + COL_IS_USER_CREATED + "=0", null);
         if (cursor.moveToFirst()) {
             do { list.add(cursorToRecipe(cursor)); } while (cursor.moveToNext());
         }
@@ -144,8 +160,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_RECIPES);
-        onCreate(db);
+        if (oldVersion < 2) {
+            db.execSQL("ALTER TABLE " + TABLE_RECIPES + " ADD COLUMN " + COL_INGREDIENTS + " TEXT DEFAULT ''");
+            db.execSQL("ALTER TABLE " + TABLE_RECIPES + " ADD COLUMN " + COL_STEPS + " TEXT DEFAULT ''");
+            db.execSQL("ALTER TABLE " + TABLE_RECIPES + " ADD COLUMN " + COL_IS_USER_CREATED + " INTEGER DEFAULT 0");
+        }
+        if (oldVersion < 3) {
+            db.execSQL("ALTER TABLE " + TABLE_RECIPES + " ADD COLUMN " + COL_IMAGE_URI + " TEXT DEFAULT ''");
+        }
     }
 
     public void updateFavourite(int recipeId, boolean isFavourite) {
@@ -161,7 +183,41 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         List<Recipe> list = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery(
-                "SELECT * FROM " + TABLE_RECIPES + " WHERE " + COL_IS_FAVOURITE + "=1", null);
+                "SELECT * FROM " + TABLE_RECIPES + " WHERE " + COL_IS_FAVOURITE + "=1 AND " +
+                        COL_IS_USER_CREATED + "=0", null);
+        if (cursor.moveToFirst()) {
+            do { list.add(cursorToRecipe(cursor)); } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+        return list;
+    }
+
+    public long insertUserRecipe(String name, String time, String budget, String equipment,
+                                 String ingredients, String steps, String imageUri) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COL_NAME, name);
+        values.put(COL_TIME, time);
+        values.put(COL_BUDGET, budget);
+        values.put(COL_EQUIPMENT, equipment);
+        values.put(COL_INGREDIENTS, ingredients);
+        values.put(COL_STEPS, steps);
+        values.put(COL_IMAGE_URI, imageUri);
+        values.put(COL_IMAGE, R.drawable.logo_cropped);
+        values.put(COL_IS_FAVOURITE, 0);
+        values.put(COL_IS_USER_CREATED, 1);
+        long result = db.insert(TABLE_RECIPES, null, values);
+        db.close();
+        return result;
+    }
+
+    public List<Recipe> getUserRecipes() {
+        List<Recipe> list = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(
+                "SELECT * FROM " + TABLE_RECIPES + " WHERE " + COL_IS_USER_CREATED + "=1 ORDER BY " +
+                        COL_ID + " DESC", null);
         if (cursor.moveToFirst()) {
             do { list.add(cursorToRecipe(cursor)); } while (cursor.moveToNext());
         }

@@ -1,0 +1,74 @@
+package com.example.dormchef.activities;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+
+import com.example.dormchef.R;
+import com.example.dormchef.adapters.RecipeAdapter;
+import com.example.dormchef.databinding.ActivityMyRecipesBinding;
+import com.example.dormchef.models.Recipe;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import java.util.List;
+
+import database.DatabaseHelper;
+
+public class MyRecipesActivity extends AppCompatActivity {
+
+    private ActivityMyRecipesBinding binding;
+    private DatabaseHelper dbHelper;
+    private RecipeAdapter recipeAdapter;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        binding = ActivityMyRecipesBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
+        dbHelper = new DatabaseHelper(this);
+        binding.recyclerMyRecipes.setLayoutManager(new LinearLayoutManager(this));
+        recipeAdapter = new RecipeAdapter(dbHelper.getUserRecipes(), false);
+        binding.recyclerMyRecipes.setAdapter(recipeAdapter);
+
+        binding.btnOpenAddRecipe.setOnClickListener(v ->
+                startActivity(new Intent(this, AddRecipeActivity.class)));
+
+        BottomNavigationView bottomNavigation = binding.bottomNavigation.bottomNavigation;
+        bottomNavigation.setSelectedItemId(R.id.nav_my_recipes);
+        bottomNavigation.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_my_recipes) {
+                return true;
+            } else if (id == R.id.nav_home) {
+                startActivity(new Intent(this, HomeActivity.class));
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            } else if (id == R.id.nav_favorites) {
+                startActivity(new Intent(this, FavoritesActivity.class));
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            }
+            return false;
+        });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshRecipes();
+    }
+
+    private void refreshRecipes() {
+        List<Recipe> userRecipes = dbHelper.getUserRecipes();
+        recipeAdapter.updateData(userRecipes);
+        boolean isEmpty = userRecipes.isEmpty();
+        binding.emptyState.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
+        binding.recyclerMyRecipes.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
+    }
+}

@@ -9,25 +9,44 @@ public class Recipe {
     private String time;
     private String budget;
     private String equipment;
+    private String ingredients;
+    private String steps;
+    private String imageUri;
     private boolean isFavourite;
 
-    public Recipe(int id, int imageResId, String name, String time, String budget, String equipment, boolean isFavourite){
+    public Recipe(int id, int imageResId, String name, String time, String budget,
+                  String equipment, String ingredients, String steps, String imageUri, boolean isFavourite){
         this.id = id;
         this.imageResId = imageResId;
         this.name = name;
         this.time = time;
         this.budget = budget;
         this.equipment = equipment;
+        this.ingredients = ingredients;
+        this.steps = steps;
+        this.imageUri = imageUri;
         this.isFavourite = isFavourite;
     }
 
-    public Recipe(int imageResId, String name, String time, String budget, String equipment, boolean isFavourite){
+    public Recipe(int imageResId, String name, String time, String budget,
+                  String equipment, String ingredients, String steps, String imageUri, boolean isFavourite){
         this.imageResId = imageResId;
         this.name = name;
         this.time = time;
         this.budget = budget;
         this.equipment = equipment;
+        this.ingredients = ingredients;
+        this.steps = steps;
+        this.imageUri = imageUri;
         this.isFavourite = isFavourite;
+    }
+
+    public Recipe(int id, int imageResId, String name, String time, String budget, String equipment, boolean isFavourite){
+        this(id, imageResId, name, time, budget, equipment, "", "", "", isFavourite);
+    }
+
+    public Recipe(int imageResId, String name, String time, String budget, String equipment, boolean isFavourite){
+        this(imageResId, name, time, budget, equipment, "", "", "", isFavourite);
     }
 
     public int getId(){ return id; }
@@ -49,6 +68,18 @@ public class Recipe {
 
     public String getEquipment(){
         return equipment;
+    }
+
+    public String getIngredients() {
+        return ingredients;
+    }
+
+    public String getSteps() {
+        return steps;
+    }
+
+    public String getImageUri() {
+        return imageUri;
     }
 
     public boolean isFavourite(){ return isFavourite; }

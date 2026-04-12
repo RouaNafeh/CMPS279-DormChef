@@ -15,4 +15,5 @@
     app:itemTextColor="@color/bottom_nav_color"
     app:itemIconSize="20dp"
     app:itemHorizontalTranslationEnabled="false"
+    app:labelVisibilityMode="labeled"
     />

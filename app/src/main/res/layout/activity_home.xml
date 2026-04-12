@@ -81,6 +81,23 @@
         app:layout_constraintBottom_toTopOf="@+id/bottomNavigation"
         android:layout_marginTop="16dp"
         />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btnQuickAddRecipe"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="18dp"
+        android:layout_marginBottom="84dp"
+        android:contentDescription="Add recipe"
+        android:src="@drawable/add_plus"
+        app:backgroundTint="@color/primary"
+        app:borderWidth="0dp"
+        app:elevation="6dp"
+        app:maxImageSize="22dp"
+        app:rippleColor="@color/white"
+        app:tint="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
     <include
         android:id="@+id/bottomNavigation"
         layout="@layout/bottom_nav"

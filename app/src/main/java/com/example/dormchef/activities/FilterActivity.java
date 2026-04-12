@@ -61,14 +61,9 @@ public class FilterActivity extends AppCompatActivity {
         setupApplyButton();
 
         BottomNavigationView bottomNavigation = binding.bottomNavigation.bottomNavigation;
-        bottomNavigation.setSelectedItemId(R.id.nav_filter);
-
         bottomNavigation.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
-            if(id == R.id.nav_filter){
-                return true;
-            }
-            else if(id==R.id.nav_favorites){
+            if(id==R.id.nav_favorites){
                 startActivity(new Intent(FilterActivity.this, FavoritesActivity.class));
                 overridePendingTransition(0, 0);
                 finish();
@@ -76,6 +71,12 @@ public class FilterActivity extends AppCompatActivity {
             }
             else if(id == R.id.nav_home){
                 startActivity(new Intent(FilterActivity.this, HomeActivity.class));
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            }
+            else if(id == R.id.nav_my_recipes){
+                startActivity(new Intent(FilterActivity.this, MyRecipesActivity.class));
                 overridePendingTransition(0, 0);
                 finish();
                 return true;

@@ -7,8 +7,6 @@
         <item name="colorAccent">@color/primary</item>
     </style>
 
-    <style name="Theme.DormChef" parent="Base.Theme.DormChef" />
-
     <style name="RoundedImageView" parent="">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">12dp</item>
