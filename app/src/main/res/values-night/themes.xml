@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.DormChef" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.DormChef" parent="Base.Theme.DormChef">
         <item name="colorOnSecondary">@color/white</item>
         <item name="android:windowBackground">@color/background_peach</item>
         <item name="colorSurface">@color/card_white</item>

@@ -8,4 +8,9 @@
     <string name="start_cooking">Start Cooking</string>
     <string name="recipe_name">Recipe name</string>
     <string name="under_60_mins">Under 60 mins</string>
+    <string name="slogan">What\'s in your fridge today?</string>
+    <string name="favorites_title">Favorites</string>
+    <string name="favorites_subtitle">Your saved recipes in one place.</string>
+    <string name="recipe_detail_image">Recipe image</string>
+    <string name="start_cooking_mode">Start Cooking Mode</string>
 </resources>

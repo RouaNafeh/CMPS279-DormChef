@@ -1,5 +1,6 @@
 package com.example.dormchef.adapters;
 
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.dormchef.R;
+import com.example.dormchef.activities.RecipeDetailActivity;
 import com.example.dormchef.models.Recipe;
 
 import java.util.List;
@@ -50,6 +52,16 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
                 recipe.isFavourite() ? R.drawable.heart_filled : R.drawable.heart
         );
 
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(v.getContext(), RecipeDetailActivity.class);
+            intent.putExtra(RecipeDetailActivity.EXTRA_RECIPE_NAME, recipe.getName());
+            intent.putExtra(RecipeDetailActivity.EXTRA_RECIPE_TIME, recipe.getTime());
+            intent.putExtra(RecipeDetailActivity.EXTRA_RECIPE_BUDGET, recipe.getBudget());
+            intent.putExtra(RecipeDetailActivity.EXTRA_RECIPE_EQUIPMENT, recipe.getEquipment());
+            intent.putExtra(RecipeDetailActivity.EXTRA_RECIPE_IMAGE, recipe.getImageResId());
+            v.getContext().startActivity(intent);
+        });
+
         holder.heartButton.setOnClickListener(v -> {
             boolean newState = !recipe.isFavourite();
             recipe.setFavourite(newState);
@@ -73,8 +85,6 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
             holder.heartButton.setImageResource(
                     newState ? R.drawable.heart_filled : R.drawable.heart
             );
-
-            notifyItemChanged(position);
         });
     }
 

@@ -1,21 +1,26 @@
 package com.example.dormchef.activities;
 
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
+
 import com.example.dormchef.R;
+import com.example.dormchef.models.RecipeContent;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import android.content.res.ColorStateList;
-import android.graphics.Color;
 
 public class TimerActivity extends AppCompatActivity {
 
-    // UI Elements
+    public static final String EXTRA_RECIPE_NAME = "recipe_name";
+
     private TextView tvRecipeTitle;
     private TextView tvStepIndicator;
     private TextView tvStepDescription;
@@ -24,14 +29,13 @@ public class TimerActivity extends AppCompatActivity {
     private Button btnStart;
     private Button btnPause;
     private Button btnReset;
+    private ImageButton btnBack;
 
-    // Timer variables
     private CountDownTimer countDownTimer;
-    private long timeLeftInMillis = 600000; // 10 minutes in milliseconds
+    private long timeLeftInMillis = 600000;
     private boolean timerRunning = false;
 
-    // Recipe data (using hardcoded data for now)
-    private String recipeTitle = "Smashed Burger";
+    private String recipeTitle = "Recipe";
     private List<String> steps = new ArrayList<>();
     private int currentStep = 0;
     private int totalSteps = 0;
@@ -42,10 +46,12 @@ public class TimerActivity extends AppCompatActivity {
         setContentView(R.layout.activity_timer);
 
         initViews();
-        loadSampleData(); // Using sample data since teammate hasn't built her part yet
+        loadRecipeData();
         setupClickListeners();
         updateStepDisplay();
         updateTimerDisplay();
+        btnPause.setEnabled(false);
+        btnReset.setEnabled(false);
     }
 
     private void initViews() {
@@ -57,25 +63,22 @@ public class TimerActivity extends AppCompatActivity {
         btnStart = findViewById(R.id.btnStart);
         btnPause = findViewById(R.id.btnPause);
         btnReset = findViewById(R.id.btnReset);
+        btnBack = findViewById(R.id.btnBack);
     }
 
-    private void loadSampleData() {
-        // Hardcoded steps for testing - your timer works 100% without anyone else!
-        recipeTitle = "Smashed Burger";
+    private void loadRecipeData() {
+        recipeTitle = getIntent().getStringExtra(EXTRA_RECIPE_NAME);
+        if (recipeTitle == null || recipeTitle.trim().isEmpty()) {
+            recipeTitle = "Recipe";
+        }
+
         tvRecipeTitle.setText(recipeTitle);
-
-        steps = Arrays.asList(
-                "Step 1: Form loosely packed balls of cold 80/20 ground beef without overworking or seasoning the meat.",
-                "Step 2: Heat a cast-iron skillet or griddle over high heat until it's smoking hot.",
-                "Step 3: Place the meat balls in the skillet and press down firmly with a spatula to smash flat.",
-                "Step 4: Season generously with salt and pepper, cook for 2-3 minutes until edges are crispy.",
-                "Step 5: Flip, add cheese if desired, and cook for another 1-2 minutes. Serve on buns with toppings."
-        );
-
+        steps = new ArrayList<>(RecipeContent.getDetails(recipeTitle).getSteps());
         totalSteps = steps.size();
     }
 
     private void setupClickListeners() {
+        btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
         btnStart.setOnClickListener(v -> startTimer());
         btnPause.setOnClickListener(v -> pauseTimer());
         btnReset.setOnClickListener(v -> resetTimer());
@@ -98,17 +101,15 @@ public class TimerActivity extends AppCompatActivity {
             public void onFinish() {
                 timerRunning = false;
                 Toast.makeText(TimerActivity.this, "Time's up! Check your cooking!", Toast.LENGTH_LONG).show();
-                // Update button states
                 btnStart.setEnabled(true);
                 btnPause.setEnabled(false);
                 btnReset.setEnabled(true);
             }
         }.start();
+
         btnPause.setText("Pause");
         btnPause.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FF9800")));
         timerRunning = true;
-
-        // Update button states
         btnStart.setEnabled(false);
         btnPause.setEnabled(true);
         btnReset.setEnabled(true);
@@ -116,15 +117,13 @@ public class TimerActivity extends AppCompatActivity {
 
     private void pauseTimer() {
         if (timerRunning) {
-            // Pause
             countDownTimer.cancel();
             timerRunning = false;
             btnPause.setText("Cont.");
             btnPause.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#4CAF50")));
         } else {
-            // Resume
             startTimer();
-            btnPause.setText("Pause");  // startTimer() already overwrites this
+            btnPause.setText("Pause");
             btnPause.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#D59493")));
         }
     }
@@ -134,12 +133,11 @@ public class TimerActivity extends AppCompatActivity {
             countDownTimer.cancel();
         }
 
-        timeLeftInMillis = 600000; // Reset to 10 minutes
+        timeLeftInMillis = 600000;
         updateTimerDisplay();
         btnPause.setText("Pause");
         btnPause.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#D59493")));
         timerRunning = false;
-
         btnStart.setEnabled(true);
         btnPause.setEnabled(false);
         btnReset.setEnabled(false);
@@ -149,16 +147,11 @@ public class TimerActivity extends AppCompatActivity {
         if (currentStep < totalSteps - 1) {
             currentStep++;
             updateStepDisplay();
-
-            // Reset timer for new step
             resetTimer();
-
-            // Optional: Show a message when moving to next step
             Toast.makeText(this, "Moving to step " + (currentStep + 1), Toast.LENGTH_SHORT).show();
         } else {
-            // Last step completed
-            Toast.makeText(this, "🎉 Congratulations! Recipe completed! 🎉", Toast.LENGTH_LONG).show();
-            finish(); // Close the timer activity
+            Toast.makeText(this, "Recipe completed!", Toast.LENGTH_LONG).show();
+            finish();
         }
     }
 
@@ -170,7 +163,6 @@ public class TimerActivity extends AppCompatActivity {
     private void updateTimerDisplay() {
         int minutes = (int) (timeLeftInMillis / 1000) / 60;
         int seconds = (int) (timeLeftInMillis / 1000) % 60;
-
         String timeFormatted = String.format("%02d:%02d:00", minutes, seconds);
         tvTimer.setText(timeFormatted);
     }
