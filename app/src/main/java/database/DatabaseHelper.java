@@ -141,11 +141,65 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public void insertSampleRecipes() {
-        insertRecipe(new Recipe(R.drawable.salad,    "Greek Salad",   "15 min", "Low", "Bowl, Knife",    false));
-        insertRecipe(new Recipe(R.drawable.pasta,    "Easy Pasta",    "20 min", "Low", "Pot, Stove",     false));
-        insertRecipe(new Recipe(R.drawable.sandwich, "Dorm Sandwich", "10 min", "Low", "Knife",          false));
-        insertRecipe(new Recipe(R.drawable.cake,     "Mug Cake",      "8 min",  "Low", "Microwave, Mug", false));
-        insertRecipe(new Recipe(R.drawable.omelette, "Omelette",      "12 min", "Low", "Pan, Stove",     false));
+        insertRecipe(new Recipe(
+                R.drawable.salad,
+                "Greek Salad",
+                "15 min",
+                "Low",
+                "Bowl, Knife",
+                "Tomatoes,Cucumber,Feta,Olives,Olive oil,Oregano",
+                "Wash and chop the tomatoes and cucumber into bite-sized pieces.|Add the vegetables to a bowl with olives and crumbled feta.|Drizzle with olive oil and season with oregano, salt, and pepper.|Toss lightly and serve fresh.",
+                "",
+                false
+        ));
+
+        insertRecipe(new Recipe(
+                R.drawable.pasta,
+                "Easy Pasta",
+                "20 min",
+                "Low",
+                "Pot, Strainer",
+                "Pasta,Garlic,Olive oil,Parmesan,Salt,Pepper",
+                "Boil the pasta in salted water until tender, then drain.|Warm olive oil in a pot and cook the garlic for 30 seconds.|Return the pasta to the pot and toss with the garlic oil.|Season with salt and pepper, then finish with parmesan.",
+                "",
+                false
+        ));
+
+        insertRecipe(new Recipe(
+                R.drawable.sandwich,
+                "Dorm Sandwich",
+                "5 min",
+                "Low",
+                "Knife",
+                "Bread,Turkey,Cheese,Lettuce,Tomato,Mayo",
+                "Lay out the bread slices and spread mayo on one side.|Layer turkey, cheese, lettuce, and tomato on the bread.|Close the sandwich and press lightly.|Slice in half and serve.",
+                "",
+                false
+        ));
+
+        insertRecipe(new Recipe(
+                R.drawable.cake,
+                "Mug Cake",
+                "5 min",
+                "Low",
+                "Mug, Microwave",
+                "Flour,Sugar,Cocoa powder,Milk,Oil,Baking powder",
+                "Mix all ingredients in a microwave-safe mug until smooth.|Microwave for 60 to 90 seconds until the cake rises.|Let it rest for a minute before eating.|Top with chocolate chips or powdered sugar if available.",
+                "",
+                false
+        ));
+
+        insertRecipe(new Recipe(
+                R.drawable.omelette,
+                "Omelette",
+                "10 min",
+                "Low",
+                "Pan, Spatula",
+                "Eggs,Milk,Butter,Cheese,Salt,Pepper",
+                "Whisk the eggs with a splash of milk, salt, and pepper.|Heat butter in a pan over medium heat.|Pour in the eggs and gently pull the edges inward as they set.|Add cheese, fold the omelette, and cook for one more minute.",
+                "",
+                false
+        ));
     }
 
     public boolean isRecipesTableEmpty() {
