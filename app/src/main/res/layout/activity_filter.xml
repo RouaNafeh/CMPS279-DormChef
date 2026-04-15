@@ -101,7 +101,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginEnd="10dp"
                             android:src="@android:drawable/ic_menu_search"
-                            android:tint="@color/textMuted"
+                            app:tint="@color/textMuted"
                             android:contentDescription="@null" />
 
                         <EditText

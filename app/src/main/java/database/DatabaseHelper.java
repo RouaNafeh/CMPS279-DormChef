@@ -4,10 +4,14 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.content.ContentValues;
+import android.database.Cursor;
+
+import androidx.annotation.Nullable;
 
 import com.example.dormchef.R;
 import com.example.dormchef.models.Recipe;
 import android.database.Cursor;
+import com.example.dormchef.models.RecipeContent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -96,13 +100,33 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
         return list;
     }
-    public List<Recipe> getFilteredRecipes(List<String> selectedEquipment,
+    public List<Recipe> getFilteredRecipes(List<String> selectedIngredients, List<String> selectedEquipment,
                                            int maxTimeMinutes,
                                            String budget) {
         List<Recipe> all      = getAllRecipes();
         List<Recipe> filtered = new ArrayList<>();
 
         for (Recipe recipe : all) {
+            if (!selectedIngredients.isEmpty()) {
+                RecipeContent.Details details =
+                        RecipeContent.getDetails(recipe.getName());
+                List<String> recipeIngredients = details.getIngredients();
+
+                StringBuilder ingredientBlob = new StringBuilder();
+                for (String ing : recipeIngredients) {
+                    ingredientBlob.append(ing.toLowerCase()).append(" ");
+                }
+                String blob = ingredientBlob.toString();
+
+                boolean anyMatch = false;
+                for (String selected : selectedIngredients) {
+                    if (blob.contains(selected.toLowerCase())) {
+                        anyMatch = true;
+                        break;
+                    }
+                }
+                if (!anyMatch) continue;
+            }
 
             if (!selectedEquipment.isEmpty()) {
                 String equipLower = recipe.getEquipment().toLowerCase();

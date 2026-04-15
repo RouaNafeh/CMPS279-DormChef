@@ -37,11 +37,13 @@ public class RecipeListActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         Intent intent = getIntent();
+        ArrayList<String> ingredients = intent.getStringArrayListExtra("ingredients");
         ArrayList<String> equipment = intent.getStringArrayListExtra("equipment");
         int maxTime    = intent.getIntExtra("maxTime", -1);
         String budget  = intent.getStringExtra("budget");
 
         List<Recipe> results = dbHelper.getFilteredRecipes(
+                ingredients != null ? ingredients : new ArrayList<>(),
                 equipment != null ? equipment : new ArrayList<>(),
                 maxTime,
                 budget != null ? budget : ""
