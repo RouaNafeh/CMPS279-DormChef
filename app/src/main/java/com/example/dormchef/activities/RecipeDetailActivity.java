@@ -125,11 +125,14 @@ public class RecipeDetailActivity extends AppCompatActivity {
         if (rawValue == null || rawValue.trim().isEmpty()) {
             return values;
         }
-        String[] lines = rawValue.split("\\r?\\n");
+        String[] lines = rawValue.split("\\r?\\n|\\|");
         for (String line : lines) {
-            String trimmed = line.trim();
-            if (!trimmed.isEmpty()) {
-                values.add(trimmed);
+            String[] parts = line.split(",");
+            for (String part : parts) {
+                String trimmed = part.trim();
+                if (!trimmed.isEmpty()) {
+                    values.add(trimmed);
+                }
             }
         }
         return values;
