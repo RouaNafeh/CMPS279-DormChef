@@ -13,6 +13,12 @@ import com.cookio.app.R;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class SignupActivity extends AppCompatActivity {
     private TextInputLayout usernameInputLayout;
@@ -25,6 +31,7 @@ public class SignupActivity extends AppCompatActivity {
     private Button backButton;
     private TextView loginLink;
     private FirebaseAuth auth;
+    private FirebaseFirestore firestore;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,6 +39,7 @@ public class SignupActivity extends AppCompatActivity {
         setContentView(R.layout.activity_signup);
 
         auth = FirebaseAuth.getInstance();
+        firestore = FirebaseFirestore.getInstance();
         usernameInputLayout = findViewById(R.id.username_input_layout);
         emailInputLayout = findViewById(R.id.email_input_layout);
         passwordInputLayout = findViewById(R.id.password_input_layout);
@@ -82,12 +90,10 @@ public class SignupActivity extends AppCompatActivity {
         setLoading(true);
         auth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
-                    setLoading(false);
                     if (task.isSuccessful()) {
-                        Intent intent = new Intent(SignupActivity.this, HomeActivity.class);
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                        startActivity(intent);
+                        saveUserDocument(username);
                     } else {
+                        setLoading(false);
                         Toast.makeText(
                                 this,
                                 task.getException() != null
@@ -96,6 +102,40 @@ public class SignupActivity extends AppCompatActivity {
                                 Toast.LENGTH_LONG
                         ).show();
                     }
+                });
+    }
+
+    private void saveUserDocument(String username) {
+        FirebaseUser firebaseUser = auth.getCurrentUser();
+
+        if (firebaseUser == null) {
+            setLoading(false);
+            Toast.makeText(this, R.string.user_profile_create_failed, Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("uid", firebaseUser.getUid());
+        userData.put("username", username);
+        userData.put("email", firebaseUser.getEmail());
+        userData.put("createdAt", FieldValue.serverTimestamp());
+
+        firestore.collection("users")
+                .document(firebaseUser.getUid())
+                .set(userData)
+                .addOnSuccessListener(unused -> {
+                    setLoading(false);
+                    Intent intent = new Intent(SignupActivity.this, HomeActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                })
+                .addOnFailureListener(e -> {
+                    setLoading(false);
+                    Toast.makeText(
+                            this,
+                            getString(R.string.user_profile_create_failed),
+                            Toast.LENGTH_LONG
+                    ).show();
                 });
     }
 

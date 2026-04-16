@@ -12,6 +12,7 @@ import com.cookio.app.adapters.RecipeAdapter;
 import com.cookio.app.databinding.ActivityMyRecipesBinding;
 import com.cookio.app.models.Recipe;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.List;
 
@@ -22,10 +23,21 @@ public class MyRecipesActivity extends AppCompatActivity {
     private ActivityMyRecipesBinding binding;
     private DatabaseHelper dbHelper;
     private RecipeAdapter recipeAdapter;
+    private FirebaseAuth auth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        auth = FirebaseAuth.getInstance();
+
+        if (auth.getCurrentUser() == null) {
+            Intent intent = new Intent(MyRecipesActivity.this, LandingActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+            return;
+        }
+
         binding = ActivityMyRecipesBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
