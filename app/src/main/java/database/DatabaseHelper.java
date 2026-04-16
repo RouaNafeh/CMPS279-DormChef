@@ -11,6 +11,7 @@ import com.example.dormchef.models.Recipe;
 import com.example.dormchef.models.RecipeContent;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import androidx.annotation.Nullable;
@@ -88,27 +89,24 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public List<Recipe> getAllRecipes() {
         return getRecipesWhere(COL_IS_USER_CREATED + "=0", null, null);
     }
-    public List<Recipe> getFilteredRecipes(List<String> selectedIngredients, List<String> selectedEquipment,
+    public List<Recipe> getFilteredRecipes(List<String> selectedIngredients, List<String> availableEquipment,
                                            int maxTimeMinutes,
-                                           String budget) {
-        List<Recipe> all      = getAllRecipes();
+                                           String budget, boolean includeUserRecipes) {
+        List<Recipe> all = includeUserRecipes
+                ? getRecipesWhere(null, null, null)
+                : getAllRecipes();
         List<Recipe> filtered = new ArrayList<>();
 
         for (Recipe recipe : all) {
             if (!selectedIngredients.isEmpty()) {
-                RecipeContent.Details details =
-                        RecipeContent.getDetails(recipe.getName());
-                List<String> recipeIngredients = details.getIngredients();
+                String ingredientsRaw = recipe.getIngredients();
+                if (ingredientsRaw == null) ingredientsRaw = "";
 
-                StringBuilder ingredientBlob = new StringBuilder();
-                for (String ing : recipeIngredients) {
-                    ingredientBlob.append(ing.toLowerCase()).append(" ");
-                }
-                String blob = ingredientBlob.toString();
+                String ingredientsLower = ingredientsRaw.toLowerCase();
 
                 boolean anyMatch = false;
                 for (String selected : selectedIngredients) {
-                    if (blob.contains(selected.toLowerCase())) {
+                    if (ingredientsLower.contains(selected.toLowerCase())) {
                         anyMatch = true;
                         break;
                     }
@@ -116,16 +114,24 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 if (!anyMatch) continue;
             }
 
-            if (!selectedEquipment.isEmpty()) {
-                String equipLower = recipe.getEquipment().toLowerCase();
-                boolean hasAll = true;
-                for (String item : selectedEquipment) {
-                    if (!equipLower.contains(item.toLowerCase())) {
-                        hasAll = false;
-                        break;
+            if (!availableEquipment.isEmpty()) {
+                List<String> controlledEquipment = Arrays.asList("microwave", "stove", "air fryer");
+
+                String equipRaw = recipe.getEquipment();
+                if (equipRaw == null) equipRaw = "";
+                String[] recipeParts = equipRaw.split(",");
+
+                boolean recipeCanBeMade = true;
+                for (String part : recipeParts) {
+                    String needed = part.trim().toLowerCase();
+                    if (controlledEquipment.contains(needed)) {
+                        if (!availableEquipment.contains(needed)) {
+                            recipeCanBeMade = false;
+                            break;
+                        }
                     }
                 }
-                if (!hasAll) continue;
+                if (!recipeCanBeMade) continue;
             }
 
             if (maxTimeMinutes != -1) {

@@ -240,11 +240,6 @@ public class FilterActivity extends AppCompatActivity {
     private void setupApplyButton() {
         btnApplyFilters.setOnClickListener(v -> {
 
-            if (selectedIngredients.isEmpty()) {
-                Toast.makeText(this,
-                        "Please add at least one ingredient!", Toast.LENGTH_SHORT).show();
-                return;
-            }
 
             ArrayList<String> equipment = new ArrayList<>();
             if (switchMicrowave.isChecked()) equipment.add("microwave");
@@ -256,6 +251,7 @@ public class FilterActivity extends AppCompatActivity {
             intent.putExtra("maxTime", selectedMaxTime);
             intent.putExtra("budget", selectedBudget);
             intent.putStringArrayListExtra("equipment", equipment);
+            intent.putExtra("includeUserRecipes", true);
             startActivity(intent);
         });
     }
