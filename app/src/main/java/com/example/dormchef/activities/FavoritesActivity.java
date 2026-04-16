@@ -50,7 +50,7 @@ public class FavoritesActivity extends AppCompatActivity {
             binding.recyclerFavorites.animate().alpha(1f).setDuration(300);
 
             binding.emptyState.setVisibility(View.GONE);
-        }  binding.recyclerFavorites.setVisibility(View.VISIBLE);
+        }
 
 
         RecipeAdapter adapter = new RecipeAdapter(favList);

@@ -1,16 +1,13 @@
 package database;
 
 import android.content.Context;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.content.ContentValues;
 import android.database.Cursor;
-
-import androidx.annotation.Nullable;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
 
 import com.example.dormchef.R;
 import com.example.dormchef.models.Recipe;
-import android.database.Cursor;
 import com.example.dormchef.models.RecipeContent;
 
 import java.util.ArrayList;
@@ -89,16 +86,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public List<Recipe> getAllRecipes() {
-        List<Recipe> list = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery(
-                "SELECT * FROM " + TABLE_RECIPES + " WHERE " + COL_IS_USER_CREATED + "=0", null);
-        if (cursor.moveToFirst()) {
-            do { list.add(cursorToRecipe(cursor)); } while (cursor.moveToNext());
-        }
-        cursor.close();
-        db.close();
-        return list;
+        return getRecipesWhere(COL_IS_USER_CREATED + "=0", null, null);
     }
     public List<Recipe> getFilteredRecipes(List<String> selectedIngredients, List<String> selectedEquipment,
                                            int maxTimeMinutes,
@@ -258,17 +246,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public List<Recipe> getFavouriteRecipes() {
-        List<Recipe> list = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery(
-                "SELECT * FROM " + TABLE_RECIPES + " WHERE " + COL_IS_FAVOURITE + "=1 AND " +
-                        COL_IS_USER_CREATED + "=0", null);
-        if (cursor.moveToFirst()) {
-            do { list.add(cursorToRecipe(cursor)); } while (cursor.moveToNext());
-        }
-        cursor.close();
-        db.close();
-        return list;
+        return getRecipesWhere(
+                COL_IS_FAVOURITE + "=1 AND " + COL_IS_USER_CREATED + "=0",
+                null,
+                null
+        );
     }
 
     public long insertUserRecipe(String name, String time, String budget, String equipment,
@@ -291,16 +273,23 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public List<Recipe> getUserRecipes() {
-        List<Recipe> list = new ArrayList<>();
+        return getRecipesWhere(COL_IS_USER_CREATED + "=1", null, COL_ID + " DESC");
+    }
+
+    private List<Recipe> getRecipesWhere(String selection, String[] selectionArgs, String orderBy) {
+        List<Recipe> recipes = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery(
-                "SELECT * FROM " + TABLE_RECIPES + " WHERE " + COL_IS_USER_CREATED + "=1 ORDER BY " +
-                        COL_ID + " DESC", null);
-        if (cursor.moveToFirst()) {
-            do { list.add(cursorToRecipe(cursor)); } while (cursor.moveToNext());
+        Cursor cursor = db.query(TABLE_RECIPES, null, selection, selectionArgs, null, null, orderBy);
+        try {
+            if (cursor.moveToFirst()) {
+                do {
+                    recipes.add(cursorToRecipe(cursor));
+                } while (cursor.moveToNext());
+            }
+            return recipes;
+        } finally {
+            cursor.close();
+            db.close();
         }
-        cursor.close();
-        db.close();
-        return list;
     }
 }

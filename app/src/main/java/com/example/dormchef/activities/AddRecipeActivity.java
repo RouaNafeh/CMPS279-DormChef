@@ -1,7 +1,6 @@
 package com.example.dormchef.activities;
 
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.Toast;
@@ -46,12 +45,12 @@ public class AddRecipeActivity extends AppCompatActivity {
     }
 
     private void saveRecipe() {
-        String name = binding.etRecipeName.getText().toString().trim();
-        String time = binding.etRecipeTime.getText().toString().trim();
-        String budget = binding.etRecipeBudget.getText().toString().trim();
-        String equipment = binding.etRecipeEquipment.getText().toString().trim();
-        String ingredients = binding.etRecipeIngredients.getText().toString().trim();
-        String steps = binding.etRecipeSteps.getText().toString().trim();
+        String name = normalizeSingleLineInput(binding.etRecipeName.getText().toString());
+        String time = normalizeSingleLineInput(binding.etRecipeTime.getText().toString());
+        String budget = normalizeSingleLineInput(binding.etRecipeBudget.getText().toString());
+        String equipment = normalizeSingleLineInput(binding.etRecipeEquipment.getText().toString());
+        String ingredients = normalizeMultilineInput(binding.etRecipeIngredients.getText().toString());
+        String steps = normalizeMultilineInput(binding.etRecipeSteps.getText().toString());
 
         if (TextUtils.isEmpty(name) || TextUtils.isEmpty(time) || TextUtils.isEmpty(budget)
                 || TextUtils.isEmpty(equipment) || TextUtils.isEmpty(ingredients)
@@ -71,5 +70,29 @@ public class AddRecipeActivity extends AppCompatActivity {
 
         Toast.makeText(this, "Recipe added to My Recipes.", Toast.LENGTH_SHORT).show();
         finish();
+    }
+
+    private String normalizeSingleLineInput(String value) {
+        return value == null ? "" : value.trim().replaceAll("\\s+", " ");
+    }
+
+    private String normalizeMultilineInput(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        StringBuilder normalized = new StringBuilder();
+        String[] lines = value.split("\\r?\\n");
+        for (String line : lines) {
+            String trimmed = line.trim().replaceAll("\\s+", " ");
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            if (normalized.length() > 0) {
+                normalized.append('\n');
+            }
+            normalized.append(trimmed);
+        }
+        return normalized.toString();
     }
 }

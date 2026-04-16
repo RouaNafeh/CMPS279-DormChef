@@ -229,11 +229,13 @@ public class TimerActivity extends AppCompatActivity {
         if (rawValue == null || rawValue.trim().isEmpty()) {
             return values;
         }
-        String[] lines = rawValue.split("\\r?\\n");
+        String[] lines = rawValue.split("\\r?\\n|\\|");
         for (String line : lines) {
-            String trimmed = line.trim();
-            if (!trimmed.isEmpty()) {
-                values.add(trimmed);
+            for (String part : line.split(",")) {
+                String trimmed = part.trim();
+                if (!trimmed.isEmpty()) {
+                    values.add(trimmed);
+                }
             }
         }
         return values;
