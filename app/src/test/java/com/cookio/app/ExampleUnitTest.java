@@ -1,4 +1,4 @@
-package com.example.dormchef;
+package com.cookio.app;
 
 import org.junit.Test;
 

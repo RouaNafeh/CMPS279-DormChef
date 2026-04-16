@@ -1,4 +1,4 @@
-package com.example.dormchef.activities;
+package com.cookio.app.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -7,10 +7,10 @@ import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
-import com.example.dormchef.R;
-import com.example.dormchef.adapters.RecipeAdapter;
-import com.example.dormchef.databinding.ActivityMyRecipesBinding;
-import com.example.dormchef.models.Recipe;
+import com.cookio.app.R;
+import com.cookio.app.adapters.RecipeAdapter;
+import com.cookio.app.databinding.ActivityMyRecipesBinding;
+import com.cookio.app.models.Recipe;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.List;

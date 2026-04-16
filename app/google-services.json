@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "125361919350",
+    "project_id": "cooksy-ef10e",
+    "storage_bucket": "cooksy-ef10e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:125361919350:android:4ef163f4fd331c822a9657",
+        "android_client_info": {
+          "package_name": "com.cookio.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZHnNEVYKGcW0hc1eyXh-ZlTmASMF_3AE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,4 +1,4 @@
-package com.example.dormchef.models;
+package com.cookio.app.models;
 
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package com.example.dormchef.adapters;
+package com.cookio.app.adapters;
 
 import android.content.Intent;
 import android.net.Uri;
@@ -12,9 +12,9 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.dormchef.R;
-import com.example.dormchef.activities.RecipeDetailActivity;
-import com.example.dormchef.models.Recipe;
+import com.cookio.app.R;
+import com.cookio.app.activities.RecipeDetailActivity;
+import com.cookio.app.models.Recipe;
 
 import java.util.List;
 

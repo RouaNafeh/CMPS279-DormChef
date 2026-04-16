@@ -1,4 +1,4 @@
-package com.example.dormchef;
+package com.cookio.app;
 
 import android.content.Context;
 
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
     public void useAppContext() {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        assertEquals("com.example.dormchef", appContext.getPackageName());
+        assertEquals("com.cookio.app", appContext.getPackageName());
     }
 }
