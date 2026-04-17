@@ -1,4 +1,4 @@
-package com.example.dormchef.activities;
+package com.cookio.app.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -9,7 +9,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.dormchef.databinding.ActivityAddRecipeBinding;
+import com.cookio.app.databinding.ActivityAddRecipeBinding;
 
 import database.DatabaseHelper;
 

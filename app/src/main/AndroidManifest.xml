@@ -10,6 +10,12 @@
         android:theme="@style/Theme.DormChef">
 
         <activity
+            android:name=".activities.SignupActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.LoginActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.TimerActivity"
             android:exported="false" />
         <activity

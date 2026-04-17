@@ -1,4 +1,4 @@
-package com.example.dormchef.activities;
+package com.cookio.app.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -7,13 +7,16 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import androidx.appcompat.widget.SearchView;
+
+import android.widget.Button;
 import android.widget.Toast;
 
-import com.example.dormchef.R;
-import com.example.dormchef.adapters.RecipeAdapter;
-import com.example.dormchef.databinding.ActivityHomeBinding;
-import com.example.dormchef.models.Recipe;
+import com.cookio.app.R;
+import com.cookio.app.adapters.RecipeAdapter;
+import com.cookio.app.databinding.ActivityHomeBinding;
+import com.cookio.app.models.Recipe;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,12 +32,33 @@ public class HomeActivity extends AppCompatActivity {
     private List<Recipe> filteredList;
 
     private RecipeAdapter recipeAdapter;
+    private FirebaseAuth auth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        auth = FirebaseAuth.getInstance();
+
+        if (auth.getCurrentUser() == null) {
+            Intent intent = new Intent(HomeActivity.this, LandingActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+            return;
+        }
+
         binding = ActivityHomeBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        Button btnLogout = findViewById(R.id.btn_logout);
+
+        btnLogout.setOnClickListener(v ->{
+            auth.signOut();
+            Intent intent = new Intent(HomeActivity.this, LandingActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+        });
 
         dbHelper = new DatabaseHelper(this);
         if (dbHelper.isRecipesTableEmpty()) {

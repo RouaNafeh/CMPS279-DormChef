@@ -3,13 +3,13 @@ plugins {
 }
 
 android {
-    namespace = "com.example.dormchef"
+    namespace = "com.cookio.app"
     compileSdk {
         version = release(36)
     }
 
     defaultConfig {
-        applicationId = "com.example.dormchef"
+        applicationId = "com.cookio.app"
         minSdk = 25
         targetSdk = 36
         versionCode = 1

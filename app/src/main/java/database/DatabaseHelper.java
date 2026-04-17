@@ -6,9 +6,9 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-import com.example.dormchef.R;
-import com.example.dormchef.models.Recipe;
-import com.example.dormchef.models.RecipeContent;
+import com.cookio.app.R;
+import com.cookio.app.models.Recipe;
+import com.cookio.app.models.RecipeContent;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,7 +17,7 @@ import java.util.List;
 import androidx.annotation.Nullable;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
-    private static final String DB_NAME = "dormchef.db";
+    private static final String DB_NAME = "cookio.db";
     private static final int DB_VERSION = 4;
     public static final String TABLE_RECIPES    = "recipes";
     public static final String COL_ID           = "id";

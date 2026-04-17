@@ -1,4 +1,4 @@
-package com.example.dormchef.activities;
+package com.cookio.app.activities;
 
 import android.content.res.ColorStateList;
 import android.graphics.Color;
@@ -12,8 +12,8 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.dormchef.R;
-import com.example.dormchef.models.RecipeContent;
+import com.cookio.app.R;
+import com.cookio.app.models.RecipeContent;
 
 import java.util.ArrayList;
 import java.util.List;

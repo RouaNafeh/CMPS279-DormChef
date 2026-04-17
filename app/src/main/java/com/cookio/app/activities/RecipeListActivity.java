@@ -1,4 +1,4 @@
-package com.example.dormchef.activities;
+package com.cookio.app.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -9,9 +9,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.dormchef.R;
-import com.example.dormchef.models.Recipe;
-import com.example.dormchef.adapters.RecipeAdapter;
+import com.cookio.app.R;
+import com.cookio.app.models.Recipe;
+import com.cookio.app.adapters.RecipeAdapter;
 
 import database.DatabaseHelper;
 

@@ -1,4 +1,4 @@
-package com.example.dormchef.activities;
+package com.cookio.app.activities;
 
 import android.content.Intent;
 import android.net.Uri;
@@ -8,9 +8,9 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.dormchef.R;
-import com.example.dormchef.databinding.ActivityRecipeDetailBinding;
-import com.example.dormchef.models.RecipeContent;
+import com.cookio.app.R;
+import com.cookio.app.databinding.ActivityRecipeDetailBinding;
+import com.cookio.app.models.RecipeContent;
 import com.google.android.material.chip.Chip;
 
 import java.util.List;
