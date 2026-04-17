@@ -22,6 +22,7 @@
             android:paddingEnd="20dp"
             android:paddingBottom="20dp">
 
+            <!-- Header -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -56,6 +57,7 @@
                 </LinearLayout>
             </LinearLayout>
 
+            <!-- Ingredients card -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -100,9 +102,9 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginEnd="10dp"
+                            android:contentDescription="@null"
                             android:src="@android:drawable/ic_menu_search"
-                            app:tint="@color/textMuted"
-                            android:contentDescription="@null" />
+                            app:tint="@color/textMuted" />
 
                         <EditText
                             android:id="@+id/etIngredientSearch"
@@ -135,6 +137,7 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
+            <!-- Cooking Time card -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -231,6 +234,7 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
+            <!-- Budget card -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -307,6 +311,7 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
+            <!-- Equipment card — 3 switches + free-text input -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -337,6 +342,7 @@
                         android:layout_marginBottom="14dp"
                         android:text="Only show recipes you can cook right now." />
 
+                    <!-- Microwave switch -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="56dp"
@@ -363,6 +369,7 @@
                             app:trackTint="@drawable/switch_track_selector" />
                     </LinearLayout>
 
+                    <!-- Stove switch -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="56dp"
@@ -389,9 +396,11 @@
                             app:trackTint="@drawable/switch_track_selector" />
                     </LinearLayout>
 
+                    <!-- Air fryer switch -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="56dp"
+                        android:layout_marginBottom="14dp"
                         android:background="@drawable/bg_equip_item"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
@@ -413,6 +422,69 @@
                             android:checked="false"
                             app:trackTint="@drawable/switch_track_selector" />
                     </LinearLayout>
+
+                    <!-- Divider -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginBottom="14dp"
+                        android:background="@color/borderSoft" />
+
+                    <!-- Free-text equipment input -->
+                    <TextView
+                        style="@style/FilterSectionHint"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:text="Add other equipment you have." />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/search_background"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="12dp">
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="10dp"
+                            android:contentDescription="@null"
+                            android:src="@android:drawable/ic_menu_search"
+                            app:tint="@color/textMuted" />
+
+                        <EditText
+                            android:id="@+id/etEquipmentSearch"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:background="@android:color/transparent"
+                            android:hint="e.g. Oven, Blender..."
+                            android:imeOptions="actionDone"
+                            android:inputType="text"
+                            android:maxLines="1"
+                            android:textColor="@color/textDark"
+                            android:textColorHint="@color/textGrey"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chipGroupEquipment"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:chipSpacingHorizontal="8dp"
+                        app:chipSpacingVertical="8dp" />
+
+                    <TextView
+                        style="@style/FilterSectionHint"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Tap the x on a chip to remove it." />
+
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 

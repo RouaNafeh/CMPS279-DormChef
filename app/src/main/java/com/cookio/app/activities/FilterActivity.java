@@ -6,7 +6,6 @@ import android.view.KeyEvent;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -43,8 +42,13 @@ public class FilterActivity extends AppCompatActivity {
     private Button btnBudgetLow, btnBudgetMedium, btnBudgetHigh;
     private String selectedBudget = "medium";
 
-    // Equipment
+    // Equipment — switches
     private SwitchCompat switchMicrowave, switchStove, switchAirFryer;
+
+    // Equipment — free text input
+    private EditText etEquipmentSearch;
+    private ChipGroup chipGroupEquipment;
+    private ArrayList<String> extraEquipment = new ArrayList<>();
 
     // Apply
     private Button btnApplyFilters;
@@ -68,6 +72,7 @@ public class FilterActivity extends AppCompatActivity {
         initViews();
         setupBackButton();
         setupIngredientSearch();
+        setupEquipmentSearch();
         setupTimeFilter();
         setupBudgetToggle();
         setupApplyButton();
@@ -75,19 +80,17 @@ public class FilterActivity extends AppCompatActivity {
         BottomNavigationView bottomNavigation = binding.bottomNavigation.bottomNavigation;
         bottomNavigation.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
-            if(id==R.id.nav_favorites){
+            if (id == R.id.nav_favorites) {
                 startActivity(new Intent(FilterActivity.this, FavoritesActivity.class));
                 overridePendingTransition(0, 0);
                 finish();
                 return true;
-            }
-            else if(id == R.id.nav_home){
+            } else if (id == R.id.nav_home) {
                 startActivity(new Intent(FilterActivity.this, HomeActivity.class));
                 overridePendingTransition(0, 0);
                 finish();
                 return true;
-            }
-            else if(id == R.id.nav_my_recipes){
+            } else if (id == R.id.nav_my_recipes) {
                 startActivity(new Intent(FilterActivity.this, MyRecipesActivity.class));
                 overridePendingTransition(0, 0);
                 finish();
@@ -101,18 +104,21 @@ public class FilterActivity extends AppCompatActivity {
         etIngredientSearch   = binding.etIngredientSearch;
         chipGroupIngredients = binding.chipGroupIngredients;
 
-        seekBarTime    = binding.seekBarTime;
-        tvSliderValue  = binding.tvSliderValue;
-        btnUnder15     = binding.btnUnder15;
-        btnUnder30     = binding.btnUnder30;
+        seekBarTime     = binding.seekBarTime;
+        tvSliderValue   = binding.tvSliderValue;
+        btnUnder15      = binding.btnUnder15;
+        btnUnder30      = binding.btnUnder30;
 
         btnBudgetLow    = binding.btnBudgetLow;
         btnBudgetMedium = binding.btnBudgetMedium;
         btnBudgetHigh   = binding.btnBudgetHigh;
 
-        switchMicrowave = binding.switchMicrowave;
-        switchStove     = binding.switchStove;
-        switchAirFryer  = binding.switchAirFryer;
+        switchMicrowave    = binding.switchMicrowave;
+        switchStove        = binding.switchStove;
+        switchAirFryer     = binding.switchAirFryer;
+
+        etEquipmentSearch  = binding.etEquipmentSearch;
+        chipGroupEquipment = binding.chipGroupEquipment;
 
         btnApplyFilters = binding.btnApplyFilters;
     }
@@ -137,13 +143,11 @@ public class FilterActivity extends AppCompatActivity {
     private void addIngredientFromInput() {
         String input = etIngredientSearch.getText().toString().trim();
         if (input.isEmpty()) return;
-
         if (selectedIngredients.contains(input.toLowerCase())) {
             Toast.makeText(this, input + " already added!", Toast.LENGTH_SHORT).show();
             etIngredientSearch.setText("");
             return;
         }
-
         selectedIngredients.add(input.toLowerCase());
         addIngredientChip(input);
         etIngredientSearch.setText("");
@@ -157,13 +161,51 @@ public class FilterActivity extends AppCompatActivity {
         chip.setChipBackgroundColorResource(R.color.chip_text);
         chip.setTextColor(getColor(R.color.white));
         chip.setCloseIconTintResource(R.color.white);
-
         chip.setOnCloseIconClickListener(v -> {
             chipGroupIngredients.removeView(chip);
             selectedIngredients.remove(name.toLowerCase());
         });
-
         chipGroupIngredients.addView(chip);
+    }
+
+    // ── Equipment free-text search ────────────────────────────
+    private void setupEquipmentSearch() {
+        etEquipmentSearch.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE
+                    || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+                addEquipmentFromInput();
+                return true;
+            }
+            return false;
+        });
+    }
+
+    private void addEquipmentFromInput() {
+        String input = etEquipmentSearch.getText().toString().trim();
+        if (input.isEmpty()) return;
+        if (extraEquipment.contains(input.toLowerCase())) {
+            Toast.makeText(this, input + " already added!", Toast.LENGTH_SHORT).show();
+            etEquipmentSearch.setText("");
+            return;
+        }
+        extraEquipment.add(input.toLowerCase());
+        addEquipmentChip(input);
+        etEquipmentSearch.setText("");
+    }
+
+    private void addEquipmentChip(String name) {
+        Chip chip = new Chip(this);
+        chip.setText(name);
+        chip.setCheckable(false);
+        chip.setCloseIconVisible(true);
+        chip.setChipBackgroundColorResource(R.color.chip_text);
+        chip.setTextColor(getColor(R.color.white));
+        chip.setCloseIconTintResource(R.color.white);
+        chip.setOnCloseIconClickListener(v -> {
+            chipGroupEquipment.removeView(chip);
+            extraEquipment.remove(name.toLowerCase());
+        });
+        chipGroupEquipment.addView(chip);
     }
 
     // ── Time filter ───────────────────────────────────────────
@@ -204,7 +246,6 @@ public class FilterActivity extends AppCompatActivity {
     private void setTimeButtonSelected(Button selected, Button unselected) {
         selected.setBackgroundTintList(null);
         unselected.setBackgroundTintList(null);
-
         selected.setBackgroundResource(R.drawable.bg_time_button_selected);
         selected.setTextColor(getColor(R.color.white));
         unselected.setBackgroundResource(R.drawable.bg_time_button_default);
@@ -214,7 +255,6 @@ public class FilterActivity extends AppCompatActivity {
     private void resetTimeButtons() {
         btnUnder15.setBackgroundTintList(null);
         btnUnder30.setBackgroundTintList(null);
-
         btnUnder15.setBackgroundResource(R.drawable.bg_time_button_default);
         btnUnder15.setTextColor(getColor(R.color.textGrey));
         btnUnder30.setBackgroundResource(R.drawable.bg_time_button_default);
@@ -224,22 +264,16 @@ public class FilterActivity extends AppCompatActivity {
     // ── Budget toggle ─────────────────────────────────────────
     private void setupBudgetToggle() {
         selectBudget(btnBudgetMedium, btnBudgetLow, btnBudgetHigh, "medium");
-
-        btnBudgetLow.setOnClickListener(v ->
-                selectBudget(btnBudgetLow, btnBudgetMedium, btnBudgetHigh, "low"));
-        btnBudgetMedium.setOnClickListener(v ->
-                selectBudget(btnBudgetMedium, btnBudgetLow, btnBudgetHigh, "medium"));
-        btnBudgetHigh.setOnClickListener(v ->
-                selectBudget(btnBudgetHigh, btnBudgetLow, btnBudgetMedium, "high"));
+        btnBudgetLow.setOnClickListener(v    -> selectBudget(btnBudgetLow,    btnBudgetMedium, btnBudgetHigh,   "low"));
+        btnBudgetMedium.setOnClickListener(v -> selectBudget(btnBudgetMedium, btnBudgetLow,    btnBudgetHigh,   "medium"));
+        btnBudgetHigh.setOnClickListener(v   -> selectBudget(btnBudgetHigh,   btnBudgetLow,    btnBudgetMedium, "high"));
     }
 
     private void selectBudget(Button selected, Button other1, Button other2, String budget) {
         selectedBudget = budget;
-
         selected.setBackgroundTintList(null);
         other1.setBackgroundTintList(null);
         other2.setBackgroundTintList(null);
-
         selected.setBackgroundResource(R.drawable.bg_toggle_selected);
         selected.setTextColor(getColor(R.color.textGrey));
         other1.setBackgroundResource(R.drawable.bg_toggle_unselected);
@@ -252,17 +286,18 @@ public class FilterActivity extends AppCompatActivity {
     private void setupApplyButton() {
         btnApplyFilters.setOnClickListener(v -> {
 
-
-            ArrayList<String> equipment = new ArrayList<>();
-            if (switchMicrowave.isChecked()) equipment.add("microwave");
-            if (switchStove.isChecked())     equipment.add("stove");
-            if (switchAirFryer.isChecked())  equipment.add("air fryer");
+            // Collect equipment: switches + anything the user typed
+            ArrayList<String> availableEquipment = new ArrayList<>();
+            if (switchMicrowave.isChecked()) availableEquipment.add("microwave");
+            if (switchStove.isChecked())     availableEquipment.add("stove");
+            if (switchAirFryer.isChecked())  availableEquipment.add("air fryer");
+            availableEquipment.addAll(extraEquipment); // add typed equipment chips
 
             Intent intent = new Intent(this, RecipeListActivity.class);
             intent.putStringArrayListExtra("ingredients", selectedIngredients);
             intent.putExtra("maxTime", selectedMaxTime);
             intent.putExtra("budget", selectedBudget);
-            intent.putStringArrayListExtra("equipment", equipment);
+            intent.putStringArrayListExtra("equipment", availableEquipment);
             intent.putExtra("includeUserRecipes", true);
             startActivity(intent);
         });
