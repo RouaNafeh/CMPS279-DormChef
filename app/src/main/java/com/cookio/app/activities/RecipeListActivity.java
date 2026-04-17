@@ -41,12 +41,15 @@ public class RecipeListActivity extends AppCompatActivity {
         ArrayList<String> equipment = intent.getStringArrayListExtra("equipment");
         int maxTime    = intent.getIntExtra("maxTime", -1);
         String budget  = intent.getStringExtra("budget");
+        boolean includeUserRecipes         = getIntent().getBooleanExtra("includeUserRecipes", true);
+
 
         List<Recipe> results = dbHelper.getFilteredRecipes(
                 ingredients != null ? ingredients : new ArrayList<>(),
                 equipment != null ? equipment : new ArrayList<>(),
                 maxTime,
-                budget != null ? budget : ""
+                budget != null ? budget : "",
+                includeUserRecipes
         );
 
         if (results.isEmpty()) {
