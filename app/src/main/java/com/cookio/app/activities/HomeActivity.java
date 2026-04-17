@@ -52,7 +52,7 @@ public class HomeActivity extends AppCompatActivity {
 
         Button btnLogout = findViewById(R.id.btn_logout);
 
-        btnLogout.setOnClickListener(v ->{
+        btnLogout.setOnClickListener(v -> {
             auth.signOut();
             Intent intent = new Intent(HomeActivity.this, LandingActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -75,9 +75,11 @@ public class HomeActivity extends AppCompatActivity {
         binding.recyclerCards.setAdapter(recipeAdapter);
 
         binding.searchBar.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+
             @Override
             public boolean onQueryTextSubmit(String query) {
-                return false;
+                filterRecipes(query);
+                return true;
             }
 
             @Override
@@ -119,15 +121,26 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void filterRecipes(String text) {
+
         filteredList.clear();
 
-        for (Recipe recipe : recipeList) {
-            if (recipe.getName().toLowerCase().contains(text.toLowerCase())) {
-                filteredList.add(recipe);
+        if (text == null || text.trim().isEmpty()) {
+            filteredList.addAll(recipeList);
+        } else {
+
+            String query = text.toLowerCase().trim();
+
+            for (Recipe recipe : recipeList) {
+
+                if (recipe.getName() != null &&
+                        recipe.getName().toLowerCase().contains(query)) {
+
+                    filteredList.add(recipe);
+                }
             }
         }
 
-        recipeAdapter.notifyDataSetChanged();
+        recipeAdapter.updateData(filteredList);
 
         if (filteredList.isEmpty()) {
             Toast.makeText(this, "No recipes found", Toast.LENGTH_SHORT).show();
