@@ -95,7 +95,7 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         binding.btnQuickAddRecipe.setOnClickListener(v -> {
-            Intent intent = new Intent(this, AddRecipeActivity.class);
+            Intent intent = new Intent(this, CreatePostActivity.class);
             startActivity(intent);
         });
 

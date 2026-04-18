@@ -40,6 +40,9 @@
             android:name=".activities.HomeActivity"
             android:exported="false" />
         <activity
+            android:name=".activities.CreatePostActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.LandingActivity"
             android:exported="true">
             <intent-filter>
