@@ -3,6 +3,7 @@ package com.cookio.app.models;
 import java.util.List;
 
 public class Recipe {
+
     private int id;
     private int imageResId;
     private String name;
@@ -13,6 +14,10 @@ public class Recipe {
     private String steps;
     private String imageUri;
     private boolean isFavourite;
+
+    private String userId;
+
+    public Recipe() {}
 
     public Recipe(int id, int imageResId, String name, String time, String budget,
                   String equipment, String ingredients, String steps, String imageUri, boolean isFavourite){
@@ -41,15 +46,18 @@ public class Recipe {
         this.isFavourite = isFavourite;
     }
 
-    public Recipe(int id, int imageResId, String name, String time, String budget, String equipment, boolean isFavourite){
+    public Recipe(int id, int imageResId, String name, String time, String budget,
+                  String equipment, boolean isFavourite){
         this(id, imageResId, name, time, budget, equipment, "", "", "", isFavourite);
     }
 
-    public Recipe(int imageResId, String name, String time, String budget, String equipment, boolean isFavourite){
+    public Recipe(int imageResId, String name, String time, String budget,
+                  String equipment, boolean isFavourite){
         this(imageResId, name, time, budget, equipment, "", "", "", isFavourite);
     }
 
     public int getId(){ return id; }
+
     public int getImageResId(){
         return imageResId;
     }
@@ -82,8 +90,19 @@ public class Recipe {
         return imageUri;
     }
 
-    public boolean isFavourite(){ return isFavourite; }
+    public boolean isFavourite(){
+        return isFavourite;
+    }
+
     public void setFavourite(boolean favourite) {
         this.isFavourite = favourite;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId){
+        this.userId = userId;
     }
 }
