@@ -43,8 +43,13 @@
             android:name=".activities.CreatePostActivity"
             android:exported="false" />
         <activity
+            android:name=".activities.SavedPostsActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.LandingActivity"
             android:exported="true">
+
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
