@@ -119,6 +119,10 @@ public class HomeActivity extends AppCompatActivity {
             if (id == R.id.nav_home) {
                 return true;
             } else if (id == R.id.nav_favorites) {
+                startActivity(new Intent(HomeActivity.this, FavoritesActivity.class));
+                overridePendingTransition(0, 0);
+                return true;
+            } else if (id == R.id.nav_saved) {
                 startActivity(new Intent(HomeActivity.this, SavedPostsActivity.class));
                 overridePendingTransition(0, 0);
                 return true;

@@ -192,7 +192,7 @@ public class SavedPostsActivity extends AppCompatActivity {
 
     private void navigateBack() {
         if (isTaskRoot()) {
-            Intent intent = new Intent(this, FavoritesActivity.class);
+            Intent intent = new Intent(this, HomeActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(intent);
             finish();
@@ -203,13 +203,18 @@ public class SavedPostsActivity extends AppCompatActivity {
 
     private void setupBottomNavigation() {
         BottomNavigationView bottomNavigation = binding.bottomNavigation.bottomNavigation;
-        bottomNavigation.setSelectedItemId(R.id.nav_favorites);
+        bottomNavigation.setSelectedItemId(R.id.nav_saved);
         bottomNavigation.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.nav_favorites) {
+            if (id == R.id.nav_saved) {
                 return true;
             } else if (id == R.id.nav_home) {
                 startActivity(new Intent(this, HomeActivity.class));
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            } else if (id == R.id.nav_favorites) {
+                startActivity(new Intent(this, FavoritesActivity.class));
                 overridePendingTransition(0, 0);
                 finish();
                 return true;

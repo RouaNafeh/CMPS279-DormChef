@@ -81,6 +81,11 @@ public class FilterActivity extends AppCompatActivity {
         bottomNavigation.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_favorites) {
+                startActivity(new Intent(FilterActivity.this, FavoritesActivity.class));
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            } else if (id == R.id.nav_saved) {
                 startActivity(new Intent(FilterActivity.this, SavedPostsActivity.class));
                 overridePendingTransition(0, 0);
                 finish();

@@ -11,6 +11,8 @@
     <string name="slogan">What\'s in your fridge today?</string>
     <string name="favorites_title">Favorites</string>
     <string name="favorites_subtitle">Your saved recipes in one place.</string>
+    <string name="liked_posts_title">Favorites</string>
+    <string name="liked_posts_subtitle">Posts you liked from the community feed.</string>
     <string name="saved_posts_title">Saved Posts</string>
     <string name="saved_posts_subtitle">Your saved community recipes in one place.</string>
     <string name="no_saved_posts">No saved posts yet</string>
