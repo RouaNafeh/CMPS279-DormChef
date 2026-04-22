@@ -65,6 +65,11 @@ public class MyRecipesActivity extends AppCompatActivity {
                 overridePendingTransition(0, 0);
                 finish();
                 return true;
+            } else if (id == R.id.nav_saved) {
+                startActivity(new Intent(this, SavedPostsActivity.class));
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
             }
             return false;
         });

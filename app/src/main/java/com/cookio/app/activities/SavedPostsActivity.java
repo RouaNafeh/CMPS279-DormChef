@@ -1,5 +1,6 @@
 package com.cookio.app.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
@@ -8,9 +9,11 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.cookio.app.R;
 import com.cookio.app.adapters.PostAdapter;
 import com.cookio.app.databinding.ActivitySavedPostsBinding;
 import com.cookio.app.models.Post;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -46,9 +49,11 @@ public class SavedPostsActivity extends AppCompatActivity {
         binding.recyclerSavedPosts.setHasFixedSize(true);
 
         postAdapter = new PostAdapter(this, savedPostsList, savedPostIds, likedPostIds);
+        postAdapter.setOnPostUnsavedListener(this::removeUnsavedPost);
         binding.recyclerSavedPosts.setAdapter(postAdapter);
 
-        binding.btnBack.setOnClickListener(v -> finish());
+        binding.btnBack.setOnClickListener(v -> navigateBack());
+        setupBottomNavigation();
 
         loadSavedPosts();
     }
@@ -68,7 +73,7 @@ public class SavedPostsActivity extends AppCompatActivity {
         String uid = auth.getCurrentUser().getUid();
 
         binding.progressBar.setVisibility(View.VISIBLE);
-        binding.tvEmpty.setVisibility(View.GONE);
+        binding.emptyState.setVisibility(View.GONE);
 
         db.collection("users")
                 .document(uid)
@@ -87,9 +92,7 @@ public class SavedPostsActivity extends AppCompatActivity {
                     if (ids.isEmpty()) {
                         savedPostsList.clear();
                         likedPostIds.clear();
-                        postAdapter.updateData(savedPostsList);
-                        binding.progressBar.setVisibility(View.GONE);
-                        binding.tvEmpty.setVisibility(View.VISIBLE);
+                        finishLoading();
                         return;
                     }
 
@@ -135,9 +138,7 @@ public class SavedPostsActivity extends AppCompatActivity {
         likedPostIds.clear();
 
         if (savedPostsList.isEmpty()) {
-            postAdapter.updateData(savedPostsList);
-            binding.progressBar.setVisibility(View.GONE);
-            binding.tvEmpty.setVisibility(View.VISIBLE);
+            finishLoading();
             return;
         }
 
@@ -170,7 +171,60 @@ public class SavedPostsActivity extends AppCompatActivity {
 
     private void finishLoading() {
         postAdapter.updateData(savedPostsList);
+        int count = savedPostsList.size();
+        binding.savedCount.setText(count + (count == 1 ? " post" : " posts"));
         binding.progressBar.setVisibility(View.GONE);
-        binding.tvEmpty.setVisibility(savedPostsList.isEmpty() ? View.VISIBLE : View.GONE);
+        binding.emptyState.setVisibility(savedPostsList.isEmpty() ? View.VISIBLE : View.GONE);
+        binding.recyclerSavedPosts.setVisibility(savedPostsList.isEmpty() ? View.GONE : View.VISIBLE);
+    }
+
+    private void removeUnsavedPost(String postId) {
+        for (int i = 0; i < savedPostsList.size(); i++) {
+            if (postId.equals(savedPostsList.get(i).getPostId())) {
+                savedPostsList.remove(i);
+                break;
+            }
+        }
+        savedPostIds.remove(postId);
+        likedPostIds.remove(postId);
+        finishLoading();
+    }
+
+    private void navigateBack() {
+        if (isTaskRoot()) {
+            Intent intent = new Intent(this, HomeActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
+            finish();
+        } else {
+            getOnBackPressedDispatcher().onBackPressed();
+        }
+    }
+
+    private void setupBottomNavigation() {
+        BottomNavigationView bottomNavigation = binding.bottomNavigation.bottomNavigation;
+        bottomNavigation.setSelectedItemId(R.id.nav_saved);
+        bottomNavigation.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_saved) {
+                return true;
+            } else if (id == R.id.nav_home) {
+                startActivity(new Intent(this, HomeActivity.class));
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            } else if (id == R.id.nav_favorites) {
+                startActivity(new Intent(this, FavoritesActivity.class));
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            } else if (id == R.id.nav_my_recipes) {
+                startActivity(new Intent(this, MyRecipesActivity.class));
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            }
+            return false;
+        });
     }
 }

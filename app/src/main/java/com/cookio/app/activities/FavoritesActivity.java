@@ -77,7 +77,7 @@ public class FavoritesActivity extends AppCompatActivity {
                 return true;
             }
             else if(id==R.id.nav_home){
-                startActivity(new Intent(FavoritesActivity.this, FeedActivity.class));
+                startActivity(new Intent(FavoritesActivity.this, HomeActivity.class));
                 overridePendingTransition(0, 0);
                 finish();
                 return true;
