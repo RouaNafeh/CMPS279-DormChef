@@ -61,7 +61,7 @@ public class MyRecipesActivity extends AppCompatActivity {
                 finish();
                 return true;
             } else if (id == R.id.nav_favorites) {
-                startActivity(new Intent(this, FavoritesActivity.class));
+                startActivity(new Intent(this, SavedPostsActivity.class));
                 overridePendingTransition(0, 0);
                 finish();
                 return true;
