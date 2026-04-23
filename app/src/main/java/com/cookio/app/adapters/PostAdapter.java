@@ -38,14 +38,21 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         void onPostUnsaved(String postId);
     }
 
+    public interface OnPostDeleteListener {
+        void onPostDelete(Post post);
+    }
+
     private final Context context;
     private List<Post> postList;
     private final Set<String> savedPostIds;
     private final Set<String> likedPostIds;
     private final String currentUid;
+    private boolean isGridMode = false;
 
     private OnPostUnsavedListener onPostUnsavedListener;
     private OnPostClickListener onPostClickListener;
+
+    private OnPostDeleteListener onPostDeleteListener;
 
     public PostAdapter(Context context, List<Post> postList,
                        Set<String> savedPostIds, Set<String> likedPostIds,
@@ -68,6 +75,17 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
     public void updateData(List<Post> newList) {
         this.postList = newList;
         notifyDataSetChanged();
+    }
+
+    public void removePostFromUI(String postId) {
+        for (int i = 0; i < postList.size(); i++) {
+            if (postList.get(i).getPostId().equals(postId)) {
+                postList.remove(i);
+                notifyItemRemoved(i);
+                notifyItemRangeChanged(i, postList.size());
+                return;
+            }
+        }
     }
 
     @NonNull
@@ -105,17 +123,61 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         holder.saveButton.setImageResource(
                 isSaved ? R.drawable.ic_save_filled : R.drawable.ic_save_outline
         );
+
         holder.likeButton.setImageResource(
                 isLiked ? R.drawable.heart_filled : R.drawable.heart
         );
 
         holder.saveButton.setOnClickListener(v -> toggleSave(post, holder));
         holder.likeButton.setOnClickListener(v -> toggleLike(post, holder));
+
         holder.itemView.setOnClickListener(v -> {
             if (onPostClickListener != null) {
                 onPostClickListener.onPostClick(post);
             }
         });
+
+        holder.deleteButton.setOnClickListener(v -> {
+            if (onPostDeleteListener != null) {
+                onPostDeleteListener.onPostDelete(post);
+            }
+        });
+
+        if (isGridMode) {
+
+            holder.postDescription.setVisibility(View.GONE);
+            holder.deleteButton.setVisibility(View.GONE);
+
+            holder.postCookTime.setVisibility(View.GONE);
+            holder.postBudget.setVisibility(View.GONE);
+            holder.likesCount.setVisibility(View.GONE);
+            holder.likeButton.setVisibility(View.GONE);
+            holder.saveButton.setVisibility(View.GONE);
+
+            holder.postTitle.setMaxLines(1);
+            holder.postTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);
+
+            ViewGroup.LayoutParams params = holder.postImage.getLayoutParams();
+            params.height = 320;
+            holder.postImage.setLayoutParams(params);
+
+        } else {
+
+            holder.postDescription.setVisibility(View.VISIBLE);
+            holder.deleteButton.setVisibility(View.VISIBLE);
+
+            holder.postCookTime.setVisibility(View.VISIBLE);
+            holder.postBudget.setVisibility(View.VISIBLE);
+            holder.likesCount.setVisibility(View.VISIBLE);
+            holder.likeButton.setVisibility(View.VISIBLE);
+            holder.saveButton.setVisibility(View.VISIBLE);
+
+            holder.postTitle.setMaxLines(2);
+
+            ViewGroup.LayoutParams params = holder.postImage.getLayoutParams();
+            params.height = 104;
+            holder.postImage.setLayoutParams(params);
+        }
     }
 
     @Override
@@ -207,17 +269,6 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
 
             return null;
         }).addOnFailureListener(e -> {
-            if (currentlyLiked) {
-                likedPostIds.add(postId);
-                holder.likeButton.setImageResource(R.drawable.heart_filled);
-                post.setLikesCount(post.getLikesCount() + 1);
-            } else {
-                likedPostIds.remove(postId);
-                holder.likeButton.setImageResource(R.drawable.heart);
-                post.setLikesCount(Math.max(0, post.getLikesCount() - 1));
-            }
-
-            holder.likesCount.setText(String.valueOf(post.getLikesCount()));
             Toast.makeText(context, "Failed to update like", Toast.LENGTH_SHORT).show();
         });
     }
@@ -226,6 +277,8 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         TextView postTitle, postDescription, postCookTime, postBudget, likesCount;
         ImageView postImage;
         ImageButton saveButton, likeButton;
+
+        ImageButton deleteButton;
 
         public PostViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -237,10 +290,21 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             postImage = itemView.findViewById(R.id.post_image);
             saveButton = itemView.findViewById(R.id.btn_save);
             likeButton = itemView.findViewById(R.id.btn_like);
+
+            deleteButton = itemView.findViewById(R.id.btn_delete);
         }
     }
 
     public void setOnPostUnsavedListener(OnPostUnsavedListener listener) {
         this.onPostUnsavedListener = listener;
+    }
+
+    public void setOnPostDeleteListener(OnPostDeleteListener listener) {
+        this.onPostDeleteListener = listener;
+    }
+
+    public void setGridMode(boolean isGridMode) {
+        this.isGridMode = isGridMode;
+        notifyDataSetChanged();
     }
 }
