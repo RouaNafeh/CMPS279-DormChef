@@ -56,12 +56,17 @@ public class MyRecipesActivity extends AppCompatActivity {
             if (id == R.id.nav_my_recipes) {
                 return true;
             } else if (id == R.id.nav_home) {
-                startActivity(new Intent(this, HomeActivity.class));
+                startActivity(new Intent(this, FeedActivity.class));
                 overridePendingTransition(0, 0);
                 finish();
                 return true;
             } else if (id == R.id.nav_favorites) {
                 startActivity(new Intent(this, FavoritesActivity.class));
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            } else if (id == R.id.nav_saved) {
+                startActivity(new Intent(this, SavedPostsActivity.class));
                 overridePendingTransition(0, 0);
                 finish();
                 return true;

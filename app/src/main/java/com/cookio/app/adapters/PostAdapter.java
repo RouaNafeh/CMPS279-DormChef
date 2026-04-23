@@ -30,6 +30,14 @@ import java.util.Set;
 
 public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder> {
 
+    public interface OnPostClickListener {
+        void onPostClick(Post post);
+    }
+
+    public interface OnPostUnsavedListener {
+        void onPostUnsaved(String postId);
+    }
+
     private final Context context;
     private List<Post> postList;
     private final Set<String> savedPostIds;
@@ -37,6 +45,14 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
     private final String currentUid;
 
     private OnPostUnsavedListener onPostUnsavedListener;
+    private OnPostClickListener onPostClickListener;
+
+    public PostAdapter(Context context, List<Post> postList,
+                       Set<String> savedPostIds, Set<String> likedPostIds,
+                       OnPostClickListener clickListener) {
+        this(context, postList, savedPostIds, likedPostIds);
+        this.onPostClickListener = clickListener;
+    }
 
     public PostAdapter(Context context, List<Post> postList,
                        Set<String> savedPostIds, Set<String> likedPostIds) {
@@ -74,7 +90,9 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
 
         String imageUrl = post.getImageUrl();
         Glide.with(holder.itemView)
-                .load(imageUrl != null && !imageUrl.trim().isEmpty() ? Uri.parse(imageUrl) : R.drawable.logo_cropped)
+                .load(imageUrl != null && !imageUrl.trim().isEmpty()
+                        ? Uri.parse(imageUrl)
+                        : R.drawable.logo_cropped)
                 .placeholder(R.drawable.logo_cropped)
                 .error(R.drawable.logo_cropped)
                 .centerCrop()
@@ -87,17 +105,16 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         holder.saveButton.setImageResource(
                 isSaved ? R.drawable.ic_save_filled : R.drawable.ic_save_outline
         );
-
         holder.likeButton.setImageResource(
                 isLiked ? R.drawable.heart_filled : R.drawable.heart
         );
 
         holder.saveButton.setOnClickListener(v -> toggleSave(post, holder));
         holder.likeButton.setOnClickListener(v -> toggleLike(post, holder));
-
         holder.itemView.setOnClickListener(v -> {
-            // later open social recipe detail if you have one
-            Toast.makeText(context, post.getTitle(), Toast.LENGTH_SHORT).show();
+            if (onPostClickListener != null) {
+                onPostClickListener.onPostClick(post);
+            }
         });
     }
 
@@ -221,9 +238,6 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             saveButton = itemView.findViewById(R.id.btn_save);
             likeButton = itemView.findViewById(R.id.btn_like);
         }
-    }
-    public interface OnPostUnsavedListener {
-        void onPostUnsaved(String postId);
     }
 
     public void setOnPostUnsavedListener(OnPostUnsavedListener listener) {

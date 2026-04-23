@@ -13,6 +13,12 @@
     <string name="favorites_subtitle">Your saved recipes in one place.</string>
     <string name="my_recipes_title">Profile</string>
     <string name="my_recipes_subtitle">See your activity, saved posts, and everything you have shared.</string>
+    <string name="liked_posts_title">Favorites</string>
+    <string name="liked_posts_subtitle">Posts you liked from the community feed.</string>
+    <string name="saved_posts_title">Saved Posts</string>
+    <string name="saved_posts_subtitle">Your saved community recipes in one place.</string>
+    <string name="no_saved_posts">No saved posts yet</string>
+    <string name="saved_posts_empty_hint">Save posts you like to find them here.</string>
     <string name="recipe_detail_image">Recipe image</string>
     <string name="start_cooking_mode">Start Cooking Mode</string>
     <string name="welcome_to_cookio">Welcome to Cookio</string>
@@ -33,6 +39,7 @@
     <string name="go_to_login">Already have an account? Log in</string>
     <string name="back_to_landing">Back</string>
     <string name="log_out">Log Out</string>
+    <string name="view_saved_posts">View Saved Posts</string>
     <string name="logging_in">Logging in...</string>
     <string name="creating_account">Creating account...</string>
     <string name="error_username_required">Username is required.</string>
