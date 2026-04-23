@@ -2,21 +2,22 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="primary">#E07A5F</color>
-    <color name="secondary">#FFF3E0</color>
-    <color name="surfaceWarm">#FFF8F3</color>
-    <color name="borderSoft">#E6D6CC</color>
-    <color name="textDark">#333333</color>
-    <color name="textGrey">#888888</color>
-    <color name="textMuted">#6F6A64</color>
-    <color name="tag_none">#9A9A9A</color>
+    <color name="primary">#0F766E</color>
+    <color name="secondary">#F4F7F8</color>
+    <color name="surfaceWarm">#EDF6F5</color>
+    <color name="borderSoft">#D9E4E6</color>
+    <color name="textDark">#0F172A</color>
+    <color name="textGrey">#64748B</color>
+    <color name="textMuted">#6B7280</color>
+    <color name="tag_none">#94A3B8</color>
     <color name="red">#d1001F</color>
-    <color name="background_peach">#F7E6DE</color>
+    <color name="background_peach">#F4F7F8</color>
     <color name="card_white">#FFFFFF</color>
-    <color name="title_blue">#083D6C</color>
-    <color name="accent_pink">#C96F6D</color>
-    <color name="chip_peach">#F9E6DE</color>
-    <color name="chip_text">#8A5A57</color>
-    <color name="separator_line">#EDE6E3</color>
-    <color name="text_primary">#2B3A4A</color>
+    <color name="title_blue">#0F172A</color>
+    <color name="accent_pink">#F97316</color>
+    <color name="chip_peach">#E3F3F0</color>
+    <color name="chip_text">#115E59</color>
+    <color name="separator_line">#E2EAEC</color>
+    <color name="text_primary">#162033</color>
+    <color name="textPrimaryOnLight">#4A5C65</color>
 </resources>

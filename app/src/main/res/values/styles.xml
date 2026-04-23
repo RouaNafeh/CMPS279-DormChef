@@ -5,35 +5,39 @@
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryVariant">@color/primary</item>
         <item name="colorAccent">@color/primary</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@color/card_white</item>
     </style>
 
     <style name="RoundedImageView" parent="">
         <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">12dp</item>
+        <item name="cornerSize">18dp</item>
     </style>
 
     <style name="BottomNavText" parent="TextAppearance.MaterialComponents.Caption">
         <item name="android:textSize">11sp</item>
+        <item name="android:textStyle">bold</item>
     </style>
 
     <style name="FilterSectionTitle">
-        <item name="android:textSize">17sp</item>
+        <item name="android:textSize">18sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">@color/textDark</item>
     </style>
 
     <style name="FilterSectionHint">
-        <item name="android:textSize">13sp</item>
+        <item name="android:textSize">14sp</item>
         <item name="android:textColor">@color/textMuted</item>
     </style>
 
     <style name="FilterChoiceButton">
-        <item name="android:layout_height">44dp</item>
-        <item name="android:textSize">13sp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:textSize">14sp</item>
         <item name="android:textAllCaps">false</item>
         <item name="android:textColor">@color/textGrey</item>
         <item name="android:backgroundTint">@null</item>
         <item name="android:background">@drawable/bg_time_button_default</item>
+        <item name="android:textStyle">bold</item>
     </style>
 
     <style name="IngredientChip" parent="Widget.MaterialComponents.Chip.Filter">
@@ -43,7 +47,49 @@
         <item name="chipStrokeColor">@color/chip_stroke_selector</item>
         <item name="chipStrokeWidth">1.5dp</item>
         <item name="chipCornerRadius">100dp</item>
-        <item name="chipMinHeight">36dp</item>
+        <item name="chipMinHeight">38dp</item>
+    </style>
+
+    <style name="ModernPrimaryButton" parent="Widget.Material3.Button">
+        <item name="android:layout_height">56dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="backgroundTint">@color/primary</item>
+        <item name="cornerRadius">18dp</item>
+    </style>
+
+    <style name="ModernSecondaryButton" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:layout_height">52dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textColor">@color/textDark</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="backgroundTint">@color/card_white</item>
+        <item name="cornerRadius">18dp</item>
+        <item name="strokeColor">@color/borderSoft</item>
+    </style>
+
+    <style name="ModernInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxBackgroundColor">@color/card_white</item>
+        <item name="boxCornerRadiusTopStart">18dp</item>
+        <item name="boxCornerRadiusTopEnd">18dp</item>
+        <item name="boxCornerRadiusBottomStart">18dp</item>
+        <item name="boxCornerRadiusBottomEnd">18dp</item>
+        <item name="boxStrokeColor">@color/borderSoft</item>
+        <item name="hintTextColor">@color/textGrey</item>
+    </style>
+
+    <style name="ScreenTitle">
+        <item name="android:textColor">@color/textDark</item>
+        <item name="android:textSize">30sp</item>
+        <item name="android:fontFamily">@font/genty_sans_regular</item>
+    </style>
+
+    <style name="ScreenSubtitle">
+        <item name="android:textColor">@color/textMuted</item>
+        <item name="android:textSize">14sp</item>
     </style>
 
 </resources>

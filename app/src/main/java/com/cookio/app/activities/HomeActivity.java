@@ -8,7 +8,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import androidx.appcompat.widget.SearchView;
 
-import android.widget.Button;
 import android.widget.Toast;
 
 import com.cookio.app.R;
@@ -49,16 +48,6 @@ public class HomeActivity extends AppCompatActivity {
 
         binding = ActivityHomeBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
-        Button btnLogout = findViewById(R.id.btn_logout);
-
-        btnLogout.setOnClickListener(v -> {
-            auth.signOut();
-            Intent intent = new Intent(HomeActivity.this, LandingActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(intent);
-            finish();
-        });
 
         dbHelper = new DatabaseHelper(this);
         if (dbHelper.isRecipesTableEmpty()) {
@@ -112,7 +101,7 @@ public class HomeActivity extends AppCompatActivity {
                 overridePendingTransition(0, 0);
                 return true;
             } else if (id == R.id.nav_my_recipes) {
-                startActivity(new Intent(HomeActivity.this, MyRecipesActivity.class));
+                startActivity(new Intent(HomeActivity.this, ProfileActivity.class));
                 overridePendingTransition(0, 0);
                 return true;
             }

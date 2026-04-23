@@ -35,12 +35,13 @@
 
                 <ImageButton
                     android:id="@+id/btnBack"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
                     android:background="@drawable/bg_back_button"
                     android:contentDescription="Back"
-                    android:padding="8dp"
-                    android:src="@android:drawable/ic_menu_revert" />
+                    android:padding="10dp"
+                    android:src="@android:drawable/ic_menu_revert"
+                    app:tint="@color/textDark" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -59,9 +60,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
                 app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="2dp"
-                app:cardUseCompatPadding="true">
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/borderSoft"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -153,13 +155,12 @@
 
                     <!-- Title -->
                     <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        style="@style/ModernInputLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
                         android:hint="Recipe title"
-                        app:boxBackgroundColor="@color/white"
-                        app:boxStrokeColor="@color/primary">
+                        >
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etTitle"
@@ -170,13 +171,12 @@
 
                     <!-- Description -->
                     <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        style="@style/ModernInputLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:hint="Short description"
-                        app:boxBackgroundColor="@color/white"
-                        app:boxStrokeColor="@color/primary">
+                        >
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etDescription"
@@ -188,13 +188,12 @@
 
                     <!-- Cook time -->
                     <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        style="@style/ModernInputLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:hint="Cook time (e.g. 20 min)"
-                        app:boxBackgroundColor="@color/white"
-                        app:boxStrokeColor="@color/primary">
+                        >
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etCookTime"
@@ -205,13 +204,12 @@
 
                     <!-- Budget -->
                     <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        style="@style/ModernInputLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:hint="Budget (Low / Medium / High)"
-                        app:boxBackgroundColor="@color/white"
-                        app:boxStrokeColor="@color/primary">
+                        >
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etBudget"
@@ -228,9 +226,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
                 app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="2dp"
-                app:cardUseCompatPadding="true">
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/borderSoft"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -253,12 +252,11 @@
                         android:text="One ingredient per line." />
 
                     <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        style="@style/ModernInputLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="e.g. 2 eggs, 1 cup flour..."
-                        app:boxBackgroundColor="@color/white"
-                        app:boxStrokeColor="@color/primary">
+                        >
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etIngredients"
@@ -277,9 +275,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="20dp"
                 app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="2dp"
-                app:cardUseCompatPadding="true">
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/borderSoft"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -302,12 +301,11 @@
                         android:text="One step per line." />
 
                     <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        style="@style/ModernInputLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="e.g. Mix flour and eggs..."
-                        app:boxBackgroundColor="@color/white"
-                        app:boxStrokeColor="@color/primary">
+                        >
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etSteps"
@@ -321,17 +319,12 @@
             </androidx.cardview.widget.CardView>
 
             <!-- Post button -->
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnPost"
+                style="@style/ModernPrimaryButton"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:background="@drawable/bg_apply_button"
-                android:backgroundTint="@null"
                 android:text="Post Recipe"
-                android:textAllCaps="false"
-                android:textColor="@color/white"
-                android:textSize="17sp"
-                android:textStyle="bold" />
+                />
 
         </LinearLayout>
     </ScrollView>

@@ -118,6 +118,8 @@ public class SignupActivity extends AppCompatActivity {
         userData.put("uid", firebaseUser.getUid());
         userData.put("username", username);
         userData.put("email", firebaseUser.getEmail());
+        userData.put("bio", "");
+        userData.put("profileImageUrl", "");
         userData.put("createdAt", FieldValue.serverTimestamp());
 
         firestore.collection("users")

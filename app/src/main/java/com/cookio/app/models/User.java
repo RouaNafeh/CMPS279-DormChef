@@ -1,16 +1,20 @@
 package com.cookio.app.models;
 
+import java.util.Date;
+
 public class User {
     private String uid;
     private String username;
     private String email;
     private String bio;
     private String profileImageUrl;
-    private long createdAt;
-    public User(){
+    private Date createdAt;
+
+    public User() {
 
     }
-    public User(String uid, String username, String email, String bio, String profileImageUrl, long createdAt){
+
+    public User(String uid, String username, String email, String bio, String profileImageUrl, Date createdAt) {
         this.uid = uid;
         this.username = username;
         this.bio = bio;
@@ -19,51 +23,51 @@ public class User {
         this.createdAt = createdAt;
     }
 
-    public String getUid(){
+    public String getUid() {
         return uid;
     }
 
-    public String getUsername(){
+    public String getUsername() {
         return username;
     }
 
-    public String getEmail(){
+    public String getEmail() {
         return email;
     }
 
-    public String getBio(){
+    public String getBio() {
         return bio;
     }
 
-    public String getProfileImageUrl(){
+    public String getProfileImageUrl() {
         return profileImageUrl;
     }
 
-    public long getCreatedAt(){
+    public Date getCreatedAt() {
         return createdAt;
     }
 
-    public void setUid(String uid){
+    public void setUid(String uid) {
         this.uid = uid;
     }
 
-    public void setUsername(String username){
+    public void setUsername(String username) {
         this.username = username;
     }
 
-    public void setEmail(String email){
+    public void setEmail(String email) {
         this.email = email;
     }
 
-    public void setBio(String bio){
+    public void setBio(String bio) {
         this.bio = bio;
     }
 
-    public void setProfileImageUrl(String profileImageUrl){
+    public void setProfileImageUrl(String profileImageUrl) {
         this.profileImageUrl = profileImageUrl;
     }
 
-    public void setCreatedAt(long createdAt){
+    public void setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
     }
 }

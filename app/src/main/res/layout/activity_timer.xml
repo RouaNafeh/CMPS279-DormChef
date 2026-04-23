@@ -29,12 +29,13 @@
 
                 <ImageButton
                     android:id="@+id/btnBack"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
                     android:background="@drawable/bg_back_button"
                     android:contentDescription="Back"
-                    android:padding="8dp"
-                    android:src="@android:drawable/ic_menu_revert" />
+                    android:padding="10dp"
+                    android:src="@android:drawable/ic_menu_revert"
+                    app:tint="@color/textDark" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -51,10 +52,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="10dp"
                 app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="24dp"
-                app:cardElevation="3dp"
-                app:cardPreventCornerOverlap="true"
-                app:cardUseCompatPadding="true">
+                app:cardCornerRadius="28dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/borderSoft"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -89,10 +90,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="10dp"
                 app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="2dp"
-                app:cardPreventCornerOverlap="true"
-                app:cardUseCompatPadding="true">
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/borderSoft"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -131,10 +132,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
                 app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="2dp"
-                app:cardPreventCornerOverlap="true"
-                app:cardUseCompatPadding="true">
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/borderSoft"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -197,19 +198,14 @@
                             android:textColorHint="@color/textGrey"
                             android:textSize="15sp" />
 
-                        <Button
+                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnApplyCustomTime"
+                            style="@style/ModernSecondaryButton"
                             android:layout_width="wrap_content"
-                            android:layout_height="50dp"
                             android:layout_marginStart="10dp"
-                            android:background="@drawable/bg_toggle_selected"
-                            android:backgroundTint="@null"
                             android:paddingHorizontal="18dp"
                             android:text="Set"
-                            android:textAllCaps="false"
-                            android:textColor="@color/white"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
+                            />
                     </LinearLayout>
 
                     <LinearLayout
@@ -218,63 +214,46 @@
                         android:layout_marginTop="20dp"
                         android:orientation="horizontal">
 
-                        <Button
+                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnStart"
+                            style="@style/ModernPrimaryButton"
                             android:layout_width="0dp"
-                            android:layout_height="46dp"
+                            android:layout_height="48dp"
                             android:layout_weight="1"
                             android:layout_marginEnd="6dp"
-                            android:background="@drawable/bg_apply_button"
-                            android:backgroundTint="@null"
                             android:text="Start"
-                            android:textAllCaps="false"
-                            android:textColor="@color/white"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
+                            />
 
-                        <Button
+                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnPause"
+                            style="@style/ModernSecondaryButton"
                             android:layout_width="0dp"
-                            android:layout_height="46dp"
+                            android:layout_height="48dp"
                             android:layout_weight="1"
                             android:layout_marginStart="3dp"
                             android:layout_marginEnd="3dp"
-                            android:background="@drawable/bg_apply_button"
-                            android:backgroundTint="@null"
                             android:text="Pause"
-                            android:textAllCaps="false"
-                            android:textColor="@color/white"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
+                            />
 
-                        <Button
+                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnReset"
+                            style="@style/ModernSecondaryButton"
                             android:layout_width="0dp"
-                            android:layout_height="46dp"
+                            android:layout_height="48dp"
                             android:layout_weight="1"
                             android:layout_marginStart="6dp"
-                            android:background="@drawable/bg_apply_button"
-                            android:backgroundTint="@null"
                             android:text="Reset"
-                            android:textAllCaps="false"
-                            android:textColor="@color/white"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
+                            />
                     </LinearLayout>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnNextStep"
+                style="@style/ModernPrimaryButton"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:background="@drawable/bg_apply_button"
-                android:backgroundTint="@null"
                 android:text="Next Step"
-                android:textAllCaps="false"
-                android:textColor="@color/white"
-                android:textSize="17sp"
-                android:textStyle="bold" />
+                />
         </LinearLayout>
     </ScrollView>
 

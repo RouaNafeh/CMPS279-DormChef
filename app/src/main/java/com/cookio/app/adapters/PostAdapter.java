@@ -13,6 +13,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.cookio.app.R;
 import com.cookio.app.models.Post;
 import com.google.firebase.auth.FirebaseAuth;
@@ -70,11 +72,14 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         holder.postBudget.setText(post.getBudget());
         holder.likesCount.setText(String.valueOf(post.getLikesCount()));
 
-        if (post.getImageUrl() != null && !post.getImageUrl().trim().isEmpty()) {
-            holder.postImage.setImageURI(Uri.parse(post.getImageUrl()));
-        } else {
-            holder.postImage.setImageResource(R.drawable.logo_cropped);
-        }
+        String imageUrl = post.getImageUrl();
+        Glide.with(holder.itemView)
+                .load(imageUrl != null && !imageUrl.trim().isEmpty() ? Uri.parse(imageUrl) : R.drawable.logo_cropped)
+                .placeholder(R.drawable.logo_cropped)
+                .error(R.drawable.logo_cropped)
+                .centerCrop()
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(holder.postImage);
 
         boolean isSaved = savedPostIds.contains(post.getPostId());
         boolean isLiked = likedPostIds.contains(post.getPostId());

@@ -3,6 +3,7 @@
 
     <!-- Selected -->
     <item android:color="@color/accent_pink" android:state_selected="true"/>
+    <item android:color="@color/primary" android:state_checked="true"/>
 
     <!-- Default -->
     <item android:color="@color/separator_line"/>

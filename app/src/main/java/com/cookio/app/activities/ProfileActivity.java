@@ -1,148 +1,493 @@
 package com.cookio.app.activities;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
 import android.view.View;
+import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.cookio.app.R;
-import com.cookio.app.adapters.RecipeAdapter;
-import com.cookio.app.models.Recipe;
+import com.cookio.app.adapters.PostAdapter;
+import com.cookio.app.databinding.ActivityProfileBinding;
+import com.google.android.material.textfield.TextInputEditText;
+import com.cookio.app.models.Post;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.WriteBatch;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 public class ProfileActivity extends AppCompatActivity {
 
-    TextView tvUsername, tvEmpty;
-    RecyclerView rvMyRecipes;
-    Button btnEdit;
+    private ActivityProfileBinding binding;
+    private FirebaseAuth auth;
+    private FirebaseFirestore db;
+    private FirebaseStorage storage;
 
-    FirebaseAuth auth;
-    FirebaseFirestore db;
+    private final List<Post> myPosts = new ArrayList<>();
+    private final Set<String> savedPostIds = new HashSet<>();
+    private final Set<String> likedPostIds = new HashSet<>();
 
-    RecipeAdapter adapter;
-    List<Recipe> recipeList;
+    private PostAdapter postAdapter;
+    private int savedPostsCount = 0;
+
+    private final ActivityResultLauncher<String> profileImagePickerLauncher =
+            registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
+                if (uri != null) {
+                    uploadProfilePhoto(uri);
+                }
+            });
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_profile);
 
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
+        storage = FirebaseStorage.getInstance();
 
-        tvUsername = findViewById(R.id.tvUsername);
-        rvMyRecipes = findViewById(R.id.rvMyRecipes);
-        btnEdit = findViewById(R.id.btnEdit);
-        tvEmpty = findViewById(R.id.tvEmpty);
+        if (auth.getCurrentUser() == null) {
+            Intent intent = new Intent(this, LandingActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+            return;
+        }
 
-        rvMyRecipes.setLayoutManager(new LinearLayoutManager(this));
-        rvMyRecipes.setNestedScrollingEnabled(false);
+        binding = ActivityProfileBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
 
-        recipeList = new ArrayList<>();
-        adapter = new RecipeAdapter(recipeList, false);
-        rvMyRecipes.setAdapter(adapter);
+        postAdapter = new PostAdapter(this, myPosts, savedPostIds, likedPostIds);
+        binding.rvMyPosts.setLayoutManager(new LinearLayoutManager(this));
+        binding.rvMyPosts.setNestedScrollingEnabled(false);
+        binding.rvMyPosts.setAdapter(postAdapter);
 
-        loadUserInfo();
-        loadMyRecipes();
+        binding.btnEdit.setOnClickListener(v -> showEditDialog());
+        binding.btnCreatePost.setOnClickListener(v ->
+                startActivity(new Intent(this, CreatePostActivity.class)));
+        binding.btnSavedPosts.setOnClickListener(v ->
+                startActivity(new Intent(this, SavedPostsActivity.class)));
+        binding.btnLogout.setOnClickListener(v -> showLogoutConfirmation());
+        binding.ivProfilePhoto.setOnClickListener(v -> profileImagePickerLauncher.launch("image/*"));
+        binding.tvAvatarInitial.setOnClickListener(v -> profileImagePickerLauncher.launch("image/*"));
 
-        btnEdit.setOnClickListener(v -> showEditDialog());
+        setupBottomNavigation();
+        populateStaticUserFields();
     }
 
-    private void loadUserInfo() {
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadProfile();
+    }
 
-        String uid = auth.getCurrentUser().getUid();
+    private void setupBottomNavigation() {
+        BottomNavigationView bottomNavigation = binding.bottomNavigation.bottomNavigation;
+        bottomNavigation.setSelectedItemId(R.id.nav_my_recipes);
+        bottomNavigation.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+
+            if (id == R.id.nav_my_recipes) {
+                return true;
+            } else if (id == R.id.nav_home) {
+                startActivity(new Intent(this, HomeActivity.class));
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            } else if (id == R.id.nav_favorites) {
+                startActivity(new Intent(this, FavoritesActivity.class));
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            }
+            return false;
+        });
+    }
+
+    private void populateStaticUserFields() {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            return;
+        }
+
+        String email = user.getEmail();
+        binding.tvEmail.setText(email);
+        binding.tvUsername.setText(resolveDisplayName(null, email));
+        binding.tvAvatarInitial.setText(resolveInitial(binding.tvUsername.getText().toString()));
+        binding.ivProfilePhoto.setVisibility(View.GONE);
+        binding.tvAvatarInitial.setVisibility(View.VISIBLE);
+    }
+
+    private void loadProfile() {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            return;
+        }
+
+        binding.progressBar.setVisibility(View.VISIBLE);
+        loadUserInfo(user);
+        loadSavedPosts();
+        loadMyPosts(user);
+    }
+
+    private void loadUserInfo(FirebaseUser user) {
+        db.collection("users")
+                .document(user.getUid())
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    String email = user.getEmail();
+                    String username = documentSnapshot.getString("username");
+                    String bio = documentSnapshot.getString("bio");
+                    String profileImageUrl = documentSnapshot.getString("profileImageUrl");
+                    binding.tvUsername.setText(resolveDisplayName(username, email));
+                    binding.tvEmail.setText(email);
+                    binding.tvBio.setText(resolveBio(bio));
+                    binding.tvAvatarInitial.setText(resolveInitial(binding.tvUsername.getText().toString()));
+                    loadProfilePhoto(profileImageUrl);
+                })
+                .addOnFailureListener(e -> Toast.makeText(
+                        this,
+                        R.string.profile_load_failed,
+                        Toast.LENGTH_SHORT
+                ).show());
+    }
+
+    private void loadSavedPosts() {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            return;
+        }
 
         db.collection("users")
-                .whereEqualTo("uid", uid)
+                .document(user.getUid())
+                .collection("savedPosts")
                 .get()
-                .addOnSuccessListener(query -> {
-
-                    if (!query.isEmpty()) {
-                        DocumentSnapshot doc = query.getDocuments().get(0);
-                        tvUsername.setText(doc.getString("username"));
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    savedPostIds.clear();
+                    for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                        savedPostIds.add(doc.getId());
                     }
+                    savedPostsCount = savedPostIds.size();
+                    binding.tvSavedCount.setText(String.valueOf(savedPostsCount));
+                    postAdapter.notifyDataSetChanged();
+                })
+                .addOnFailureListener(e -> binding.tvSavedCount.setText("0"));
+    }
+
+    private void loadMyPosts(FirebaseUser user) {
+        db.collection("posts")
+                .whereEqualTo("uid", user.getUid())
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    myPosts.clear();
+                    int totalLikes = 0;
+
+                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        Post post = doc.toObject(Post.class);
+                        post.setPostId(doc.getId());
+                        myPosts.add(post);
+                        totalLikes += post.getLikesCount();
+                    }
+
+                    Collections.sort(myPosts, (first, second) -> {
+                        if (first.getCreatedAt() == null && second.getCreatedAt() == null) {
+                            return 0;
+                        }
+                        if (first.getCreatedAt() == null) {
+                            return 1;
+                        }
+                        if (second.getCreatedAt() == null) {
+                            return -1;
+                        }
+                        return second.getCreatedAt().compareTo(first.getCreatedAt());
+                    });
+
+                    binding.tvPostsCount.setText(String.valueOf(myPosts.size()));
+                    binding.tvLikesCount.setText(String.valueOf(totalLikes));
+                    binding.tvPostsSectionMeta.setText(
+                            String.format(Locale.getDefault(), "%d posts", myPosts.size())
+                    );
+
+                    if (myPosts.isEmpty()) {
+                        likedPostIds.clear();
+                        finishPostLoading();
+                    } else {
+                        loadLikedStates(user.getUid());
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    binding.progressBar.setVisibility(View.GONE);
+                    Toast.makeText(this, R.string.profile_load_failed, Toast.LENGTH_SHORT).show();
+                    finishPostLoading();
                 });
     }
 
-    private void loadMyRecipes() {
+    private void loadLikedStates(String uid) {
+        likedPostIds.clear();
+        final int[] remaining = {myPosts.size()};
 
-        String uid = auth.getCurrentUser().getUid();
-
-        db.collection("posts")
-                .whereEqualTo("userId", uid)
-                .get()
-                .addOnSuccessListener(query -> {
-
-                    recipeList.clear();
-
-                    for (DocumentSnapshot doc : query) {
-                        Recipe recipe = doc.toObject(Recipe.class);
-                        if (recipe != null) {
-                            recipeList.add(recipe);
+        for (Post post : myPosts) {
+            db.collection("posts")
+                    .document(post.getPostId())
+                    .collection("likes")
+                    .document(uid)
+                    .get()
+                    .addOnSuccessListener(documentSnapshot -> {
+                        if (documentSnapshot.exists()) {
+                            likedPostIds.add(post.getPostId());
                         }
-                    }
+                        remaining[0]--;
+                        if (remaining[0] == 0) {
+                            finishPostLoading();
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        remaining[0]--;
+                        if (remaining[0] == 0) {
+                            finishPostLoading();
+                        }
+                    });
+        }
+    }
 
-                    adapter.notifyDataSetChanged();
+    private void finishPostLoading() {
+        postAdapter.updateData(myPosts);
+        binding.progressBar.setVisibility(View.GONE);
 
-                    if (recipeList.isEmpty()) {
-                        tvEmpty.setVisibility(View.VISIBLE);
-                        rvMyRecipes.setVisibility(View.GONE);
-                    } else {
-                        tvEmpty.setVisibility(View.GONE);
-                        rvMyRecipes.setVisibility(View.VISIBLE);
-                    }
-                });
+        boolean isEmpty = myPosts.isEmpty();
+        binding.emptyStateCard.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
+        binding.rvMyPosts.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
     }
 
     private void showEditDialog() {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            return;
+        }
 
-        EditText input = new EditText(this);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_profile_edit, null);
+        TextInputEditText usernameInput = dialogView.findViewById(R.id.inputUsername);
+        TextInputEditText bioInput = dialogView.findViewById(R.id.inputBio);
 
-        new AlertDialog.Builder(this)
-                .setTitle("Edit Username")
-                .setView(input)
-                .setPositiveButton("Save", (d, w) -> {
+        usernameInput.setText(binding.tvUsername.getText());
+        CharSequence currentBio = binding.tvBio.getText();
+        if (!TextUtils.equals(currentBio, getString(R.string.profile_bio_empty))) {
+            bioInput.setText(currentBio);
+        }
 
-                    String newName = input.getText().toString().trim();
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
 
-                    if (!TextUtils.isEmpty(newName)) {
-                        updateUsername(newName);
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        dialogView.findViewById(R.id.btnCancel).setOnClickListener(v -> dialog.dismiss());
+        dialogView.findViewById(R.id.btnSave).setOnClickListener(v -> {
+            String newName = usernameInput.getText() == null
+                    ? ""
+                    : usernameInput.getText().toString().trim();
+            String newBio = bioInput.getText() == null
+                    ? ""
+                    : bioInput.getText().toString().trim();
+
+            if (!TextUtils.isEmpty(newName)) {
+                dialog.dismiss();
+                updateProfile(user.getUid(), newName, newBio);
+            }
+        });
+
+        dialog.show();
     }
 
-    private void updateUsername(String newName) {
-
-        String uid = auth.getCurrentUser().getUid();
+    private void updateProfile(String uid, String newName, String newBio) {
+        binding.btnEdit.setEnabled(false);
 
         db.collection("users")
+                .document(uid)
+                .update("username", newName, "bio", newBio)
+                .addOnSuccessListener(unused -> updateUsernameOnPosts(uid, newName, newBio))
+                .addOnFailureListener(e -> {
+                    binding.btnEdit.setEnabled(true);
+                    Toast.makeText(this, R.string.profile_load_failed, Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void updateUsernameOnPosts(String uid, String newName, String newBio) {
+        db.collection("posts")
                 .whereEqualTo("uid", uid)
                 .get()
-                .addOnSuccessListener(query -> {
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    WriteBatch batch = db.batch();
 
-                    if (!query.isEmpty()) {
-                        String docId = query.getDocuments().get(0).getId();
-
-                        db.collection("users")
-                                .document(docId)
-                                .update("username", newName);
-
-                        tvUsername.setText(newName);
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        DocumentReference ref = db.collection("posts").document(document.getId());
+                        batch.update(ref, "username", newName);
                     }
+
+                    batch.commit()
+                            .addOnSuccessListener(unused -> {
+                                binding.btnEdit.setEnabled(true);
+                                binding.tvUsername.setText(newName);
+                                binding.tvBio.setText(resolveBio(newBio));
+                                binding.tvAvatarInitial.setText(resolveInitial(newName));
+                                Toast.makeText(
+                                        this,
+                                        R.string.profile_username_updated,
+                                        Toast.LENGTH_SHORT
+                                ).show();
+                            })
+                            .addOnFailureListener(e -> {
+                                binding.btnEdit.setEnabled(true);
+                                Toast.makeText(
+                                        this,
+                                        R.string.profile_load_failed,
+                                        Toast.LENGTH_SHORT
+                                ).show();
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    binding.btnEdit.setEnabled(true);
+                    Toast.makeText(this, R.string.profile_load_failed, Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    private String resolveDisplayName(@Nullable String username, @Nullable String email) {
+        if (!TextUtils.isEmpty(username)) {
+            return username;
+        }
+
+        if (!TextUtils.isEmpty(email) && email.contains("@")) {
+            return email.substring(0, email.indexOf('@'));
+        }
+
+        return getString(R.string.profile_default_username);
+    }
+
+    private String resolveInitial(String value) {
+        if (TextUtils.isEmpty(value)) {
+            return getString(R.string.profile_default_username).substring(0, 1).toUpperCase(Locale.getDefault());
+        }
+        return value.substring(0, 1).toUpperCase(Locale.getDefault());
+    }
+
+    private String resolveBio(@Nullable String bio) {
+        if (TextUtils.isEmpty(bio)) {
+            return getString(R.string.profile_bio_empty);
+        }
+        return bio;
+    }
+
+    private void loadProfilePhoto(@Nullable String profileImageUrl) {
+        if (!TextUtils.isEmpty(profileImageUrl)) {
+            binding.tvAvatarInitial.setVisibility(View.GONE);
+            binding.ivProfilePhoto.setVisibility(View.VISIBLE);
+            Glide.with(this)
+                    .load(profileImageUrl)
+                    .placeholder(R.drawable.logo_cropped)
+                    .error(R.drawable.logo_cropped)
+                    .centerCrop()
+                    .into(binding.ivProfilePhoto);
+            return;
+        }
+
+        binding.ivProfilePhoto.setVisibility(View.GONE);
+        binding.tvAvatarInitial.setVisibility(View.VISIBLE);
+    }
+
+    private void uploadProfilePhoto(Uri imageUri) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            return;
+        }
+
+        binding.ivProfilePhoto.setEnabled(false);
+        binding.tvAvatarInitial.setEnabled(false);
+
+        StorageReference ref = storage.getReference()
+                .child("profileImages")
+                .child(user.getUid())
+                .child("avatar.jpg");
+
+        ref.putFile(imageUri)
+                .addOnSuccessListener(taskSnapshot ->
+                        ref.getDownloadUrl().addOnSuccessListener(downloadUri ->
+                                db.collection("users")
+                                        .document(user.getUid())
+                                        .update("profileImageUrl", downloadUri.toString())
+                                        .addOnSuccessListener(unused -> {
+                                            binding.ivProfilePhoto.setEnabled(true);
+                                            binding.tvAvatarInitial.setEnabled(true);
+                                            loadProfilePhoto(downloadUri.toString());
+                                            Toast.makeText(
+                                                    this,
+                                                    R.string.profile_photo_updated,
+                                                    Toast.LENGTH_SHORT
+                                            ).show();
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            binding.ivProfilePhoto.setEnabled(true);
+                                            binding.tvAvatarInitial.setEnabled(true);
+                                            Toast.makeText(
+                                                    this,
+                                                    R.string.profile_load_failed,
+                                                    Toast.LENGTH_SHORT
+                                            ).show();
+                                        })))
+                .addOnFailureListener(e -> {
+                    binding.ivProfilePhoto.setEnabled(true);
+                    binding.tvAvatarInitial.setEnabled(true);
+                    Toast.makeText(
+                            this,
+                            R.string.profile_photo_upload_failed,
+                            Toast.LENGTH_SHORT
+                    ).show();
+                });
+    }
+
+    private void showLogoutConfirmation() {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_logout_confirm, null);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        dialogView.findViewById(R.id.btnStay).setOnClickListener(v -> dialog.dismiss());
+        dialogView.findViewById(R.id.btnLogoutConfirm).setOnClickListener(v -> {
+            dialog.dismiss();
+            auth.signOut();
+            Intent intent = new Intent(this, LandingActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+        });
+
+        dialog.show();
     }
 }

@@ -83,7 +83,7 @@ public class FavoritesActivity extends AppCompatActivity {
                 return true;
             }
             else if(id == R.id.nav_my_recipes){
-                startActivity(new Intent(FavoritesActivity.this, MyRecipesActivity.class));
+                startActivity(new Intent(FavoritesActivity.this, ProfileActivity.class));
                 overridePendingTransition(0, 0);
                 finish();
                 return true;

@@ -1,7 +1,7 @@
 package com.cookio.app.adapters;
 
 import android.content.Intent;
-import android.net.Uri;
+import com.bumptech.glide.Glide;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -54,11 +54,16 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         holder.recipeTime.setText(recipe.getTime());
         holder.recipeBudget.setText(recipe.getBudget());
         holder.recipeTag.setText(recipe.getEquipment());
-        holder.recipeImage.setImageURI(null);
-        if (recipe.getImageUri() != null && !recipe.getImageUri().trim().isEmpty()) {
-            holder.recipeImage.setImageURI(Uri.parse(recipe.getImageUri()));
+        String imageUrl = recipe.getImageUri();
+
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            Glide.with(holder.itemView.getContext())
+                    .load(imageUrl)
+                    .placeholder(R.drawable.placeholder)
+                    .error(R.drawable.placeholder)
+                    .into(holder.recipeImage);
         } else {
-            holder.recipeImage.setImageResource(recipe.getImageResId());
+            holder.recipeImage.setImageResource(R.drawable.placeholder);
         }
         holder.heartButton.setImageResource(
                 recipe.isFavourite() ? R.drawable.heart_filled : R.drawable.heart
