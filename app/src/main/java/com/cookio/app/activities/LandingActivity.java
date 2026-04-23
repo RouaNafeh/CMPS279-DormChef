@@ -18,7 +18,7 @@ public class LandingActivity extends AppCompatActivity {
         auth = FirebaseAuth.getInstance();
 
         if (auth.getCurrentUser() != null) {
-            Intent intent = new Intent(LandingActivity.this, FeedActivity.class);
+            Intent intent = new Intent(LandingActivity.this, HomeActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             finish();

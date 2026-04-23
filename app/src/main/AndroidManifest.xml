@@ -16,9 +16,6 @@
             android:name=".activities.PostDetailActivity"
             android:exported="false" />
         <activity
-            android:name=".activities.FeedActivity"
-            android:exported="false" />
-        <activity
             android:name=".activities.SignupActivity"
             android:exported="false" />
         <activity
@@ -26,12 +23,6 @@
             android:exported="false" />
         <activity
             android:name=".activities.TimerActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.AddRecipeActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.MyRecipesActivity"
             android:exported="false" />
         <activity
             android:name=".activities.RecipeDetailActivity"
