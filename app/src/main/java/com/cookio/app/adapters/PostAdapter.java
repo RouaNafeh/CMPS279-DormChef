@@ -1,6 +1,7 @@
 package com.cookio.app.adapters;
 
 import android.content.Context;
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.cookio.app.R;
 import com.cookio.app.models.Post;
 import com.google.firebase.auth.FirebaseAuth;
@@ -28,7 +30,6 @@ import java.util.Set;
 
 public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder> {
 
-    // ── Click listener interface (used by FeedActivity to open detail) ────────
     public interface OnPostClickListener {
         void onPostClick(Post post);
     }
@@ -44,9 +45,8 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
     private final String currentUid;
 
     private OnPostUnsavedListener onPostUnsavedListener;
-    private OnPostClickListener   onPostClickListener;
+    private OnPostClickListener onPostClickListener;
 
-    // ── Constructor WITH click listener (used by FeedActivity) ───────────────
     public PostAdapter(Context context, List<Post> postList,
                        Set<String> savedPostIds, Set<String> likedPostIds,
                        OnPostClickListener clickListener) {
@@ -54,14 +54,13 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         this.onPostClickListener = clickListener;
     }
 
-    // ── Original constructor (used by SavedPostsActivity) ────────────────────
     public PostAdapter(Context context, List<Post> postList,
                        Set<String> savedPostIds, Set<String> likedPostIds) {
-        this.context      = context;
-        this.postList     = postList;
+        this.context = context;
+        this.postList = postList;
         this.savedPostIds = savedPostIds;
         this.likedPostIds = likedPostIds;
-        this.currentUid   = FirebaseAuth.getInstance().getCurrentUser() != null
+        this.currentUid = FirebaseAuth.getInstance().getCurrentUser() != null
                 ? FirebaseAuth.getInstance().getCurrentUser().getUid()
                 : null;
     }
@@ -89,17 +88,16 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         holder.postBudget.setText(post.getBudget());
         holder.likesCount.setText(String.valueOf(post.getLikesCount()));
 
-        // ── FIX: use Glide to load Firebase Storage URLs ──────────────────────
-        if (post.getImageUrl() != null && !post.getImageUrl().trim().isEmpty()) {
-            Glide.with(context)
-                    .load(post.getImageUrl())
-                    .placeholder(R.drawable.logo_cropped)
-                    .error(R.drawable.logo_cropped)
-                    .centerCrop()
-                    .into(holder.postImage);
-        } else {
-            holder.postImage.setImageResource(R.drawable.logo_cropped);
-        }
+        String imageUrl = post.getImageUrl();
+        Glide.with(holder.itemView)
+                .load(imageUrl != null && !imageUrl.trim().isEmpty()
+                        ? Uri.parse(imageUrl)
+                        : R.drawable.logo_cropped)
+                .placeholder(R.drawable.logo_cropped)
+                .error(R.drawable.logo_cropped)
+                .centerCrop()
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(holder.postImage);
 
         boolean isSaved = savedPostIds.contains(post.getPostId());
         boolean isLiked = likedPostIds.contains(post.getPostId());
@@ -113,8 +111,6 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
 
         holder.saveButton.setOnClickListener(v -> toggleSave(post, holder));
         holder.likeButton.setOnClickListener(v -> toggleLike(post, holder));
-
-        // ── Open detail screen on card tap ────────────────────────────────────
         holder.itemView.setOnClickListener(v -> {
             if (onPostClickListener != null) {
                 onPostClickListener.onPostClick(post);
@@ -127,11 +123,10 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         return postList.size();
     }
 
-    // ── Save / unsave ─────────────────────────────────────────────────────────
     private void toggleSave(Post post, PostViewHolder holder) {
         if (currentUid == null) return;
 
-        String postId        = post.getPostId();
+        String postId = post.getPostId();
         boolean currentlySaved = savedPostIds.contains(postId);
 
         if (currentlySaved) {
@@ -163,6 +158,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         } else {
             Map<String, Object> data = new HashMap<>();
             data.put("savedAt", FieldValue.serverTimestamp());
+
             savedRef.set(data)
                     .addOnFailureListener(e -> {
                         savedPostIds.remove(postId);
@@ -172,11 +168,10 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         }
     }
 
-    // ── Like / unlike ─────────────────────────────────────────────────────────
     private void toggleLike(Post post, PostViewHolder holder) {
         if (currentUid == null) return;
 
-        String postId          = post.getPostId();
+        String postId = post.getPostId();
         boolean currentlyLiked = likedPostIds.contains(postId);
 
         if (currentlyLiked) {
@@ -188,16 +183,17 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             holder.likeButton.setImageResource(R.drawable.heart_filled);
             post.setLikesCount(post.getLikesCount() + 1);
         }
+
         holder.likesCount.setText(String.valueOf(post.getLikesCount()));
 
-        FirebaseFirestore db  = FirebaseFirestore.getInstance();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
         DocumentReference postRef = db.collection("posts").document(postId);
         DocumentReference likeRef = postRef.collection("likes").document(currentUid);
 
         db.runTransaction(transaction -> {
-            DocumentSnapshot snapshot   = transaction.get(postRef);
-            Long currentCountObj        = snapshot.getLong("likesCount");
-            long currentCount           = currentCountObj == null ? 0 : currentCountObj;
+            DocumentSnapshot snapshot = transaction.get(postRef);
+            Long currentCountObj = snapshot.getLong("likesCount");
+            long currentCount = currentCountObj == null ? 0 : currentCountObj;
 
             if (currentlyLiked) {
                 transaction.delete(likeRef);
@@ -208,9 +204,9 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
                 transaction.set(likeRef, likeData);
                 transaction.update(postRef, "likesCount", currentCount + 1);
             }
+
             return null;
         }).addOnFailureListener(e -> {
-            // Roll back UI on failure
             if (currentlyLiked) {
                 likedPostIds.add(postId);
                 holder.likeButton.setImageResource(R.drawable.heart_filled);
@@ -220,27 +216,27 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
                 holder.likeButton.setImageResource(R.drawable.heart);
                 post.setLikesCount(Math.max(0, post.getLikesCount() - 1));
             }
+
             holder.likesCount.setText(String.valueOf(post.getLikesCount()));
             Toast.makeText(context, "Failed to update like", Toast.LENGTH_SHORT).show();
         });
     }
 
-    // ── ViewHolder ────────────────────────────────────────────────────────────
     static class PostViewHolder extends RecyclerView.ViewHolder {
-        TextView   postTitle, postDescription, postCookTime, postBudget, likesCount;
-        ImageView  postImage;
+        TextView postTitle, postDescription, postCookTime, postBudget, likesCount;
+        ImageView postImage;
         ImageButton saveButton, likeButton;
 
         public PostViewHolder(@NonNull View itemView) {
             super(itemView);
-            postTitle       = itemView.findViewById(R.id.post_title);
+            postTitle = itemView.findViewById(R.id.post_title);
             postDescription = itemView.findViewById(R.id.post_description);
-            postCookTime    = itemView.findViewById(R.id.post_time);
-            postBudget      = itemView.findViewById(R.id.post_budget);
-            likesCount      = itemView.findViewById(R.id.likes_count);
-            postImage       = itemView.findViewById(R.id.post_image);
-            saveButton      = itemView.findViewById(R.id.btn_save);
-            likeButton      = itemView.findViewById(R.id.btn_like);
+            postCookTime = itemView.findViewById(R.id.post_time);
+            postBudget = itemView.findViewById(R.id.post_budget);
+            likesCount = itemView.findViewById(R.id.likes_count);
+            postImage = itemView.findViewById(R.id.post_image);
+            saveButton = itemView.findViewById(R.id.btn_save);
+            likeButton = itemView.findViewById(R.id.btn_like);
         }
     }
 

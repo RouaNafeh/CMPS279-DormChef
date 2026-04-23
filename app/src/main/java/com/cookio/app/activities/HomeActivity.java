@@ -2,7 +2,6 @@ package com.cookio.app.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -50,19 +49,11 @@ public class HomeActivity extends AppCompatActivity {
             return;
         }
 
+
         db = FirebaseFirestore.getInstance();
 
         binding = ActivityHomeBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
-        Button btnLogout = findViewById(R.id.btn_logout);
-        btnLogout.setOnClickListener(v -> {
-            auth.signOut();
-            Intent intent = new Intent(HomeActivity.this, LandingActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(intent);
-            finish();
-        });
 
         setupRecyclerView();
         setupSearch();
@@ -127,7 +118,7 @@ public class HomeActivity extends AppCompatActivity {
                 overridePendingTransition(0, 0);
                 return true;
             } else if (id == R.id.nav_my_recipes) {
-                startActivity(new Intent(HomeActivity.this, MyRecipesActivity.class));
+                startActivity(new Intent(HomeActivity.this, ProfileActivity.class));
                 overridePendingTransition(0, 0);
                 return true;
             }
