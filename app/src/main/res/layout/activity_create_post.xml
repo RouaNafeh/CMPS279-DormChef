@@ -54,7 +54,7 @@
                     android:textSize="26sp" />
             </LinearLayout>
 
-            <!-- Image picker -->
+            <!-- Image picker card -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -75,7 +75,7 @@
                         style="@style/FilterSectionTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Photo" />
+                        android:text="Photo *" />
 
                     <TextView
                         style="@style/FilterSectionHint"
@@ -83,9 +83,8 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:layout_marginBottom="14dp"
-                        android:text="Add a photo of your recipe." />
+                        android:text="Required. Tap to add or change photo." />
 
-                    <!-- Tap to pick image -->
                     <FrameLayout
                         android:id="@+id/imagePickerContainer"
                         android:layout_width="match_parent"
@@ -94,7 +93,6 @@
                         android:clickable="true"
                         android:focusable="true">
 
-                        <!-- Placeholder shown before image is picked -->
                         <LinearLayout
                             android:id="@+id/imagePlaceholder"
                             android:layout_width="wrap_content"
@@ -106,9 +104,9 @@
                             <ImageView
                                 android:layout_width="48dp"
                                 android:layout_height="48dp"
+                                android:contentDescription="@null"
                                 android:src="@android:drawable/ic_menu_camera"
-                                app:tint="@color/textGrey"
-                                android:contentDescription="@null" />
+                                app:tint="@color/textGrey" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -119,15 +117,53 @@
                                 android:textSize="14sp" />
                         </LinearLayout>
 
-                        <!-- Preview shown after image is picked -->
                         <ImageView
                             android:id="@+id/ivImagePreview"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
+                            android:contentDescription="Recipe photo preview"
                             android:scaleType="centerCrop"
-                            android:visibility="gone"
-                            android:contentDescription="Recipe photo preview" />
+                            android:visibility="gone" />
+
+                        <!-- Reselect button shown after image picked -->
+                        <TextView
+                            android:id="@+id/tvReselect"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="bottom|end"
+                            android:layout_margin="8dp"
+                            android:background="@color/textDark"
+                            android:paddingStart="8dp"
+                            android:paddingEnd="8dp"
+                            android:paddingTop="4dp"
+                            android:paddingBottom="4dp"
+                            android:text="Change"
+                            android:textColor="@color/white"
+                            android:textSize="12sp"
+                            android:visibility="gone" />
                     </FrameLayout>
+
+                    <!-- Upload progress bar — hidden until posting starts -->
+                    <ProgressBar
+                        android:id="@+id/uploadProgressBar"
+                        style="@android:style/Widget.ProgressBar.Horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="8dp"
+                        android:layout_marginTop="10dp"
+                        android:max="100"
+                        android:progress="0"
+                        android:progressTint="@color/primary"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/tvUploadProgress"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textColor="@color/primary"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -153,14 +189,12 @@
                         android:layout_height="wrap_content"
                         android:text="Recipe Details" />
 
-                    <!-- Title -->
                     <com.google.android.material.textfield.TextInputLayout
                         style="@style/ModernInputLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:hint="Recipe title"
-                        >
+                        android:hint="Recipe title *">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etTitle"
@@ -169,14 +203,12 @@
                             android:inputType="textCapSentences" />
                     </com.google.android.material.textfield.TextInputLayout>
 
-                    <!-- Description -->
                     <com.google.android.material.textfield.TextInputLayout
                         style="@style/ModernInputLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:hint="Short description"
-                        >
+                        android:hint="Short description">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etDescription"
@@ -186,14 +218,12 @@
                             android:minLines="2" />
                     </com.google.android.material.textfield.TextInputLayout>
 
-                    <!-- Cook time -->
                     <com.google.android.material.textfield.TextInputLayout
                         style="@style/ModernInputLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:hint="Cook time (e.g. 20 min)"
-                        >
+                        android:hint="Cook time (e.g. 20 min)">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etCookTime"
@@ -202,14 +232,12 @@
                             android:inputType="text" />
                     </com.google.android.material.textfield.TextInputLayout>
 
-                    <!-- Budget -->
                     <com.google.android.material.textfield.TextInputLayout
                         style="@style/ModernInputLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:hint="Budget (Low / Medium / High)"
-                        >
+                        android:hint="Budget (Low / Medium / High)">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etBudget"
@@ -220,7 +248,7 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- Ingredients card -->
+            <!-- Ingredients card — dynamic list -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -241,7 +269,7 @@
                         style="@style/FilterSectionTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Ingredients" />
+                        android:text="Ingredients *" />
 
                     <TextView
                         style="@style/FilterSectionHint"
@@ -249,27 +277,29 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:layout_marginBottom="14dp"
-                        android:text="One ingredient per line." />
+                        android:text="At least one ingredient required." />
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        style="@style/ModernInputLayout"
+                    <!-- Dynamic ingredient rows go here -->
+                    <LinearLayout
+                        android:id="@+id/ingredientsContainer"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="e.g. 2 eggs, 1 cup flour..."
-                        >
+                        android:orientation="vertical" />
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etIngredients"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="textCapSentences|textMultiLine"
-                            android:minLines="3"
-                            android:gravity="top" />
-                    </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnAddIngredient"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="+ Add Ingredient"
+                        android:textAllCaps="false"
+                        app:strokeColor="@color/primary"
+                        android:textColor="@color/primary" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- Steps card -->
+            <!-- Steps card — dynamic list -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -290,7 +320,7 @@
                         style="@style/FilterSectionTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Steps" />
+                        android:text="Steps *" />
 
                     <TextView
                         style="@style/FilterSectionHint"
@@ -298,23 +328,25 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:layout_marginBottom="14dp"
-                        android:text="One step per line." />
+                        android:text="At least one step required." />
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        style="@style/ModernInputLayout"
+                    <!-- Dynamic step rows go here -->
+                    <LinearLayout
+                        android:id="@+id/stepsContainer"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="e.g. Mix flour and eggs..."
-                        >
+                        android:orientation="vertical" />
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etSteps"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="textCapSentences|textMultiLine"
-                            android:minLines="4"
-                            android:gravity="top" />
-                    </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnAddStep"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="+ Add Step"
+                        android:textAllCaps="false"
+                        app:strokeColor="@color/primary"
+                        android:textColor="@color/primary" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -323,8 +355,7 @@
                 android:id="@+id/btnPost"
                 style="@style/ModernPrimaryButton"
                 android:layout_width="match_parent"
-                android:text="Post Recipe"
-                />
+                android:text="Post Recipe" />
 
         </LinearLayout>
     </ScrollView>
