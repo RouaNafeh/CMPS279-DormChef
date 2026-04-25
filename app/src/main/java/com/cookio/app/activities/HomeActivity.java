@@ -16,9 +16,9 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -131,7 +131,6 @@ public class HomeActivity extends AppCompatActivity {
 
     private void loadFeedData() {
         db.collection("posts")
-                .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     allPosts.clear();
@@ -143,6 +142,19 @@ public class HomeActivity extends AppCompatActivity {
                             allPosts.add(post);
                         }
                     }
+
+                    Collections.sort(allPosts, (first, second) -> {
+                        if (first.getCreatedAt() == null && second.getCreatedAt() == null) {
+                            return 0;
+                        }
+                        if (first.getCreatedAt() == null) {
+                            return 1;
+                        }
+                        if (second.getCreatedAt() == null) {
+                            return -1;
+                        }
+                        return second.getCreatedAt().compareTo(first.getCreatedAt());
+                    });
 
                     loadSavedPostIds();
                 })
