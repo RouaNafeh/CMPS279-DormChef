@@ -48,7 +48,13 @@ public class SavedPostsActivity extends AppCompatActivity {
         binding.recyclerSavedPosts.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerSavedPosts.setHasFixedSize(true);
 
-        postAdapter = new PostAdapter(this, savedPostsList, savedPostIds, likedPostIds);
+        postAdapter = new PostAdapter(
+                this,
+                savedPostsList,
+                savedPostIds,
+                likedPostIds,
+                this::openPostDetail
+        );
         postAdapter.setOnPostUnsavedListener(this::removeUnsavedPost);
         binding.recyclerSavedPosts.setAdapter(postAdapter);
 
@@ -190,6 +196,33 @@ public class SavedPostsActivity extends AppCompatActivity {
         finishLoading();
     }
 
+    private void openPostDetail(Post post) {
+        Intent intent = new Intent(this, PostDetailActivity.class);
+        intent.putExtra(PostDetailActivity.EXTRA_POST_ID, post.getPostId());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_TITLE, post.getTitle());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_DESCRIPTION, post.getDescription());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_IMAGE_URL, post.getImageUrl());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_COOK_TIME, post.getCookTime());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_BUDGET, post.getBudget());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_USERNAME, post.getUsername());
+
+        if (post.getIngredients() != null) {
+            intent.putStringArrayListExtra(
+                    PostDetailActivity.EXTRA_POST_INGREDIENTS,
+                    new ArrayList<>(post.getIngredients())
+            );
+        }
+
+        if (post.getSteps() != null) {
+            intent.putStringArrayListExtra(
+                    PostDetailActivity.EXTRA_POST_STEPS,
+                    new ArrayList<>(post.getSteps())
+            );
+        }
+
+        startActivity(intent);
+    }
+
     private void navigateBack() {
         if (isTaskRoot()) {
             Intent intent = new Intent(this, HomeActivity.class);
@@ -213,13 +246,8 @@ public class SavedPostsActivity extends AppCompatActivity {
                 overridePendingTransition(0, 0);
                 finish();
                 return true;
-            } else if (id == R.id.nav_favorites) {
-                startActivity(new Intent(this, FavoritesActivity.class));
-                overridePendingTransition(0, 0);
-                finish();
-                return true;
             } else if (id == R.id.nav_my_recipes) {
-                startActivity(new Intent(this, MyRecipesActivity.class));
+                startActivity(new Intent(this, ProfileActivity.class));
                 overridePendingTransition(0, 0);
                 finish();
                 return true;

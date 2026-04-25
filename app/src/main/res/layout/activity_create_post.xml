@@ -189,6 +189,22 @@
                         android:layout_height="wrap_content"
                         android:text="Recipe Details" />
 
+                    <Button
+                        android:id="@+id/btnGenerateAi"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Generate with AI"
+                        android:textAllCaps="false"
+                        android:backgroundTint="@color/primary"
+                        android:textColor="@color/white" />
+
+                    <TextView
+                        style="@style/FilterSectionHint"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Get a clean recipe draft from a short idea like &quot;cheap spicy pasta for two&quot;." />
+
                     <com.google.android.material.textfield.TextInputLayout
                         style="@style/ModernInputLayout"
                         android:layout_width="match_parent"

@@ -42,6 +42,8 @@ import java.util.Set;
 
 public class ProfileActivity extends AppCompatActivity {
 
+    private static final String STORAGE_BUCKET_URL = "gs://cooksy-ef10e.firebasestorage.app";
+
     private ActivityProfileBinding binding;
     private FirebaseAuth auth;
     private FirebaseFirestore db;
@@ -68,7 +70,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
-        storage = FirebaseStorage.getInstance();
+        storage = FirebaseStorage.getInstance(STORAGE_BUCKET_URL);
 
         if (auth.getCurrentUser() == null) {
             Intent intent = new Intent(this, LandingActivity.class);
@@ -81,7 +83,13 @@ public class ProfileActivity extends AppCompatActivity {
         binding = ActivityProfileBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        postAdapter = new PostAdapter(this, myPosts, savedPostIds, likedPostIds);
+        postAdapter = new PostAdapter(
+                this,
+                myPosts,
+                savedPostIds,
+                likedPostIds,
+                this::openPostDetail
+        );
         postAdapter.setOnPostDeleteListener(post -> showDeleteDialog(post));
         binding.rvMyPosts.setNestedScrollingEnabled(false);
         binding.rvMyPosts.setAdapter(postAdapter);
@@ -134,8 +142,8 @@ public class ProfileActivity extends AppCompatActivity {
                 overridePendingTransition(0, 0);
                 finish();
                 return true;
-            } else if (id == R.id.nav_favorites) {
-                startActivity(new Intent(this, FavoritesActivity.class));
+            } else if (id == R.id.nav_saved) {
+                startActivity(new Intent(this, SavedPostsActivity.class));
                 overridePendingTransition(0, 0);
                 finish();
                 return true;
@@ -364,6 +372,33 @@ public class ProfileActivity extends AppCompatActivity {
                             R.string.profile_photo_upload_failed,
                             Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    private void openPostDetail(Post post) {
+        Intent intent = new Intent(this, PostDetailActivity.class);
+        intent.putExtra(PostDetailActivity.EXTRA_POST_ID, post.getPostId());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_TITLE, post.getTitle());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_DESCRIPTION, post.getDescription());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_IMAGE_URL, post.getImageUrl());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_COOK_TIME, post.getCookTime());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_BUDGET, post.getBudget());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_USERNAME, post.getUsername());
+
+        if (post.getIngredients() != null) {
+            intent.putStringArrayListExtra(
+                    PostDetailActivity.EXTRA_POST_INGREDIENTS,
+                    new ArrayList<>(post.getIngredients())
+            );
+        }
+
+        if (post.getSteps() != null) {
+            intent.putStringArrayListExtra(
+                    PostDetailActivity.EXTRA_POST_STEPS,
+                    new ArrayList<>(post.getSteps())
+            );
+        }
+
+        startActivity(intent);
     }
 
     private void showEditDialog() {

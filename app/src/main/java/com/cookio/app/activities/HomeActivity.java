@@ -16,6 +16,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -68,7 +69,13 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
-        postAdapter = new PostAdapter(this, filteredPosts, savedPostIds, likedPostIds);
+        postAdapter = new PostAdapter(
+                this,
+                filteredPosts,
+                savedPostIds,
+                likedPostIds,
+                this::openPostDetail
+        );
         binding.recyclerCards.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerCards.setHasFixedSize(true);
         binding.recyclerCards.setAdapter(postAdapter);
@@ -109,10 +116,6 @@ public class HomeActivity extends AppCompatActivity {
 
             if (id == R.id.nav_home) {
                 return true;
-            } else if (id == R.id.nav_favorites) {
-                startActivity(new Intent(HomeActivity.this, FavoritesActivity.class));
-                overridePendingTransition(0, 0);
-                return true;
             } else if (id == R.id.nav_saved) {
                 startActivity(new Intent(HomeActivity.this, SavedPostsActivity.class));
                 overridePendingTransition(0, 0);
@@ -128,6 +131,7 @@ public class HomeActivity extends AppCompatActivity {
 
     private void loadFeedData() {
         db.collection("posts")
+                .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     allPosts.clear();
@@ -239,5 +243,32 @@ public class HomeActivity extends AppCompatActivity {
         if (filteredPosts.isEmpty()) {
             Toast.makeText(this, "No recipes found", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void openPostDetail(Post post) {
+        Intent intent = new Intent(this, PostDetailActivity.class);
+        intent.putExtra(PostDetailActivity.EXTRA_POST_ID, post.getPostId());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_TITLE, post.getTitle());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_DESCRIPTION, post.getDescription());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_IMAGE_URL, post.getImageUrl());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_COOK_TIME, post.getCookTime());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_BUDGET, post.getBudget());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_USERNAME, post.getUsername());
+
+        if (post.getIngredients() != null) {
+            intent.putStringArrayListExtra(
+                    PostDetailActivity.EXTRA_POST_INGREDIENTS,
+                    new ArrayList<>(post.getIngredients())
+            );
+        }
+
+        if (post.getSteps() != null) {
+            intent.putStringArrayListExtra(
+                    PostDetailActivity.EXTRA_POST_STEPS,
+                    new ArrayList<>(post.getSteps())
+            );
+        }
+
+        startActivity(intent);
     }
 }
