@@ -69,15 +69,18 @@ public class FavoritesActivity extends AppCompatActivity {
         binding.recyclerFavorites.setAdapter(adapter);
 
         BottomNavigationView bottomNavigation = binding.bottomNavigation.bottomNavigation;
-        bottomNavigation.setSelectedItemId(R.id.nav_favorites);
+        bottomNavigation.setSelectedItemId(R.id.nav_saved);
 
         bottomNavigation.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
-            if(id == R.id.nav_favorites){
+            if(id==R.id.nav_home){
+                startActivity(new Intent(FavoritesActivity.this, HomeActivity.class));
+                overridePendingTransition(0, 0);
+                finish();
                 return true;
             }
-            else if(id==R.id.nav_home){
-                startActivity(new Intent(FavoritesActivity.this, HomeActivity.class));
+            else if(id == R.id.nav_saved){
+                startActivity(new Intent(FavoritesActivity.this, SavedPostsActivity.class));
                 overridePendingTransition(0, 0);
                 finish();
                 return true;

@@ -16,6 +16,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.cookio.app.R;
+import com.cookio.app.ai.AiRecipeHelper;
 import com.cookio.app.databinding.ActivityCreatePostBinding;
 import com.cookio.app.models.Post;
 import com.google.android.material.textfield.TextInputEditText;
@@ -27,11 +28,15 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
 public class CreatePostActivity extends AppCompatActivity {
 
+    private static final String STORAGE_BUCKET_URL = "gs://cooksy-ef10e.firebasestorage.app";
+
+    private AiRecipeHelper aiRecipeHelper;
     private ActivityCreatePostBinding binding;
     private FirebaseAuth auth;
     private FirebaseFirestore firestore;
@@ -57,7 +62,7 @@ public class CreatePostActivity extends AppCompatActivity {
 
         auth      = FirebaseAuth.getInstance();
         firestore = FirebaseFirestore.getInstance();
-        storage   = FirebaseStorage.getInstance();
+        storage   = FirebaseStorage.getInstance(STORAGE_BUCKET_URL);
 
         if (auth.getCurrentUser() == null) {
             startActivity(new Intent(this, LandingActivity.class)
@@ -83,6 +88,9 @@ public class CreatePostActivity extends AppCompatActivity {
         binding.btnAddStep.setOnClickListener(v -> addStepRow(""));
 
         binding.btnPost.setOnClickListener(v -> validateAndPost());
+
+        aiRecipeHelper = new AiRecipeHelper();
+        binding.btnGenerateAi.setOnClickListener(v -> generateWithAi());
     }
 
     // ── Dynamic ingredient rows ───────────────────────────────
@@ -163,27 +171,21 @@ public class CreatePostActivity extends AppCompatActivity {
         String cookTime    = text(binding.etCookTime);
         String budget      = text(binding.etBudget);
 
-        // 1. Image required
-        if (selectedImageUri == null) {
-            Toast.makeText(this, "Please add a photo", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // 2. Title required
+        // 1. Title required
         if (TextUtils.isEmpty(title)) {
             binding.etTitle.setError("Title is required");
             binding.etTitle.requestFocus();
             return;
         }
 
-        // 3. At least 1 ingredient
+        // 2. At least 1 ingredient
         List<String> ingredients = collectRows(binding.ingredientsContainer);
         if (ingredients.isEmpty()) {
             Toast.makeText(this, "Add at least one ingredient", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // 4. At least 1 step
+        // 3. At least 1 step
         List<String> steps = collectRows(binding.stepsContainer);
         if (steps.isEmpty()) {
             Toast.makeText(this, "Add at least one step", Toast.LENGTH_SHORT).show();
@@ -191,7 +193,11 @@ public class CreatePostActivity extends AppCompatActivity {
         }
 
         setLoading(true);
-        uploadImageThenSave(title, description, cookTime, budget, ingredients, steps);
+        if (selectedImageUri != null) {
+            uploadImageThenSave(title, description, cookTime, budget, ingredients, steps);
+        } else {
+            savePostToFirestore(title, description, cookTime, budget, ingredients, steps, "");
+        }
     }
 
     // ── Step 1: Upload image with progress ───────────────────
@@ -289,5 +295,160 @@ public class CreatePostActivity extends AppCompatActivity {
         binding.btnPost.setText(loading ? "Posting…" : "Post Recipe");
         binding.btnAddIngredient.setEnabled(!loading);
         binding.btnAddStep.setEnabled(!loading);
+        binding.btnGenerateAi.setEnabled(!loading);
+    }
+
+    private void generateWithAi() {
+        List<String> ingredientRows = collectRows(binding.ingredientsContainer);
+        String ingredients = TextUtils.join(", ", ingredientRows);
+
+        if (ingredients.isEmpty()) {
+            Toast.makeText(this, "Enter ingredients first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        binding.btnGenerateAi.setEnabled(false);
+        binding.btnGenerateAi.setText("Generating...");
+
+        aiRecipeHelper.generateRecipe(ingredients, new AiRecipeHelper.AiRecipeCallback() {
+            @Override
+            public void onSuccess(String result) {
+                runOnUiThread(() -> {
+                    binding.btnGenerateAi.setEnabled(true);
+                    binding.btnGenerateAi.setText("Generate with AI");
+
+                    showAiResult(result);
+                });
+            }
+
+            @Override
+            public void onError(Exception e) {
+                runOnUiThread(() -> {
+                    binding.btnGenerateAi.setEnabled(true);
+                    binding.btnGenerateAi.setText("Generate with AI");
+                    Toast.makeText(CreatePostActivity.this,
+                            "AI generation failed: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+
+    private void showAiResult(String result) {
+        applyAiResult(result);
+        Toast.makeText(this, "AI draft generated", Toast.LENGTH_SHORT).show();
+    }
+
+    private void applyAiResult(String result) {
+        binding.etTitle.setText(extractSection(result, "TITLE"));
+        binding.etDescription.setText(extractSection(result, "DESCRIPTION"));
+        binding.etCookTime.setText(normalizeCookTime(extractSection(result, "TIME")));
+        binding.etBudget.setText(normalizeBudget(extractSection(result, "BUDGET")));
+
+        replaceDynamicRows(
+                binding.ingredientsContainer,
+                splitAiList(extractSection(result, "INGREDIENTS"), ","),
+                true
+        );
+        replaceDynamicRows(
+                binding.stepsContainer,
+                splitAiList(extractSection(result, "STEPS"), "\\|"),
+                false
+        );
+    }
+
+    private void replaceDynamicRows(LinearLayout container, List<String> values, boolean isIngredients) {
+        container.removeAllViews();
+
+        if (values.isEmpty()) {
+            if (isIngredients) {
+                addIngredientRow("");
+            } else {
+                addStepRow("");
+            }
+            return;
+        }
+
+        for (String value : values) {
+            if (isIngredients) {
+                addIngredientRow(value);
+            } else {
+                addStepRow(value);
+            }
+        }
+    }
+
+    private String extractSection(String result, String sectionName) {
+        String prefix = sectionName + ":";
+        for (String line : result.split("\\r?\\n")) {
+            if (line.toUpperCase().startsWith(prefix)) {
+                return line.substring(prefix.length()).trim();
+            }
+        }
+        return "";
+    }
+
+    private List<String> splitAiList(String value, String separatorRegex) {
+        List<String> items = new ArrayList<>();
+        if (TextUtils.isEmpty(value)) {
+            return items;
+        }
+
+        for (String item : Arrays.asList(value.split(separatorRegex))) {
+            String trimmed = item.trim();
+            if (!trimmed.isEmpty()) {
+                items.add(trimmed);
+            }
+        }
+        return items;
+    }
+
+    private String normalizeCookTime(String rawTime) {
+        if (TextUtils.isEmpty(rawTime)) {
+            return "";
+        }
+
+        String normalized = rawTime.trim().toLowerCase();
+        normalized = normalized.replace("minutes", "min")
+                .replace("minute", "min")
+                .replace("mins", "min")
+                .replace("hours", "hr")
+                .replace("hour", "hr")
+                .replaceAll("\\s+", " ");
+
+        String[] tokens = normalized.split(" ");
+        List<String> compact = new ArrayList<>();
+
+        for (int i = 0; i < tokens.length - 1; i++) {
+            if (tokens[i].matches("\\d+") && (tokens[i + 1].equals("min") || tokens[i + 1].equals("hr"))) {
+                compact.add(tokens[i] + " " + tokens[i + 1]);
+                i++;
+            }
+        }
+
+        if (!compact.isEmpty()) {
+            String joined = TextUtils.join(" ", compact);
+            return joined.length() > 14 ? joined.substring(0, 14).trim() : joined;
+        }
+
+        return rawTime.length() > 14 ? rawTime.substring(0, 14).trim() : rawTime.trim();
+    }
+
+    private String normalizeBudget(String rawBudget) {
+        if (TextUtils.isEmpty(rawBudget)) {
+            return "";
+        }
+
+        String normalized = rawBudget.trim().toLowerCase();
+        if (normalized.contains("low")) {
+            return "Low";
+        }
+        if (normalized.contains("high")) {
+            return "High";
+        }
+        if (normalized.contains("medium") || normalized.contains("mid")) {
+            return "Medium";
+        }
+        return "Medium";
     }
 }

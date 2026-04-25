@@ -8,7 +8,6 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import com.cookio.app.R;
 import com.cookio.app.models.Recipe;
-import com.cookio.app.models.RecipeContent;
 
 import java.util.ArrayList;
 import java.util.Arrays;
