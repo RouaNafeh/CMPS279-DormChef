@@ -436,7 +436,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         // 2. UI LOCK
         binding.btnEdit.setEnabled(false);
-        binding.progressEdit.setVisibility(View.VISIBLE);
+        binding.progressBar.setVisibility(View.VISIBLE);
 
         db.collection("users")
                 .document(uid)
@@ -446,7 +446,7 @@ public class ProfileActivity extends AppCompatActivity {
                     updateUsernameOnPosts(uid, newName, newBio);
 
                     // UI restore
-                    binding.progressEdit.setVisibility(View.GONE);
+                    binding.progressBar.setVisibility(View.GONE);
                     binding.btnEdit.setEnabled(true);
 
                     binding.tvUsername.setText(newName);
@@ -459,7 +459,7 @@ public class ProfileActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
 
-                    binding.progressEdit.setVisibility(View.GONE);
+                    binding.progressBar.setVisibility(View.GONE);
                     binding.btnEdit.setEnabled(true);
 
                     Toast.makeText(this,
