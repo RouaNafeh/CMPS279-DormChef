@@ -127,22 +127,34 @@
 
                             <TextView
                                 android:id="@+id/tvUsername"
-                                android:layout_width="wrap_content"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
+                                android:ellipsize="end"
                                 android:fontFamily="@font/genty_sans_regular"
+                                android:maxLines="1"
                                 android:textColor="@color/textDark"
                                 android:textSize="24sp"
                                 tools:text="Aub Chef" />
 
                             <TextView
                                 android:id="@+id/tvEmail"
-                                android:layout_width="wrap_content"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="3dp"
+                                android:layout_marginTop="4dp"
+                                android:ellipsize="end"
+                                android:maxLines="1"
                                 android:textColor="@color/textMuted"
                                 android:textSize="14sp"
                                 tools:text="chef@cookio.app" />
                         </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:gravity="end|center_vertical"
+                        android:orientation="horizontal">
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnEdit"
@@ -160,6 +172,15 @@
                             app:backgroundTint="@color/white"
                             app:cornerRadius="20dp"
                             app:strokeColor="@color/borderSoft" />
+
+                        <ProgressBar
+                            android:id="@+id/progressEdit"
+                            style="?android:attr/progressBarStyleSmall"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="8dp"
+                            android:indeterminateTint="@color/primary"
+                            android:visibility="gone" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btn_toggle_view"
@@ -201,6 +222,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:background="@drawable/search_background"
+                        android:lineSpacingExtra="2dp"
                         android:padding="14dp"
                         android:text="@string/profile_bio_empty"
                         android:textColor="@color/textDark"

@@ -42,6 +42,8 @@ import java.util.Set;
 
 public class ProfileActivity extends AppCompatActivity {
 
+    private static final String STORAGE_BUCKET_URL = "gs://cooksy-ef10e.firebasestorage.app";
+
     private ActivityProfileBinding binding;
     private FirebaseAuth auth;
     private FirebaseFirestore db;
@@ -68,7 +70,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
-        storage = FirebaseStorage.getInstance();
+        storage = FirebaseStorage.getInstance(STORAGE_BUCKET_URL);
 
         if (auth.getCurrentUser() == null) {
             Intent intent = new Intent(this, LandingActivity.class);
@@ -137,11 +139,6 @@ public class ProfileActivity extends AppCompatActivity {
                 return true;
             } else if (id == R.id.nav_home) {
                 startActivity(new Intent(this, HomeActivity.class));
-                overridePendingTransition(0, 0);
-                finish();
-                return true;
-            } else if (id == R.id.nav_favorites) {
-                startActivity(new Intent(this, FavoritesActivity.class));
                 overridePendingTransition(0, 0);
                 finish();
                 return true;

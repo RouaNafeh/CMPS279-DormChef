@@ -30,6 +30,9 @@ import java.util.Set;
 
 public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder> {
 
+    private static final int VIEW_TYPE_LIST = 0;
+    private static final int VIEW_TYPE_GRID = 1;
+
     public interface OnPostClickListener {
         void onPostClick(Post post);
     }
@@ -92,8 +95,13 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
     @Override
     public PostViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_post, parent, false);
+                .inflate(viewType == VIEW_TYPE_GRID ? R.layout.item_post_grid : R.layout.item_post, parent, false);
         return new PostViewHolder(view);
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return isGridMode ? VIEW_TYPE_GRID : VIEW_TYPE_LIST;
     }
 
     @Override
@@ -144,39 +152,20 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         });
 
         if (isGridMode) {
-
             holder.postDescription.setVisibility(View.GONE);
-            holder.deleteButton.setVisibility(View.GONE);
-
-            holder.postCookTime.setVisibility(View.GONE);
-            holder.postBudget.setVisibility(View.GONE);
-            holder.likesCount.setVisibility(View.GONE);
             holder.likeButton.setVisibility(View.GONE);
             holder.saveButton.setVisibility(View.GONE);
-
-            holder.postTitle.setMaxLines(1);
-            holder.postTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);
-
-            ViewGroup.LayoutParams params = holder.postImage.getLayoutParams();
-            params.height = 320;
-            holder.postImage.setLayoutParams(params);
-
-        } else {
-
-            holder.postDescription.setVisibility(View.VISIBLE);
+            holder.likesCount.setVisibility(View.GONE);
             holder.deleteButton.setVisibility(View.VISIBLE);
-
-            holder.postCookTime.setVisibility(View.VISIBLE);
-            holder.postBudget.setVisibility(View.VISIBLE);
-            holder.likesCount.setVisibility(View.VISIBLE);
+            holder.postTitle.setMaxLines(2);
+            holder.postTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        } else {
+            holder.postDescription.setVisibility(View.VISIBLE);
             holder.likeButton.setVisibility(View.VISIBLE);
             holder.saveButton.setVisibility(View.VISIBLE);
-
+            holder.likesCount.setVisibility(View.VISIBLE);
+            holder.deleteButton.setVisibility(View.VISIBLE);
             holder.postTitle.setMaxLines(2);
-
-            ViewGroup.LayoutParams params = holder.postImage.getLayoutParams();
-            params.height = 104;
-            holder.postImage.setLayoutParams(params);
         }
     }
 
