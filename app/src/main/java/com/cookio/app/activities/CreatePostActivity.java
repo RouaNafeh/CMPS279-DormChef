@@ -4,10 +4,11 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -23,22 +24,22 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public class CreatePostActivity extends AppCompatActivity {
 
     private ActivityCreatePostBinding binding;
-
     private FirebaseAuth auth;
     private FirebaseFirestore firestore;
     private FirebaseStorage storage;
 
-    private Uri selectedImageUri = null; // null = no image selected yet
+    private Uri selectedImageUri = null;
 
-    // ── Image picker launcher ─────────────────────────────────
+    // ── Image picker ──────────────────────────────────────────
     private final ActivityResultLauncher<String> imagePickerLauncher =
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
                 if (uri != null) {
@@ -46,6 +47,7 @@ public class CreatePostActivity extends AppCompatActivity {
                     binding.ivImagePreview.setImageURI(uri);
                     binding.ivImagePreview.setVisibility(View.VISIBLE);
                     binding.imagePlaceholder.setVisibility(View.GONE);
+                    binding.tvReselect.setVisibility(View.VISIBLE); // show "Change" button
                 }
             });
 
@@ -57,7 +59,6 @@ public class CreatePostActivity extends AppCompatActivity {
         firestore = FirebaseFirestore.getInstance();
         storage   = FirebaseStorage.getInstance();
 
-        // Redirect to login if not authenticated
         if (auth.getCurrentUser() == null) {
             startActivity(new Intent(this, LandingActivity.class)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK));
@@ -70,118 +71,200 @@ public class CreatePostActivity extends AppCompatActivity {
 
         binding.btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
 
-        // Tap anywhere on the image container to open gallery
-        binding.imagePickerContainer.setOnClickListener(v ->
-                imagePickerLauncher.launch("image/*"));
+        // Image picker — tap container OR "Change" label to reselect
+        binding.imagePickerContainer.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
+        binding.tvReselect.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
+
+        // Start with one empty ingredient row and one empty step row
+        addIngredientRow("");
+        addStepRow("");
+
+        binding.btnAddIngredient.setOnClickListener(v -> addIngredientRow(""));
+        binding.btnAddStep.setOnClickListener(v -> addStepRow(""));
 
         binding.btnPost.setOnClickListener(v -> validateAndPost());
     }
 
-    // ── Validate then upload or save directly ─────────────────
+    // ── Dynamic ingredient rows ───────────────────────────────
+    private void addIngredientRow(String prefill) {
+        View row = LayoutInflater.from(this)
+                .inflate(R.layout.item_dynamic_row, binding.ingredientsContainer, false);
+
+        EditText etRow    = row.findViewById(R.id.etRowInput);
+        ImageButton btnDel = row.findViewById(R.id.btnDeleteRow);
+
+        etRow.setHint("e.g. 2 eggs");
+        if (!prefill.isEmpty()) etRow.setText(prefill);
+
+        btnDel.setOnClickListener(v -> {
+            // Keep at least 1 row
+            if (binding.ingredientsContainer.getChildCount() > 1) {
+                binding.ingredientsContainer.removeView(row);
+            } else {
+                etRow.setText("");
+            }
+        });
+
+        binding.ingredientsContainer.addView(row);
+    }
+
+    // ── Dynamic step rows ─────────────────────────────────────
+    private void addStepRow(String prefill) {
+        int stepNumber = binding.stepsContainer.getChildCount() + 1;
+
+        View row = LayoutInflater.from(this)
+                .inflate(R.layout.item_dynamic_row, binding.stepsContainer, false);
+
+        EditText etRow    = row.findViewById(R.id.etRowInput);
+        ImageButton btnDel = row.findViewById(R.id.btnDeleteRow);
+
+        etRow.setHint("Step " + stepNumber);
+        if (!prefill.isEmpty()) etRow.setText(prefill);
+
+        btnDel.setOnClickListener(v -> {
+            if (binding.stepsContainer.getChildCount() > 1) {
+                binding.stepsContainer.removeView(row);
+                // Re-number remaining steps
+                renumberSteps();
+            } else {
+                etRow.setText("");
+            }
+        });
+
+        binding.stepsContainer.addView(row);
+    }
+
+    private void renumberSteps() {
+        for (int i = 0; i < binding.stepsContainer.getChildCount(); i++) {
+            View row = binding.stepsContainer.getChildAt(i);
+            EditText et = row.findViewById(R.id.etRowInput);
+            if (et.getText().toString().isEmpty()) {
+                et.setHint("Step " + (i + 1));
+            }
+        }
+    }
+
+    // ── Collect list values from containers ───────────────────
+    private List<String> collectRows(LinearLayout container) {
+        List<String> result = new ArrayList<>();
+        for (int i = 0; i < container.getChildCount(); i++) {
+            View row = container.getChildAt(i);
+            EditText et = row.findViewById(R.id.etRowInput);
+            String val = et.getText().toString().trim();
+            if (!val.isEmpty()) result.add(val);
+        }
+        return result;
+    }
+
+    // ── Validation ────────────────────────────────────────────
     private void validateAndPost() {
         String title       = text(binding.etTitle);
         String description = text(binding.etDescription);
         String cookTime    = text(binding.etCookTime);
         String budget      = text(binding.etBudget);
-        String ingredients = text(binding.etIngredients);
-        String steps       = text(binding.etSteps);
 
+        // 1. Image required
+        if (selectedImageUri == null) {
+            Toast.makeText(this, "Please add a photo", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 2. Title required
         if (TextUtils.isEmpty(title)) {
             binding.etTitle.setError("Title is required");
             binding.etTitle.requestFocus();
             return;
         }
-        if (TextUtils.isEmpty(ingredients)) {
-            binding.etIngredients.setError("Add at least one ingredient");
-            binding.etIngredients.requestFocus();
+
+        // 3. At least 1 ingredient
+        List<String> ingredients = collectRows(binding.ingredientsContainer);
+        if (ingredients.isEmpty()) {
+            Toast.makeText(this, "Add at least one ingredient", Toast.LENGTH_SHORT).show();
             return;
         }
-        if (TextUtils.isEmpty(steps)) {
-            binding.etSteps.setError("Add at least one step");
-            binding.etSteps.requestFocus();
+
+        // 4. At least 1 step
+        List<String> steps = collectRows(binding.stepsContainer);
+        if (steps.isEmpty()) {
+            Toast.makeText(this, "Add at least one step", Toast.LENGTH_SHORT).show();
             return;
         }
 
         setLoading(true);
-
-        if (selectedImageUri != null) {
-            uploadImageThenSave(title, description, cookTime, budget, ingredients, steps);
-        } else {
-            // Post without an image — imageUrl will be empty string
-            savePostToFirestore(title, description, cookTime, budget, ingredients, steps, "");
-        }
+        uploadImageThenSave(title, description, cookTime, budget, ingredients, steps);
     }
 
-    // ── Step 1: Upload image to Firebase Storage ──────────────
+    // ── Step 1: Upload image with progress ───────────────────
     private void uploadImageThenSave(String title, String description, String cookTime,
-                                     String budget, String ingredients, String steps) {
+                                     String budget, List<String> ingredients, List<String> steps) {
 
-        // Store under posts/{uid}/{randomUUID}.jpg
         String uid      = auth.getCurrentUser().getUid();
         String filename = UUID.randomUUID().toString() + ".jpg";
         StorageReference ref = storage.getReference()
-                .child("posts")
-                .child(uid)
-                .child(filename);
+                .child("posts").child(uid).child(filename);
 
-        ref.putFile(selectedImageUri)
-                .addOnSuccessListener(taskSnapshot ->
+        // Show progress bar
+        binding.uploadProgressBar.setVisibility(View.VISIBLE);
+        binding.tvUploadProgress.setVisibility(View.VISIBLE);
+        binding.tvUploadProgress.setText("Uploading photo… 0%");
+
+        UploadTask uploadTask = ref.putFile(selectedImageUri);
+
+        // Track progress
+        uploadTask.addOnProgressListener(snapshot -> {
+            double pct = (100.0 * snapshot.getBytesTransferred()) / snapshot.getTotalByteCount();
+            int progress = (int) pct;
+            binding.uploadProgressBar.setProgress(progress);
+            binding.tvUploadProgress.setText("Uploading photo… " + progress + "%");
+        });
+
+        uploadTask
+                .addOnSuccessListener(snapshot ->
                         ref.getDownloadUrl().addOnSuccessListener(downloadUri -> {
-                            // Step 2: save Firestore doc with the image URL
+                            binding.uploadProgressBar.setVisibility(View.GONE);
+                            binding.tvUploadProgress.setVisibility(View.GONE);
                             savePostToFirestore(title, description, cookTime, budget,
                                     ingredients, steps, downloadUri.toString());
                         }))
                 .addOnFailureListener(e -> {
+                    binding.uploadProgressBar.setVisibility(View.GONE);
+                    binding.tvUploadProgress.setVisibility(View.GONE);
                     setLoading(false);
                     Toast.makeText(this, "Image upload failed: " + e.getMessage(),
                             Toast.LENGTH_LONG).show();
                 });
     }
 
-    // ── Step 2: Save post document to Firestore ───────────────
+    // ── Step 2: Save post to Firestore ────────────────────────
     private void savePostToFirestore(String title, String description, String cookTime,
-                                     String budget, String ingredients, String steps,
-                                     String imageUrl) {
+                                     String budget, List<String> ingredients,
+                                     List<String> steps, String imageUrl) {
 
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) { setLoading(false); return; }
 
-        // Read author username from Firestore users/{uid}
         firestore.collection("users").document(user.getUid())
                 .get()
                 .addOnSuccessListener(userDoc -> {
                     String username = userDoc.getString("username");
                     if (username == null) username = "Unknown";
 
-                    // Split multiline text into lists (trim blank lines)
-                    List<String> ingredientList = splitLines(ingredients);
-                    List<String> stepList       = splitLines(steps);
-
                     Post post = new Post(
-                            user.getUid(),
-                            username,
-                            title,
-                            description,
-                            cookTime,
-                            budget,
-                            ingredientList,
-                            stepList,
-                            imageUrl
+                            user.getUid(), username, title, description,
+                            cookTime, budget, ingredients, steps, imageUrl
                     );
 
-                    // Auto-generate doc ID — save postId back into the document
                     firestore.collection("posts")
                             .add(post)
-                            .addOnSuccessListener(docRef -> {
-                                // Write the auto-generated ID into the doc itself
-                                docRef.update("postId", docRef.getId())
-                                        .addOnCompleteListener(t -> {
-                                            setLoading(false);
-                                            Toast.makeText(this,
-                                                    "Recipe posted!", Toast.LENGTH_SHORT).show();
-                                            finish(); // go back to feed / home
-                                        });
-                            })
+                            .addOnSuccessListener(docRef ->
+                                    docRef.update("postId", docRef.getId())
+                                            .addOnCompleteListener(t -> {
+                                                setLoading(false);
+                                                Toast.makeText(this,
+                                                        "Recipe posted!",
+                                                        Toast.LENGTH_SHORT).show();
+                                                finish();
+                                            }))
                             .addOnFailureListener(e -> {
                                 setLoading(false);
                                 Toast.makeText(this,
@@ -191,23 +274,12 @@ public class CreatePostActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     setLoading(false);
-                    Toast.makeText(this, "Could not load user info", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Could not load user info",
+                            Toast.LENGTH_SHORT).show();
                 });
     }
 
     // ── Helpers ───────────────────────────────────────────────
-
-    /** Splits a multiline string into a trimmed list, dropping blank lines. */
-    private List<String> splitLines(String raw) {
-        String[] lines = raw.split("\\n");
-        java.util.ArrayList<String> result = new java.util.ArrayList<>();
-        for (String line : lines) {
-            String trimmed = line.trim();
-            if (!trimmed.isEmpty()) result.add(trimmed);
-        }
-        return result;
-    }
-
     private String text(TextInputEditText et) {
         return et.getText() == null ? "" : et.getText().toString().trim();
     }
@@ -215,5 +287,7 @@ public class CreatePostActivity extends AppCompatActivity {
     private void setLoading(boolean loading) {
         binding.btnPost.setEnabled(!loading);
         binding.btnPost.setText(loading ? "Posting…" : "Post Recipe");
+        binding.btnAddIngredient.setEnabled(!loading);
+        binding.btnAddStep.setEnabled(!loading);
     }
 }

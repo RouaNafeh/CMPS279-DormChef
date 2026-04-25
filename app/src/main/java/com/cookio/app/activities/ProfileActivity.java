@@ -22,6 +22,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.cookio.app.models.Post;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
+import androidx.recyclerview.widget.GridLayoutManager;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -52,6 +53,7 @@ public class ProfileActivity extends AppCompatActivity {
 
     private PostAdapter postAdapter;
     private int savedPostsCount = 0;
+    private boolean isGrid = false;
 
     private final ActivityResultLauncher<String> profileImagePickerLauncher =
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
@@ -86,7 +88,7 @@ public class ProfileActivity extends AppCompatActivity {
                 likedPostIds,
                 this::openPostDetail
         );
-        binding.rvMyPosts.setLayoutManager(new LinearLayoutManager(this));
+        postAdapter.setOnPostDeleteListener(post -> showDeleteDialog(post));
         binding.rvMyPosts.setNestedScrollingEnabled(false);
         binding.rvMyPosts.setAdapter(postAdapter);
 
@@ -99,14 +101,30 @@ public class ProfileActivity extends AppCompatActivity {
         binding.ivProfilePhoto.setOnClickListener(v -> profileImagePickerLauncher.launch("image/*"));
         binding.tvAvatarInitial.setOnClickListener(v -> profileImagePickerLauncher.launch("image/*"));
 
+        binding.btnToggleView.setOnClickListener(v -> {
+            isGrid = !isGrid;
+            setLayoutManager();
+            postAdapter.setGridMode(isGrid);
+            binding.btnToggleView.setText(isGrid ? "List View" : "Grid View");
+        });
+
         setupBottomNavigation();
         populateStaticUserFields();
+        setLayoutManager();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         loadProfile();
+    }
+
+    private void setLayoutManager() {
+        if (isGrid) {
+            binding.rvMyPosts.setLayoutManager(new GridLayoutManager(this, 2));
+        } else {
+            binding.rvMyPosts.setLayoutManager(new LinearLayoutManager(this));
+        }
     }
 
     private void setupBottomNavigation() {
@@ -147,8 +165,15 @@ public class ProfileActivity extends AppCompatActivity {
         binding.tvEmail.setText(email);
         binding.tvUsername.setText(resolveDisplayName(null, email));
         binding.tvAvatarInitial.setText(resolveInitial(binding.tvUsername.getText().toString()));
-        binding.ivProfilePhoto.setVisibility(View.GONE);
-        binding.tvAvatarInitial.setVisibility(View.VISIBLE);
+    }
+
+    private void showDeleteDialog(Post post) {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete Post")
+                .setMessage("Are you sure you want to delete this post?")
+                .setPositiveButton("Delete", (dialog, which) -> deletePost(post))
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void loadProfile() {
@@ -291,6 +316,66 @@ public class ProfileActivity extends AppCompatActivity {
         binding.emptyStateCard.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
         binding.rvMyPosts.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
     }
+    private void loadProfilePhoto(@Nullable String profileImageUrl) {
+        if (!TextUtils.isEmpty(profileImageUrl)) {
+            binding.tvAvatarInitial.setVisibility(View.GONE);
+            binding.ivProfilePhoto.setVisibility(View.VISIBLE);
+
+            Glide.with(this)
+                    .load(profileImageUrl)
+                    .placeholder(R.drawable.logo_cropped)
+                    .error(R.drawable.logo_cropped)
+                    .centerCrop()
+                    .into(binding.ivProfilePhoto);
+        } else {
+            binding.ivProfilePhoto.setVisibility(View.GONE);
+            binding.tvAvatarInitial.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void uploadProfilePhoto(Uri imageUri) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) return;
+
+        binding.ivProfilePhoto.setEnabled(false);
+        binding.tvAvatarInitial.setEnabled(false);
+
+        StorageReference ref = storage.getReference()
+                .child("profileImages")
+                .child(user.getUid())
+                .child("avatar.jpg");
+
+        ref.putFile(imageUri)
+                .addOnSuccessListener(task ->
+                        ref.getDownloadUrl().addOnSuccessListener(downloadUri ->
+                                db.collection("users")
+                                        .document(user.getUid())
+                                        .update("profileImageUrl", downloadUri.toString())
+                                        .addOnSuccessListener(unused -> {
+                                            binding.ivProfilePhoto.setEnabled(true);
+                                            binding.tvAvatarInitial.setEnabled(true);
+
+                                            loadProfilePhoto(downloadUri.toString());
+
+                                            Toast.makeText(this,
+                                                    R.string.profile_photo_updated,
+                                                    Toast.LENGTH_SHORT).show();
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            binding.ivProfilePhoto.setEnabled(true);
+                                            binding.tvAvatarInitial.setEnabled(true);
+                                        })
+                        )
+                )
+                .addOnFailureListener(e -> {
+                    binding.ivProfilePhoto.setEnabled(true);
+                    binding.tvAvatarInitial.setEnabled(true);
+
+                    Toast.makeText(this,
+                            R.string.profile_photo_upload_failed,
+                            Toast.LENGTH_SHORT).show();
+                });
+    }
 
     private void openPostDetail(Post post) {
         Intent intent = new Intent(this, PostDetailActivity.class);
@@ -345,33 +430,184 @@ public class ProfileActivity extends AppCompatActivity {
 
         dialogView.findViewById(R.id.btnCancel).setOnClickListener(v -> dialog.dismiss());
         dialogView.findViewById(R.id.btnSave).setOnClickListener(v -> {
+
             String newName = usernameInput.getText() == null
                     ? ""
                     : usernameInput.getText().toString().trim();
+
             String newBio = bioInput.getText() == null
                     ? ""
                     : bioInput.getText().toString().trim();
 
-            if (!TextUtils.isEmpty(newName)) {
-                dialog.dismiss();
-                updateProfile(user.getUid(), newName, newBio);
+            if (TextUtils.isEmpty(newName)) {
+                usernameInput.setError("Username required");
+                return;
             }
+
+            if (newName.length() < 3) {
+                usernameInput.setError("Min 3 characters");
+                return;
+            }
+
+            v.setEnabled(false); // disable button
+
+            updateProfile(user.getUid(), newName, newBio);
+
+            dialog.dismiss();
         });
 
         dialog.show();
     }
 
     private void updateProfile(String uid, String newName, String newBio) {
+
+        // 1. VALIDATION
+        if (TextUtils.isEmpty(newName)) {
+            Toast.makeText(this, "Username cannot be empty", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (newName.length() < 3) {
+            Toast.makeText(this, "Username must be at least 3 characters", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 2. UI LOCK
         binding.btnEdit.setEnabled(false);
+        binding.progressEdit.setVisibility(View.VISIBLE);
 
         db.collection("users")
                 .document(uid)
                 .update("username", newName, "bio", newBio)
-                .addOnSuccessListener(unused -> updateUsernameOnPosts(uid, newName, newBio))
-                .addOnFailureListener(e -> {
+                .addOnSuccessListener(unused -> {
+
+                    updateUsernameOnPosts(uid, newName, newBio);
+
+                    // UI restore
+                    binding.progressEdit.setVisibility(View.GONE);
                     binding.btnEdit.setEnabled(true);
-                    Toast.makeText(this, R.string.profile_load_failed, Toast.LENGTH_SHORT).show();
+
+                    binding.tvUsername.setText(newName);
+                    binding.tvBio.setText(resolveBio(newBio));
+                    binding.tvAvatarInitial.setText(resolveInitial(newName));
+
+                    Toast.makeText(this,
+                            "Profile updated successfully",
+                            Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+
+                    binding.progressEdit.setVisibility(View.GONE);
+                    binding.btnEdit.setEnabled(true);
+
+                    Toast.makeText(this,
+                            "Failed to update profile",
+                            Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    private void deleteSavedFromAllUsers(String postId) {
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        db.collection("users")
+                .get()
+                .addOnSuccessListener(usersSnapshot -> {
+
+                    WriteBatch batch = db.batch();
+
+                    for (DocumentSnapshot userDoc : usersSnapshot) {
+
+                        DocumentReference savedRef = db.collection("users")
+                                .document(userDoc.getId())
+                                .collection("savedPosts")
+                                .document(postId);
+
+                        batch.delete(savedRef);
+                    }
+
+                    batch.commit();
+                });
+    }
+
+    private void deletePost(Post post) {
+        String postId = post.getPostId();
+        String uid = auth.getCurrentUser().getUid();
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        DocumentReference postRef = db.collection("posts").document(postId);
+
+        // 1. Delete likes first
+        db.collection("posts")
+                .document(postId)
+                .collection("likes")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+
+                    WriteBatch batch = db.batch();
+
+                    for (DocumentSnapshot doc : querySnapshot) {
+                        batch.delete(doc.getReference());
+                    }
+
+                    batch.commit()
+                            .addOnSuccessListener(unused -> {
+
+                                // 2. Delete saved post for CURRENT user
+                                db.collection("users")
+                                        .document(uid)
+                                        .collection("savedPosts")
+                                        .document(postId)
+                                        .delete()
+                                        .addOnSuccessListener(unused2 -> {
+
+                                            // 3. DELETE SAVED POST FROM ALL USERS (OPTION 1 FIX)
+                                            deleteSavedFromAllUsers(postId);
+
+                                            // 4. Delete post itself
+                                            postRef.delete()
+                                                    .addOnSuccessListener(unused3 -> {
+
+                                                        // 5. Update UI
+                                                        postAdapter.removePostFromUI(postId);
+                                                        myPosts.remove(post);
+
+                                                        binding.tvPostsCount.setText(
+                                                                String.valueOf(myPosts.size())
+                                                        );
+
+                                                        Toast.makeText(
+                                                                this,
+                                                                "Post deleted successfully",
+                                                                Toast.LENGTH_SHORT
+                                                        ).show();
+
+                                                    })
+                                                    .addOnFailureListener(e ->
+                                                            Toast.makeText(this,
+                                                                    "Failed to delete post",
+                                                                    Toast.LENGTH_SHORT).show()
+                                                    );
+
+                                        })
+                                        .addOnFailureListener(e ->
+                                                Toast.makeText(this,
+                                                        "Failed to remove saved post",
+                                                        Toast.LENGTH_SHORT).show()
+                                        );
+
+                            })
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(this,
+                                            "Failed to delete likes",
+                                            Toast.LENGTH_SHORT).show()
+                            );
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this,
+                                "Failed to load likes",
+                                Toast.LENGTH_SHORT).show()
+                );
     }
 
     private void updateUsernameOnPosts(String uid, String newName, String newBio) {
@@ -437,73 +673,6 @@ public class ProfileActivity extends AppCompatActivity {
             return getString(R.string.profile_bio_empty);
         }
         return bio;
-    }
-
-    private void loadProfilePhoto(@Nullable String profileImageUrl) {
-        if (!TextUtils.isEmpty(profileImageUrl)) {
-            binding.tvAvatarInitial.setVisibility(View.GONE);
-            binding.ivProfilePhoto.setVisibility(View.VISIBLE);
-            Glide.with(this)
-                    .load(profileImageUrl)
-                    .placeholder(R.drawable.logo_cropped)
-                    .error(R.drawable.logo_cropped)
-                    .centerCrop()
-                    .into(binding.ivProfilePhoto);
-            return;
-        }
-
-        binding.ivProfilePhoto.setVisibility(View.GONE);
-        binding.tvAvatarInitial.setVisibility(View.VISIBLE);
-    }
-
-    private void uploadProfilePhoto(Uri imageUri) {
-        FirebaseUser user = auth.getCurrentUser();
-        if (user == null) {
-            return;
-        }
-
-        binding.ivProfilePhoto.setEnabled(false);
-        binding.tvAvatarInitial.setEnabled(false);
-
-        StorageReference ref = storage.getReference()
-                .child("profileImages")
-                .child(user.getUid())
-                .child("avatar.jpg");
-
-        ref.putFile(imageUri)
-                .addOnSuccessListener(taskSnapshot ->
-                        ref.getDownloadUrl().addOnSuccessListener(downloadUri ->
-                                db.collection("users")
-                                        .document(user.getUid())
-                                        .update("profileImageUrl", downloadUri.toString())
-                                        .addOnSuccessListener(unused -> {
-                                            binding.ivProfilePhoto.setEnabled(true);
-                                            binding.tvAvatarInitial.setEnabled(true);
-                                            loadProfilePhoto(downloadUri.toString());
-                                            Toast.makeText(
-                                                    this,
-                                                    R.string.profile_photo_updated,
-                                                    Toast.LENGTH_SHORT
-                                            ).show();
-                                        })
-                                        .addOnFailureListener(e -> {
-                                            binding.ivProfilePhoto.setEnabled(true);
-                                            binding.tvAvatarInitial.setEnabled(true);
-                                            Toast.makeText(
-                                                    this,
-                                                    R.string.profile_load_failed,
-                                                    Toast.LENGTH_SHORT
-                                            ).show();
-                                        })))
-                .addOnFailureListener(e -> {
-                    binding.ivProfilePhoto.setEnabled(true);
-                    binding.tvAvatarInitial.setEnabled(true);
-                    Toast.makeText(
-                            this,
-                            R.string.profile_photo_upload_failed,
-                            Toast.LENGTH_SHORT
-                    ).show();
-                });
     }
 
     private void showLogoutConfirmation() {
