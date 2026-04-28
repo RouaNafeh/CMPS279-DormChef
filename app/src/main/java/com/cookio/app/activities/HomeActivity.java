@@ -39,7 +39,7 @@ public class HomeActivity extends AppCompatActivity {
     private PostAdapter postAdapter;
     private String currentQuery = "";
 
-    private static final int PAGE_SIZE = 5;
+    private static final int PAGE_SIZE = 10;
     private DocumentSnapshot lastVisible = null;
     private boolean isLoading = false;
     private boolean isLastPage = false;
@@ -303,15 +303,12 @@ public class HomeActivity extends AppCompatActivity {
 
             for (Post post : allPosts) {
                 String title = post.getTitle() == null ? "" : post.getTitle().toLowerCase();
-                String description = post.getDescription() == null
-                        ? ""
-                        : post.getDescription().toLowerCase();
+                String username = post.getUsername() == null ? "" : post.getUsername().toLowerCase();
 
-                if (title.contains(query) || description.contains(query)) {
+                if (title.contains(query) || username.contains(query)) {
                     filteredPosts.add(post);
                 }
-            }
-        }
+        }   }
 
         postAdapter.updateData(filteredPosts);
 
