@@ -1,5 +1,6 @@
 package com.cookio.app.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
@@ -11,6 +12,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
 import com.cookio.app.R;
+import com.cookio.app.models.CookingStep;
+import com.cookio.app.models.CookingStepParser;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
@@ -59,6 +62,8 @@ public class PostDetailActivity extends AppCompatActivity {
     private LinearLayout llSteps;
     private MaterialButton btnSavePost;
     private MaterialButton btnLikePost;
+    private MaterialButton btnCookingMode;
+    private List<CookingStep> cookingSteps = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,6 +87,7 @@ public class PostDetailActivity extends AppCompatActivity {
 
         btnSavePost.setOnClickListener(v -> toggleSave());
         btnLikePost.setOnClickListener(v -> toggleLike());
+        btnCookingMode.setOnClickListener(v -> openCookingMode());
     }
 
     @Override
@@ -103,6 +109,7 @@ public class PostDetailActivity extends AppCompatActivity {
         llSteps = findViewById(R.id.stepsContainer);
         btnSavePost = findViewById(R.id.btnSavePost);
         btnLikePost = findViewById(R.id.btnLikePost);
+        btnCookingMode = findViewById(R.id.btnCookingMode);
     }
 
     private void bindStaticContentFromIntent() {
@@ -115,8 +122,9 @@ public class PostDetailActivity extends AppCompatActivity {
 
         ArrayList<String> ingredients = getIntent().getStringArrayListExtra(EXTRA_POST_INGREDIENTS);
         ArrayList<String> steps = getIntent().getStringArrayListExtra(EXTRA_POST_STEPS);
+        cookingSteps = CookingStepParser.parseList(steps);
         bindIngredients(ingredients);
-        bindSteps(steps);
+        bindSteps(cookingSteps);
     }
 
     private void loadPostDetails() {
@@ -144,7 +152,8 @@ public class PostDetailActivity extends AppCompatActivity {
                     updateLikesCount();
 
                     bindIngredients(asStringList(documentSnapshot.get("ingredients")));
-                    bindSteps(asStringList(documentSnapshot.get("steps")));
+                    cookingSteps = CookingStepParser.parseList(asStringList(documentSnapshot.get("steps")));
+                    bindSteps(cookingSteps);
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(this, R.string.post_detail_loading_failed, Toast.LENGTH_SHORT).show());
@@ -370,15 +379,21 @@ public class PostDetailActivity extends AppCompatActivity {
         }
     }
 
-    private void bindSteps(List<String> steps) {
+    private void bindSteps(List<CookingStep> steps) {
         llSteps.removeAllViews();
         if (steps == null) {
             return;
         }
 
         for (int i = 0; i < steps.size(); i++) {
+            CookingStep step = steps.get(i);
             TextView stepView = new TextView(this);
-            stepView.setText((i + 1) + ". " + steps.get(i));
+            StringBuilder label = new StringBuilder();
+            label.append(i + 1).append(". ").append(step.getInstruction());
+            if (step.hasTimer()) {
+                label.append("\n").append(getString(R.string.cooking_minutes_label, step.getMinutes()));
+            }
+            stepView.setText(label.toString());
             stepView.setTextColor(getColor(R.color.textDark));
             stepView.setTextSize(15f);
             stepView.setLineSpacing(0f, 1.25f);
@@ -394,6 +409,21 @@ public class PostDetailActivity extends AppCompatActivity {
             stepView.setLayoutParams(params);
             llSteps.addView(stepView);
         }
+    }
+
+    private void openCookingMode() {
+        if (cookingSteps.isEmpty()) {
+            Toast.makeText(this, R.string.cooking_mode_missing_steps, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Intent intent = new Intent(this, TimerActivity.class);
+        intent.putExtra(TimerActivity.EXTRA_RECIPE_NAME, safeText(tvTitle.getText().toString()));
+        intent.putStringArrayListExtra(
+                TimerActivity.EXTRA_RECIPE_TIMED_STEPS,
+                new ArrayList<>(encodeSteps(cookingSteps))
+        );
+        startActivity(intent);
     }
 
     private void animateLikeButton() {
@@ -435,6 +465,14 @@ public class PostDetailActivity extends AppCompatActivity {
             }
         }
         return result;
+    }
+
+    private List<String> encodeSteps(List<CookingStep> steps) {
+        List<String> encoded = new ArrayList<>();
+        for (CookingStep step : steps) {
+            encoded.add(step.encode());
+        }
+        return encoded;
     }
 
     private int dpToPx(int dp) {

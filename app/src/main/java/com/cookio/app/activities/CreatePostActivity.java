@@ -18,6 +18,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.cookio.app.R;
 import com.cookio.app.ai.AiRecipeHelper;
 import com.cookio.app.databinding.ActivityCreatePostBinding;
+import com.cookio.app.models.CookingStep;
+import com.cookio.app.models.CookingStepParser;
 import com.cookio.app.models.Post;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
@@ -74,16 +76,14 @@ public class CreatePostActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         binding.btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
-
         binding.imagePickerContainer.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
         binding.tvReselect.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
 
         addIngredientRow("");
-        addStepRow("");
+        addStepRow(new CookingStep("", 0));
 
         binding.btnAddIngredient.setOnClickListener(v -> addIngredientRow(""));
-        binding.btnAddStep.setOnClickListener(v -> addStepRow(""));
-
+        binding.btnAddStep.setOnClickListener(v -> addStepRow(new CookingStep("", 0)));
         binding.btnPost.setOnClickListener(v -> validateAndPost());
 
         aiRecipeHelper = new AiRecipeHelper();
@@ -98,7 +98,9 @@ public class CreatePostActivity extends AppCompatActivity {
         ImageButton btnDel = row.findViewById(R.id.btnDeleteRow);
 
         etRow.setHint("e.g. 2 eggs");
-        if (!prefill.isEmpty()) etRow.setText(prefill);
+        if (!prefill.isEmpty()) {
+            etRow.setText(prefill);
+        }
 
         btnDel.setOnClickListener(v -> {
             if (binding.ingredientsContainer.getChildCount() > 1) {
@@ -111,24 +113,27 @@ public class CreatePostActivity extends AppCompatActivity {
         binding.ingredientsContainer.addView(row);
     }
 
-    private void addStepRow(String prefill) {
+    private void addStepRow(CookingStep step) {
         int stepNumber = binding.stepsContainer.getChildCount() + 1;
 
         View row = LayoutInflater.from(this)
-                .inflate(R.layout.item_dynamic_row, binding.stepsContainer, false);
+                .inflate(R.layout.item_step_timer_row, binding.stepsContainer, false);
 
-        EditText etRow = row.findViewById(R.id.etRowInput);
-        ImageButton btnDel = row.findViewById(R.id.btnDeleteRow);
+        EditText etInstruction = row.findViewById(R.id.etStepInstruction);
+        EditText etMinutes = row.findViewById(R.id.etStepMinutes);
+        ImageButton btnDelete = row.findViewById(R.id.btnDeleteStepRow);
 
-        etRow.setHint("Step " + stepNumber);
-        if (!prefill.isEmpty()) etRow.setText(prefill);
+        etInstruction.setHint("Step " + stepNumber);
+        etInstruction.setText(step.getInstruction());
+        etMinutes.setText(String.valueOf(step.getMinutes()));
 
-        btnDel.setOnClickListener(v -> {
+        btnDelete.setOnClickListener(v -> {
             if (binding.stepsContainer.getChildCount() > 1) {
                 binding.stepsContainer.removeView(row);
                 renumberSteps();
             } else {
-                etRow.setText("");
+                etInstruction.setText("");
+                etMinutes.setText("0");
             }
         });
 
@@ -138,22 +143,54 @@ public class CreatePostActivity extends AppCompatActivity {
     private void renumberSteps() {
         for (int i = 0; i < binding.stepsContainer.getChildCount(); i++) {
             View row = binding.stepsContainer.getChildAt(i);
-            EditText et = row.findViewById(R.id.etRowInput);
-            if (et.getText().toString().isEmpty()) {
-                et.setHint("Step " + (i + 1));
+            EditText etInstruction = row.findViewById(R.id.etStepInstruction);
+            if (etInstruction.getText().toString().isEmpty()) {
+                etInstruction.setHint("Step " + (i + 1));
             }
         }
     }
 
-    private List<String> collectRows(LinearLayout container) {
+    private List<String> collectIngredientRows(LinearLayout container) {
         List<String> result = new ArrayList<>();
         for (int i = 0; i < container.getChildCount(); i++) {
             View row = container.getChildAt(i);
             EditText et = row.findViewById(R.id.etRowInput);
             String val = et.getText().toString().trim();
-            if (!val.isEmpty()) result.add(val);
+            if (!val.isEmpty()) {
+                result.add(val);
+            }
         }
         return result;
+    }
+
+    private List<CookingStep> collectStepRows() {
+        List<CookingStep> steps = new ArrayList<>();
+        for (int i = 0; i < binding.stepsContainer.getChildCount(); i++) {
+            View row = binding.stepsContainer.getChildAt(i);
+            EditText etInstruction = row.findViewById(R.id.etStepInstruction);
+            EditText etMinutes = row.findViewById(R.id.etStepMinutes);
+
+            String instruction = etInstruction.getText().toString().trim();
+            String minutesRaw = etMinutes.getText().toString().trim();
+
+            if (instruction.isEmpty()) {
+                continue;
+            }
+
+            int minutes;
+            try {
+                minutes = minutesRaw.isEmpty() ? 0 : Integer.parseInt(minutesRaw);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException(getString(R.string.step_time_invalid));
+            }
+
+            if (minutes < 0) {
+                throw new IllegalArgumentException(getString(R.string.step_time_invalid));
+            }
+
+            steps.add(new CookingStep(instruction, minutes));
+        }
+        return steps;
     }
 
     private void validateAndPost() {
@@ -168,29 +205,40 @@ public class CreatePostActivity extends AppCompatActivity {
             return;
         }
 
-        List<String> ingredients = collectRows(binding.ingredientsContainer);
+        List<String> ingredients = collectIngredientRows(binding.ingredientsContainer);
         if (ingredients.isEmpty()) {
             Toast.makeText(this, "Add at least one ingredient", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        List<String> steps = collectRows(binding.stepsContainer);
-        if (steps.isEmpty()) {
-            Toast.makeText(this, "Add at least one step", Toast.LENGTH_SHORT).show();
+        List<CookingStep> cookingSteps;
+        try {
+            cookingSteps = collectStepRows();
+        } catch (IllegalArgumentException e) {
+            Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
             return;
+        }
+
+        if (cookingSteps.isEmpty()) {
+            Toast.makeText(this, R.string.step_instruction_required, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        List<String> encodedSteps = new ArrayList<>();
+        for (CookingStep step : cookingSteps) {
+            encodedSteps.add(step.encode());
         }
 
         setLoading(true);
         if (selectedImageUri != null) {
-            uploadImageThenSave(title, description, cookTime, budget, ingredients, steps);
+            uploadImageThenSave(title, description, cookTime, budget, ingredients, encodedSteps);
         } else {
-            savePostToFirestore(title, description, cookTime, budget, ingredients, steps, "");
+            savePostToFirestore(title, description, cookTime, budget, ingredients, encodedSteps, "");
         }
     }
 
     private void uploadImageThenSave(String title, String description, String cookTime,
                                      String budget, List<String> ingredients, List<String> steps) {
-
         String uid = auth.getCurrentUser().getUid();
         String filename = UUID.randomUUID().toString() + ".jpg";
         StorageReference ref = storage.getReference()
@@ -229,7 +277,6 @@ public class CreatePostActivity extends AppCompatActivity {
     private void savePostToFirestore(String title, String description, String cookTime,
                                      String budget, List<String> ingredients,
                                      List<String> steps, String imageUrl) {
-
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
             setLoading(false);
@@ -240,7 +287,9 @@ public class CreatePostActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(userDoc -> {
                     String username = userDoc.getString("username");
-                    if (username == null) username = "Unknown";
+                    if (username == null) {
+                        username = "Unknown";
+                    }
 
                     Post post = new Post(
                             user.getUid(), username, title, description,
@@ -285,7 +334,7 @@ public class CreatePostActivity extends AppCompatActivity {
     }
 
     private void generateWithAi() {
-        List<String> ingredientRows = collectRows(binding.ingredientsContainer);
+        List<String> ingredientRows = collectIngredientRows(binding.ingredientsContainer);
         String ingredients = TextUtils.join(", ", ingredientRows);
 
         if (ingredients.isEmpty()) {
@@ -302,7 +351,6 @@ public class CreatePostActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     binding.btnGenerateAi.setEnabled(true);
                     binding.btnGenerateAi.setText("Generate with AI");
-
                     showAiResult(result);
                 });
             }
@@ -331,36 +379,33 @@ public class CreatePostActivity extends AppCompatActivity {
         binding.etCookTime.setText(normalizeCookTime(extractSection(result, "TIME")));
         binding.etBudget.setText(normalizeBudget(extractSection(result, "BUDGET")));
 
-        replaceDynamicRows(
-                binding.ingredientsContainer,
-                splitAiList(extractSection(result, "INGREDIENTS"), ","),
-                true
-        );
-        replaceDynamicRows(
-                binding.stepsContainer,
-                splitAiList(extractSection(result, "STEPS"), "\\|"),
-                false
-        );
+        replaceIngredientRows(splitAiList(extractSection(result, "INGREDIENTS"), ","));
+        replaceStepRows(CookingStepParser.parseDelimited(extractSection(result, "STEPS")));
     }
 
-    private void replaceDynamicRows(LinearLayout container, List<String> values, boolean isIngredients) {
-        container.removeAllViews();
+    private void replaceIngredientRows(List<String> values) {
+        binding.ingredientsContainer.removeAllViews();
 
         if (values.isEmpty()) {
-            if (isIngredients) {
-                addIngredientRow("");
-            } else {
-                addStepRow("");
-            }
+            addIngredientRow("");
             return;
         }
 
         for (String value : values) {
-            if (isIngredients) {
-                addIngredientRow(value);
-            } else {
-                addStepRow(value);
-            }
+            addIngredientRow(value);
+        }
+    }
+
+    private void replaceStepRows(List<CookingStep> values) {
+        binding.stepsContainer.removeAllViews();
+
+        if (values.isEmpty()) {
+            addStepRow(new CookingStep("", 0));
+            return;
+        }
+
+        for (CookingStep step : values) {
+            addStepRow(step);
         }
     }
 
@@ -406,7 +451,8 @@ public class CreatePostActivity extends AppCompatActivity {
         List<String> compact = new ArrayList<>();
 
         for (int i = 0; i < tokens.length - 1; i++) {
-            if (tokens[i].matches("\\d+") && (tokens[i + 1].equals("min") || tokens[i + 1].equals("hr"))) {
+            if (tokens[i].matches("\\d+")
+                    && (tokens[i + 1].equals("min") || tokens[i + 1].equals("hr"))) {
                 compact.add(tokens[i] + " " + tokens[i + 1]);
                 i++;
             }

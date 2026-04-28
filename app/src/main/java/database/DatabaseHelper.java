@@ -165,7 +165,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "Low",
                 "Bowl, Knife",
                 "Tomatoes,Cucumber,Feta,Olives,Olive oil,Oregano",
-                "Wash and chop the tomatoes and cucumber into bite-sized pieces.|Add the vegetables to a bowl with olives and crumbled feta.|Drizzle with olive oil and season with oregano, salt, and pepper.|Toss lightly and serve fresh.",
+                "Wash and chop the tomatoes and cucumber into bite-sized pieces.|5\nAdd the vegetables to a bowl with olives and crumbled feta.|2\nDrizzle with olive oil and season with oregano, salt, and pepper.|1\nToss lightly and serve fresh.|0",
                 "",
                 false
         ));
@@ -177,7 +177,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "Low",
                 "Pot, Strainer",
                 "Pasta,Garlic,Olive oil,Parmesan,Salt,Pepper",
-                "Boil the pasta in salted water until tender, then drain.|Warm olive oil in a pot and cook the garlic for 30 seconds.|Return the pasta to the pot and toss with the garlic oil.|Season with salt and pepper, then finish with parmesan.",
+                "Boil the pasta in salted water until tender, then drain.|10\nWarm olive oil in a pot and cook the garlic for 1 minute.|1\nReturn the pasta to the pot and toss with the garlic oil.|2\nSeason with salt and pepper, then finish with parmesan.|0",
                 "",
                 false
         ));
@@ -189,7 +189,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "Low",
                 "Knife",
                 "Bread,Turkey,Cheese,Lettuce,Tomato,Mayo",
-                "Lay out the bread slices and spread mayo on one side.|Layer turkey, cheese, lettuce, and tomato on the bread.|Close the sandwich and press lightly.|Slice in half and serve.",
+                "Lay out the bread slices and spread mayo on one side.|1\nLayer turkey, cheese, lettuce, and tomato on the bread.|2\nClose the sandwich and press lightly.|0\nSlice in half and serve.|0",
                 "",
                 false
         ));
@@ -201,7 +201,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "Low",
                 "Mug, Microwave",
                 "Flour,Sugar,Cocoa powder,Milk,Oil,Baking powder",
-                "Mix all ingredients in a microwave-safe mug until smooth.|Microwave for 60 to 90 seconds until the cake rises.|Let it rest for a minute before eating.|Top with chocolate chips or powdered sugar if available.",
+                "Mix all ingredients in a microwave-safe mug until smooth.|3\nMicrowave for 2 minutes until the cake rises.|2\nLet it rest for a minute before eating.|1\nTop with chocolate chips or powdered sugar if available.|0",
                 "",
                 false
         ));
@@ -213,7 +213,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "Low",
                 "Pan, Spatula",
                 "Eggs,Milk,Butter,Cheese,Salt,Pepper",
-                "Whisk the eggs with a splash of milk, salt, and pepper.|Heat butter in a pan over medium heat.|Pour in the eggs and gently pull the edges inward as they set.|Add cheese, fold the omelette, and cook for one more minute.",
+                "Whisk the eggs with a splash of milk, salt, and pepper.|2\nHeat butter in a pan over medium heat.|1\nPour in the eggs and gently pull the edges inward as they set.|3\nAdd cheese, fold the omelette, and cook for one more minute.|1",
                 "",
                 false
         ));

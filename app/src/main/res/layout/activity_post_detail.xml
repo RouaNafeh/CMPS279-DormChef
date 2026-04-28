@@ -117,6 +117,13 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCookingMode"
+                    style="@style/ModernPrimaryButton"
+                    android:layout_width="match_parent"
+                    android:layout_marginTop="14dp"
+                    android:text="@string/cooking_mode_button" />
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

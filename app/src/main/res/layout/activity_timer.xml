@@ -32,7 +32,7 @@
                     android:layout_width="42dp"
                     android:layout_height="42dp"
                     android:background="@drawable/bg_back_button"
-                    android:contentDescription="Back"
+                    android:contentDescription="@string/back_to_landing"
                     android:padding="10dp"
                     android:src="@android:drawable/ic_menu_revert"
                     app:tint="@color/textDark" />
@@ -42,7 +42,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="14dp"
                     android:fontFamily="@font/genty_sans_regular"
-                    android:text="Cooking Mode"
+                    android:text="@string/cooking_mode_title"
                     android:textColor="@color/textDark"
                     android:textSize="26sp" />
             </LinearLayout>
@@ -105,7 +105,7 @@
                         style="@style/FilterSectionTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Current Step" />
+                        android:text="@string/cooking_current_step_title" />
 
                     <TextView
                         style="@style/FilterSectionHint"
@@ -113,7 +113,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:layout_marginBottom="14dp"
-                        android:text="Follow each step, then move to the next one." />
+                        android:text="@string/cooking_current_step_hint" />
 
                     <TextView
                         android:id="@+id/tvStepDescription"
@@ -148,14 +148,14 @@
                         style="@style/FilterSectionTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Timer" />
+                        android:text="@string/cooking_timer_title" />
 
                     <TextView
                         style="@style/FilterSectionHint"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="Use it for any step that needs a countdown." />
+                        android:text="@string/cooking_timer_hint" />
 
                     <TextView
                         android:id="@+id/tvTimer"
@@ -169,44 +169,13 @@
                         android:textStyle="bold" />
 
                     <TextView
+                        android:id="@+id/tvTimerStatus"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="14dp"
-                        android:text="Set your own time in minutes"
+                        android:text="@string/cooking_no_timer"
                         android:textColor="@color/textMuted"
                         android:textSize="13sp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <EditText
-                            android:id="@+id/etTimerMinutes"
-                            android:layout_width="0dp"
-                            android:layout_height="50dp"
-                            android:layout_weight="1"
-                            android:background="@drawable/search_background"
-                            android:gravity="center"
-                            android:hint="Minutes"
-                            android:imeOptions="actionDone"
-                            android:inputType="number"
-                            android:maxLines="1"
-                            android:textColor="@color/textDark"
-                            android:textColorHint="@color/textGrey"
-                            android:textSize="15sp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnApplyCustomTime"
-                            style="@style/ModernSecondaryButton"
-                            android:layout_width="wrap_content"
-                            android:layout_marginStart="10dp"
-                            android:paddingHorizontal="18dp"
-                            android:text="Set"
-                            />
-                    </LinearLayout>
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -252,8 +221,7 @@
                 android:id="@+id/btnNextStep"
                 style="@style/ModernPrimaryButton"
                 android:layout_width="match_parent"
-                android:text="Next Step"
-                />
+                android:text="Next Step" />
         </LinearLayout>
     </ScrollView>
 

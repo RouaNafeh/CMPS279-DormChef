@@ -10,9 +10,12 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.cookio.app.R;
 import com.cookio.app.databinding.ActivityRecipeDetailBinding;
+import com.cookio.app.models.CookingStep;
+import com.cookio.app.models.CookingStepParser;
 import com.cookio.app.models.RecipeContent;
 import com.google.android.material.chip.Chip;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class RecipeDetailActivity extends AppCompatActivity {
@@ -27,6 +30,7 @@ public class RecipeDetailActivity extends AppCompatActivity {
     public static final String EXTRA_RECIPE_STEPS = "recipe_steps";
 
     private ActivityRecipeDetailBinding binding;
+    private List<CookingStep> cookingSteps = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,14 +50,19 @@ public class RecipeDetailActivity extends AppCompatActivity {
         String customSteps = getIntent().getStringExtra(EXTRA_RECIPE_STEPS);
 
         List<String> ingredients = splitMultiline(customIngredients);
-        List<String> steps = splitMultiline(customSteps);
         RecipeContent.Details details = RecipeContent.getDetails(recipeName);
+        List<CookingStep> detailSteps = CookingStepParser.parseList(details.getSteps());
+        cookingSteps = CookingStepParser.parseDelimited(customSteps);
 
-        if (!ingredients.isEmpty() || !steps.isEmpty()) {
+        if (!ingredients.isEmpty() || !cookingSteps.isEmpty()) {
             details = new RecipeContent.Details(
                     ingredients.isEmpty() ? details.getIngredients() : ingredients,
-                    steps.isEmpty() ? details.getSteps() : steps
+                    cookingSteps.isEmpty() ? details.getSteps() : encodeSteps(cookingSteps)
             );
+        }
+
+        if (cookingSteps.isEmpty()) {
+            cookingSteps = detailSteps;
         }
 
         binding.tvRecipeTitle.setText(recipeName);
@@ -70,12 +79,15 @@ public class RecipeDetailActivity extends AppCompatActivity {
         binding.btnCookingMode.setOnClickListener(v -> {
             Intent intent = new Intent(this, TimerActivity.class);
             intent.putExtra(TimerActivity.EXTRA_RECIPE_NAME, recipeName);
-            intent.putExtra(TimerActivity.EXTRA_RECIPE_STEPS, customSteps);
+            intent.putStringArrayListExtra(
+                    TimerActivity.EXTRA_RECIPE_TIMED_STEPS,
+                    new ArrayList<>(encodeSteps(cookingSteps))
+            );
             startActivity(intent);
         });
 
         populateIngredients(details.getIngredients());
-        populateSteps(details.getSteps());
+        populateSteps(cookingSteps);
     }
 
     private void populateIngredients(List<String> ingredients) {
@@ -92,11 +104,17 @@ public class RecipeDetailActivity extends AppCompatActivity {
         }
     }
 
-    private void populateSteps(List<String> steps) {
+    private void populateSteps(List<CookingStep> steps) {
         binding.stepsContainer.removeAllViews();
         for (int i = 0; i < steps.size(); i++) {
+            CookingStep step = steps.get(i);
             TextView stepView = new TextView(this);
-            stepView.setText((i + 1) + ". " + steps.get(i));
+            StringBuilder label = new StringBuilder();
+            label.append(i + 1).append(". ").append(step.getInstruction());
+            if (step.hasTimer()) {
+                label.append("\n").append(getString(R.string.cooking_minutes_label, step.getMinutes()));
+            }
+            stepView.setText(label.toString());
             stepView.setTextColor(getColor(R.color.textDark));
             stepView.setTextSize(15f);
             stepView.setLineSpacing(0f, 1.25f);
@@ -121,11 +139,11 @@ public class RecipeDetailActivity extends AppCompatActivity {
     }
 
     private List<String> splitMultiline(String rawValue) {
-        java.util.ArrayList<String> values = new java.util.ArrayList<>();
+        ArrayList<String> values = new ArrayList<>();
         if (rawValue == null || rawValue.trim().isEmpty()) {
             return values;
         }
-        String[] lines = rawValue.split("\\r?\\n|\\|");
+        String[] lines = rawValue.split("\\r?\\n");
         for (String line : lines) {
             String[] parts = line.split(",");
             for (String part : parts) {
@@ -138,4 +156,11 @@ public class RecipeDetailActivity extends AppCompatActivity {
         return values;
     }
 
+    private List<String> encodeSteps(List<CookingStep> steps) {
+        List<String> encoded = new ArrayList<>();
+        for (CookingStep step : steps) {
+            encoded.add(step.encode());
+        }
+        return encoded;
+    }
 }
