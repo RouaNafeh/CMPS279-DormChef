@@ -60,6 +60,7 @@ public class HomeActivity extends AppCompatActivity {
         setupSearch();
         setupActions();
         setupBottomNavigation();
+        binding.swipeRefreshLayout.setOnRefreshListener(this::refreshFeed);
     }
 
     @Override
@@ -129,6 +130,10 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
+    private void refreshFeed() {
+        loadFeedData();
+    }
+
     private void loadFeedData() {
         db.collection("posts")
                 .orderBy("createdAt", Query.Direction.DESCENDING)
@@ -151,6 +156,8 @@ public class HomeActivity extends AppCompatActivity {
                     filterAllContent(currentQuery);
                 });
     }
+
+
 
     private void loadSavedPostIds() {
         if (auth.getCurrentUser() == null) {
@@ -243,6 +250,7 @@ public class HomeActivity extends AppCompatActivity {
         if (filteredPosts.isEmpty()) {
             Toast.makeText(this, "No recipes found", Toast.LENGTH_SHORT).show();
         }
+        binding.swipeRefreshLayout.setRefreshing(false);
     }
 
     private void openPostDetail(Post post) {
