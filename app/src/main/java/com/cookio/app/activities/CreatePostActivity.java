@@ -44,7 +44,6 @@ public class CreatePostActivity extends AppCompatActivity {
 
     private Uri selectedImageUri = null;
 
-    // ── Image picker ──────────────────────────────────────────
     private final ActivityResultLauncher<String> imagePickerLauncher =
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
                 if (uri != null) {
@@ -52,7 +51,7 @@ public class CreatePostActivity extends AppCompatActivity {
                     binding.ivImagePreview.setImageURI(uri);
                     binding.ivImagePreview.setVisibility(View.VISIBLE);
                     binding.imagePlaceholder.setVisibility(View.GONE);
-                    binding.tvReselect.setVisibility(View.VISIBLE); // show "Change" button
+                    binding.tvReselect.setVisibility(View.VISIBLE);
                 }
             });
 
@@ -60,9 +59,9 @@ public class CreatePostActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        auth      = FirebaseAuth.getInstance();
+        auth = FirebaseAuth.getInstance();
         firestore = FirebaseFirestore.getInstance();
-        storage   = FirebaseStorage.getInstance(STORAGE_BUCKET_URL);
+        storage = FirebaseStorage.getInstance(STORAGE_BUCKET_URL);
 
         if (auth.getCurrentUser() == null) {
             startActivity(new Intent(this, LandingActivity.class)
@@ -76,11 +75,9 @@ public class CreatePostActivity extends AppCompatActivity {
 
         binding.btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
 
-        // Image picker — tap container OR "Change" label to reselect
         binding.imagePickerContainer.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
         binding.tvReselect.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
 
-        // Start with one empty ingredient row and one empty step row
         addIngredientRow("");
         addStepRow("");
 
@@ -93,19 +90,17 @@ public class CreatePostActivity extends AppCompatActivity {
         binding.btnGenerateAi.setOnClickListener(v -> generateWithAi());
     }
 
-    // ── Dynamic ingredient rows ───────────────────────────────
     private void addIngredientRow(String prefill) {
         View row = LayoutInflater.from(this)
                 .inflate(R.layout.item_dynamic_row, binding.ingredientsContainer, false);
 
-        EditText etRow    = row.findViewById(R.id.etRowInput);
+        EditText etRow = row.findViewById(R.id.etRowInput);
         ImageButton btnDel = row.findViewById(R.id.btnDeleteRow);
 
         etRow.setHint("e.g. 2 eggs");
         if (!prefill.isEmpty()) etRow.setText(prefill);
 
         btnDel.setOnClickListener(v -> {
-            // Keep at least 1 row
             if (binding.ingredientsContainer.getChildCount() > 1) {
                 binding.ingredientsContainer.removeView(row);
             } else {
@@ -116,14 +111,13 @@ public class CreatePostActivity extends AppCompatActivity {
         binding.ingredientsContainer.addView(row);
     }
 
-    // ── Dynamic step rows ─────────────────────────────────────
     private void addStepRow(String prefill) {
         int stepNumber = binding.stepsContainer.getChildCount() + 1;
 
         View row = LayoutInflater.from(this)
                 .inflate(R.layout.item_dynamic_row, binding.stepsContainer, false);
 
-        EditText etRow    = row.findViewById(R.id.etRowInput);
+        EditText etRow = row.findViewById(R.id.etRowInput);
         ImageButton btnDel = row.findViewById(R.id.btnDeleteRow);
 
         etRow.setHint("Step " + stepNumber);
@@ -132,7 +126,6 @@ public class CreatePostActivity extends AppCompatActivity {
         btnDel.setOnClickListener(v -> {
             if (binding.stepsContainer.getChildCount() > 1) {
                 binding.stepsContainer.removeView(row);
-                // Re-number remaining steps
                 renumberSteps();
             } else {
                 etRow.setText("");
@@ -152,7 +145,6 @@ public class CreatePostActivity extends AppCompatActivity {
         }
     }
 
-    // ── Collect list values from containers ───────────────────
     private List<String> collectRows(LinearLayout container) {
         List<String> result = new ArrayList<>();
         for (int i = 0; i < container.getChildCount(); i++) {
@@ -164,28 +156,24 @@ public class CreatePostActivity extends AppCompatActivity {
         return result;
     }
 
-    // ── Validation ────────────────────────────────────────────
     private void validateAndPost() {
-        String title       = text(binding.etTitle);
+        String title = text(binding.etTitle);
         String description = text(binding.etDescription);
-        String cookTime    = text(binding.etCookTime);
-        String budget      = text(binding.etBudget);
+        String cookTime = text(binding.etCookTime);
+        String budget = text(binding.etBudget);
 
-        // 1. Title required
         if (TextUtils.isEmpty(title)) {
             binding.etTitle.setError("Title is required");
             binding.etTitle.requestFocus();
             return;
         }
 
-        // 2. At least 1 ingredient
         List<String> ingredients = collectRows(binding.ingredientsContainer);
         if (ingredients.isEmpty()) {
             Toast.makeText(this, "Add at least one ingredient", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // 3. At least 1 step
         List<String> steps = collectRows(binding.stepsContainer);
         if (steps.isEmpty()) {
             Toast.makeText(this, "Add at least one step", Toast.LENGTH_SHORT).show();
@@ -200,28 +188,25 @@ public class CreatePostActivity extends AppCompatActivity {
         }
     }
 
-    // ── Step 1: Upload image with progress ───────────────────
     private void uploadImageThenSave(String title, String description, String cookTime,
                                      String budget, List<String> ingredients, List<String> steps) {
 
-        String uid      = auth.getCurrentUser().getUid();
+        String uid = auth.getCurrentUser().getUid();
         String filename = UUID.randomUUID().toString() + ".jpg";
         StorageReference ref = storage.getReference()
                 .child("posts").child(uid).child(filename);
 
-        // Show progress bar
         binding.uploadProgressBar.setVisibility(View.VISIBLE);
         binding.tvUploadProgress.setVisibility(View.VISIBLE);
-        binding.tvUploadProgress.setText("Uploading photo… 0%");
+        binding.tvUploadProgress.setText("Uploading photo... 0%");
 
         UploadTask uploadTask = ref.putFile(selectedImageUri);
 
-        // Track progress
         uploadTask.addOnProgressListener(snapshot -> {
             double pct = (100.0 * snapshot.getBytesTransferred()) / snapshot.getTotalByteCount();
             int progress = (int) pct;
             binding.uploadProgressBar.setProgress(progress);
-            binding.tvUploadProgress.setText("Uploading photo… " + progress + "%");
+            binding.tvUploadProgress.setText("Uploading photo... " + progress + "%");
         });
 
         uploadTask
@@ -241,13 +226,15 @@ public class CreatePostActivity extends AppCompatActivity {
                 });
     }
 
-    // ── Step 2: Save post to Firestore ────────────────────────
     private void savePostToFirestore(String title, String description, String cookTime,
                                      String budget, List<String> ingredients,
                                      List<String> steps, String imageUrl) {
 
         FirebaseUser user = auth.getCurrentUser();
-        if (user == null) { setLoading(false); return; }
+        if (user == null) {
+            setLoading(false);
+            return;
+        }
 
         firestore.collection("users").document(user.getUid())
                 .get()
@@ -285,14 +272,13 @@ public class CreatePostActivity extends AppCompatActivity {
                 });
     }
 
-    // ── Helpers ───────────────────────────────────────────────
     private String text(TextInputEditText et) {
         return et.getText() == null ? "" : et.getText().toString().trim();
     }
 
     private void setLoading(boolean loading) {
         binding.btnPost.setEnabled(!loading);
-        binding.btnPost.setText(loading ? "Posting…" : "Post Recipe");
+        binding.btnPost.setText(loading ? "Posting..." : "Post Recipe");
         binding.btnAddIngredient.setEnabled(!loading);
         binding.btnAddStep.setEnabled(!loading);
         binding.btnGenerateAi.setEnabled(!loading);

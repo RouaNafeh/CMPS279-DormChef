@@ -98,7 +98,7 @@ public class ProfileActivity extends AppCompatActivity {
         binding.btnCreatePost.setOnClickListener(v ->
                 startActivity(new Intent(this, CreatePostActivity.class)));
         binding.btnSavedPosts.setOnClickListener(v ->
-                startActivity(new Intent(this, SavedPostsActivity.class)));
+                startActivity(new Intent(this, LikedPostsActivity.class)));
         binding.btnLogout.setOnClickListener(v -> showLogoutConfirmation());
         binding.ivProfilePhoto.setOnClickListener(v -> profileImagePickerLauncher.launch("image/*"));
         binding.tvAvatarInitial.setOnClickListener(v -> profileImagePickerLauncher.launch("image/*"));
@@ -383,6 +383,7 @@ public class ProfileActivity extends AppCompatActivity {
         intent.putExtra(PostDetailActivity.EXTRA_POST_COOK_TIME, post.getCookTime());
         intent.putExtra(PostDetailActivity.EXTRA_POST_BUDGET, post.getBudget());
         intent.putExtra(PostDetailActivity.EXTRA_POST_USERNAME, post.getUsername());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_LIKES_COUNT, post.getLikesCount());
 
         if (post.getIngredients() != null) {
             intent.putStringArrayListExtra(

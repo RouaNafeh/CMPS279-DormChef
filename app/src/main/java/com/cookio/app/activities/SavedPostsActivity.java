@@ -56,6 +56,27 @@ public class SavedPostsActivity extends AppCompatActivity {
                 this::openPostDetail
         );
         postAdapter.setOnPostUnsavedListener(this::removeUnsavedPost);
+        postAdapter.setOnPostSaveStateChangedListener((post, isSaved) -> {
+            if (isSaved) {
+                if (!savedPostIds.contains(post.getPostId())) {
+                    savedPostIds.add(post.getPostId());
+                }
+                if (!containsSavedPost(post.getPostId())) {
+                    savedPostsList.add(post);
+                }
+            } else {
+                savedPostIds.remove(post.getPostId());
+                removeUnsavedPost(post.getPostId());
+            }
+            finishLoading();
+        });
+        postAdapter.setOnPostLikeStateChangedListener((post, isLiked) -> {
+            if (isLiked) {
+                likedPostIds.add(post.getPostId());
+            } else {
+                likedPostIds.remove(post.getPostId());
+            }
+        });
         binding.recyclerSavedPosts.setAdapter(postAdapter);
 
         binding.btnBack.setOnClickListener(v -> navigateBack());
@@ -205,6 +226,7 @@ public class SavedPostsActivity extends AppCompatActivity {
         intent.putExtra(PostDetailActivity.EXTRA_POST_COOK_TIME, post.getCookTime());
         intent.putExtra(PostDetailActivity.EXTRA_POST_BUDGET, post.getBudget());
         intent.putExtra(PostDetailActivity.EXTRA_POST_USERNAME, post.getUsername());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_LIKES_COUNT, post.getLikesCount());
 
         if (post.getIngredients() != null) {
             intent.putStringArrayListExtra(
@@ -254,5 +276,14 @@ public class SavedPostsActivity extends AppCompatActivity {
             }
             return false;
         });
+    }
+
+    private boolean containsSavedPost(String postId) {
+        for (Post post : savedPostsList) {
+            if (postId.equals(post.getPostId())) {
+                return true;
+            }
+        }
+        return false;
     }
 }
