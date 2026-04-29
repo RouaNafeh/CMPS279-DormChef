@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -36,6 +38,11 @@ public class HomeActivity extends AppCompatActivity {
 
     private PostAdapter postAdapter;
     private String currentQuery = "";
+
+    private static final int PAGE_SIZE = 10;
+    private DocumentSnapshot lastVisible = null;
+    private boolean isLoading = false;
+    private boolean isLastPage = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +67,7 @@ public class HomeActivity extends AppCompatActivity {
         setupSearch();
         setupActions();
         setupBottomNavigation();
+        binding.swipeRefreshLayout.setOnRefreshListener(this::refreshFeed);
     }
 
     @Override
@@ -79,6 +87,27 @@ public class HomeActivity extends AppCompatActivity {
         binding.recyclerCards.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerCards.setHasFixedSize(true);
         binding.recyclerCards.setAdapter(postAdapter);
+        binding.recyclerCards.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+
+                if (dy <= 0) return;
+
+                LinearLayoutManager lm = (LinearLayoutManager) recyclerView.getLayoutManager();
+                if (lm == null) return;
+
+                int visibleCount = lm.getChildCount();
+                int totalCount = lm.getItemCount();
+                int firstVisible = lm.findFirstVisibleItemPosition();
+
+                if (!isLoading && !isLastPage
+                        && (visibleCount + firstVisible + 3) >= totalCount
+                        && firstVisible >= 0) {
+                    loadNextPage(false);
+                }
+            }
+        });
     }
 
     private void setupSearch() {
@@ -129,14 +158,46 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
-    private void loadFeedData() {
-        db.collection("posts")
-                .orderBy("createdAt", Query.Direction.DESCENDING)
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    allPosts.clear();
+    private void refreshFeed() {
+        loadFeedData();
+    }
 
-                    for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+    private void loadFeedData() {
+        // Reset pagination state — this is page 1
+        lastVisible = null;
+        isLastPage = false;
+        allPosts.clear();
+        loadNextPage(true);
+    }
+
+    private void loadNextPage(boolean isFirstPage) {
+        if (isLoading || isLastPage) return;
+        isLoading = true;
+
+        com.google.firebase.firestore.Query query = db.collection("posts")
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .limit(PAGE_SIZE);
+
+        if (lastVisible != null) {
+            query = query.startAfter(lastVisible);
+        }
+
+        query.get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<DocumentSnapshot> docs = queryDocumentSnapshots.getDocuments();
+
+                    if (docs.isEmpty()) {
+                        isLastPage = true;
+                        isLoading = false;
+                        if (isFirstPage) {
+                            loadSavedPostIds();
+                        } else {
+                            binding.swipeRefreshLayout.setRefreshing(false);
+                        }
+                        return;
+                    }
+
+                    for (DocumentSnapshot doc : docs) {
                         Post post = doc.toObject(Post.class);
                         if (post != null) {
                             post.setPostId(doc.getId());
@@ -144,13 +205,27 @@ public class HomeActivity extends AppCompatActivity {
                         }
                     }
 
-                    loadSavedPostIds();
+                    lastVisible = docs.get(docs.size() - 1);
+                    if (docs.size() < PAGE_SIZE) {
+                        isLastPage = true;
+                    }
+
+                    isLoading = false;
+
+                    if (isFirstPage) {
+                        loadSavedPostIds();
+                    } else {
+                        filterAllContent(currentQuery);
+                    }
                 })
                 .addOnFailureListener(e -> {
+                    isLoading = false;
                     Toast.makeText(this, "Failed to load posts", Toast.LENGTH_SHORT).show();
-                    filterAllContent(currentQuery);
+                    binding.swipeRefreshLayout.setRefreshing(false);
                 });
     }
+
+
 
     private void loadSavedPostIds() {
         if (auth.getCurrentUser() == null) {
@@ -228,21 +303,19 @@ public class HomeActivity extends AppCompatActivity {
 
             for (Post post : allPosts) {
                 String title = post.getTitle() == null ? "" : post.getTitle().toLowerCase();
-                String description = post.getDescription() == null
-                        ? ""
-                        : post.getDescription().toLowerCase();
+                String username = post.getUsername() == null ? "" : post.getUsername().toLowerCase();
 
-                if (title.contains(query) || description.contains(query)) {
+                if (title.contains(query) || username.contains(query)) {
                     filteredPosts.add(post);
                 }
-            }
-        }
+        }   }
 
         postAdapter.updateData(filteredPosts);
 
         if (filteredPosts.isEmpty()) {
             Toast.makeText(this, "No recipes found", Toast.LENGTH_SHORT).show();
         }
+        binding.swipeRefreshLayout.setRefreshing(false);
     }
 
     private void openPostDetail(Post post) {
