@@ -341,7 +341,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:layout_marginBottom="14dp"
-                        android:text="Only show recipes you can cook right now." />
+                        android:text="Only choose the equipment you can cook with right now." />
 
                     <!-- Microwave switch -->
                     <LinearLayout

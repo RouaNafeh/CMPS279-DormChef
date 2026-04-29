@@ -16,6 +16,9 @@
             android:name=".activities.PostDetailActivity"
             android:exported="false" />
         <activity
+            android:name=".activities.LikedPostsActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.SignupActivity"
             android:exported="false" />
         <activity

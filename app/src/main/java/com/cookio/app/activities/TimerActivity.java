@@ -1,10 +1,8 @@
 package com.cookio.app.activities;
 
-import android.content.res.ColorStateList;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.widget.EditText;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -13,6 +11,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.cookio.app.R;
+import com.cookio.app.models.CookingStep;
+import com.cookio.app.models.CookingStepParser;
 import com.cookio.app.models.RecipeContent;
 
 import java.util.ArrayList;
@@ -22,28 +22,27 @@ public class TimerActivity extends AppCompatActivity {
 
     public static final String EXTRA_RECIPE_NAME = "recipe_name";
     public static final String EXTRA_RECIPE_STEPS = "recipe_steps";
+    public static final String EXTRA_RECIPE_TIMED_STEPS = "recipe_timed_steps";
 
     private TextView tvRecipeTitle;
     private TextView tvStepIndicator;
     private TextView tvStepDescription;
     private TextView tvTimer;
+    private TextView tvTimerStatus;
     private Button btnNextStep;
     private Button btnStart;
     private Button btnPause;
     private Button btnReset;
-    private Button btnApplyCustomTime;
     private ImageButton btnBack;
-    private EditText etTimerMinutes;
 
     private CountDownTimer countDownTimer;
-    private long timeLeftInMillis = 300000;
-    private long selectedDurationInMillis = 300000;
+    private long timeLeftInMillis = 0L;
+    private long selectedDurationInMillis = 0L;
     private boolean timerRunning = false;
 
     private String recipeTitle = "Recipe";
-    private List<String> steps = new ArrayList<>();
+    private List<CookingStep> steps = new ArrayList<>();
     private int currentStep = 0;
-    private int totalSteps = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,10 +52,12 @@ public class TimerActivity extends AppCompatActivity {
         initViews();
         loadRecipeData();
         setupClickListeners();
-        updateStepDisplay();
-        updateTimerDisplay();
-        btnPause.setEnabled(false);
-        btnReset.setEnabled(false);
+        if (steps.isEmpty()) {
+            Toast.makeText(this, R.string.cooking_mode_missing_steps, Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+        loadCurrentStep();
     }
 
     private void initViews() {
@@ -64,13 +65,12 @@ public class TimerActivity extends AppCompatActivity {
         tvStepIndicator = findViewById(R.id.tvStepIndicator);
         tvStepDescription = findViewById(R.id.tvStepDescription);
         tvTimer = findViewById(R.id.tvTimer);
+        tvTimerStatus = findViewById(R.id.tvTimerStatus);
         btnNextStep = findViewById(R.id.btnNextStep);
         btnStart = findViewById(R.id.btnStart);
         btnPause = findViewById(R.id.btnPause);
         btnReset = findViewById(R.id.btnReset);
-        btnApplyCustomTime = findViewById(R.id.btnApplyCustomTime);
         btnBack = findViewById(R.id.btnBack);
-        etTimerMinutes = findViewById(R.id.etTimerMinutes);
     }
 
     private void loadRecipeData() {
@@ -78,14 +78,21 @@ public class TimerActivity extends AppCompatActivity {
         if (recipeTitle == null || recipeTitle.trim().isEmpty()) {
             recipeTitle = "Recipe";
         }
-
         tvRecipeTitle.setText(recipeTitle);
-        String customSteps = getIntent().getStringExtra(EXTRA_RECIPE_STEPS);
-        steps = splitMultiline(customSteps);
-        if (steps.isEmpty()) {
-            steps = new ArrayList<>(RecipeContent.getDetails(recipeTitle).getSteps());
+
+        ArrayList<String> timedSteps = getIntent().getStringArrayListExtra(EXTRA_RECIPE_TIMED_STEPS);
+        if (timedSteps != null && !timedSteps.isEmpty()) {
+            steps = CookingStepParser.parseList(timedSteps);
         }
-        totalSteps = steps.size();
+
+        if (steps.isEmpty()) {
+            String customSteps = getIntent().getStringExtra(EXTRA_RECIPE_STEPS);
+            steps = CookingStepParser.parseDelimited(customSteps);
+        }
+
+        if (steps.isEmpty()) {
+            steps = CookingStepParser.parseList(RecipeContent.getDetails(recipeTitle).getSteps());
+        }
     }
 
     private void setupClickListeners() {
@@ -94,15 +101,50 @@ public class TimerActivity extends AppCompatActivity {
         btnPause.setOnClickListener(v -> pauseTimer());
         btnReset.setOnClickListener(v -> resetTimer());
         btnNextStep.setOnClickListener(v -> nextStep());
-        btnApplyCustomTime.setOnClickListener(v -> applyCustomTime());
-        etTimerMinutes.setText(String.valueOf(selectedDurationInMillis / 60000L));
+    }
+
+    private void loadCurrentStep() {
+        cancelTimer();
+
+        CookingStep step = steps.get(currentStep);
+        selectedDurationInMillis = step.getMinutes() * 60000L;
+        timeLeftInMillis = selectedDurationInMillis;
+        timerRunning = false;
+
+        tvStepIndicator.setText(getString(R.string.cooking_step_of_total, currentStep + 1, steps.size()));
+        tvStepDescription.setText(step.getInstruction());
+
+        updateTimerDisplay();
+        updateTimerControls(step.hasTimer());
+        btnNextStep.setText(currentStep == steps.size() - 1 ? "Finish" : "Next Step");
+    }
+
+    private void updateTimerControls(boolean hasTimer) {
+        if (hasTimer) {
+            tvTimerStatus.setText(getString(R.string.cooking_minutes_label, steps.get(currentStep).getMinutes()));
+            btnStart.setEnabled(true);
+            btnPause.setEnabled(false);
+            btnReset.setEnabled(false);
+            btnStart.setVisibility(View.VISIBLE);
+            btnPause.setVisibility(View.VISIBLE);
+            btnReset.setVisibility(View.VISIBLE);
+        } else {
+            tvTimerStatus.setText(R.string.cooking_no_timer);
+            btnStart.setEnabled(false);
+            btnPause.setEnabled(false);
+            btnReset.setEnabled(false);
+            btnStart.setVisibility(View.GONE);
+            btnPause.setVisibility(View.GONE);
+            btnReset.setVisibility(View.GONE);
+        }
     }
 
     private void startTimer() {
-        if (countDownTimer != null) {
-            countDownTimer.cancel();
+        if (!steps.get(currentStep).hasTimer() || timerRunning) {
+            return;
         }
 
+        cancelTimer();
         countDownTimer = new CountDownTimer(timeLeftInMillis, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
@@ -113,15 +155,16 @@ public class TimerActivity extends AppCompatActivity {
             @Override
             public void onFinish() {
                 timerRunning = false;
-                Toast.makeText(TimerActivity.this, "Time's up! Check your cooking!", Toast.LENGTH_LONG).show();
+                timeLeftInMillis = 0L;
+                updateTimerDisplay();
                 btnStart.setEnabled(true);
                 btnPause.setEnabled(false);
                 btnReset.setEnabled(true);
+                tvTimerStatus.setText(R.string.cooking_timer_done);
+                Toast.makeText(TimerActivity.this, R.string.cooking_timer_done, Toast.LENGTH_LONG).show();
             }
         }.start();
 
-        btnPause.setText("Pause");
-        btnPause.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FF9800")));
         timerRunning = true;
         btnStart.setEnabled(false);
         btnPause.setEnabled(true);
@@ -129,115 +172,57 @@ public class TimerActivity extends AppCompatActivity {
     }
 
     private void pauseTimer() {
-        if (timerRunning) {
-            countDownTimer.cancel();
-            timerRunning = false;
-            btnPause.setText("Cont.");
-            btnPause.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#4CAF50")));
-        } else {
+        if (!timerRunning) {
             startTimer();
-            btnPause.setText("Pause");
-            btnPause.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#D59493")));
-        }
-    }
-
-    private void resetTimer() {
-        if (countDownTimer != null) {
-            countDownTimer.cancel();
+            return;
         }
 
-        timeLeftInMillis = selectedDurationInMillis;
-        updateTimerDisplay();
-        btnPause.setText("Pause");
-        btnPause.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#D59493")));
+        cancelTimer();
         timerRunning = false;
         btnStart.setEnabled(true);
         btnPause.setEnabled(false);
-        btnReset.setEnabled(false);
+        btnReset.setEnabled(true);
     }
 
-    private void nextStep() {
-        if (currentStep < totalSteps - 1) {
-            currentStep++;
-            updateStepDisplay();
-            resetTimer();
-            Toast.makeText(this, "Moving to step " + (currentStep + 1), Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(this, "Recipe completed!", Toast.LENGTH_LONG).show();
-            finish();
+    private void resetTimer() {
+        cancelTimer();
+        timerRunning = false;
+        timeLeftInMillis = selectedDurationInMillis;
+        updateTimerDisplay();
+        btnStart.setEnabled(steps.get(currentStep).hasTimer());
+        btnPause.setEnabled(false);
+        btnReset.setEnabled(false);
+        if (steps.get(currentStep).hasTimer()) {
+            tvTimerStatus.setText(getString(R.string.cooking_minutes_label, steps.get(currentStep).getMinutes()));
         }
     }
 
-    private void updateStepDisplay() {
-        tvStepIndicator.setText("Step " + (currentStep + 1) + " of " + totalSteps);
-        tvStepDescription.setText(steps.get(currentStep));
+    private void nextStep() {
+        if (currentStep < steps.size() - 1) {
+            currentStep++;
+            loadCurrentStep();
+        } else {
+            Toast.makeText(this, R.string.cooking_recipe_complete, Toast.LENGTH_LONG).show();
+            finish();
+        }
     }
 
     private void updateTimerDisplay() {
         int minutes = (int) (timeLeftInMillis / 1000) / 60;
         int seconds = (int) (timeLeftInMillis / 1000) % 60;
-        String timeFormatted = String.format("%02d:%02d", minutes, seconds);
-        tvTimer.setText(timeFormatted);
+        tvTimer.setText(String.format("%02d:%02d", minutes, seconds));
     }
 
-    private void applyCustomTime() {
-        if (timerRunning) {
-            Toast.makeText(this, "Pause or reset the timer before changing it.", Toast.LENGTH_SHORT).show();
-            return;
+    private void cancelTimer() {
+        if (countDownTimer != null) {
+            countDownTimer.cancel();
+            countDownTimer = null;
         }
-
-        String input = etTimerMinutes.getText().toString().trim();
-        if (input.isEmpty()) {
-            Toast.makeText(this, "Enter the number of minutes you need.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        int minutes;
-        try {
-            minutes = Integer.parseInt(input);
-        } catch (NumberFormatException e) {
-            Toast.makeText(this, "Enter a valid number of minutes.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (minutes < 1) {
-            Toast.makeText(this, "Timer must be at least 1 minute.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (minutes > 60) {
-            Toast.makeText(this, "Timer cannot be more than 60 minutes.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        selectedDurationInMillis = minutes * 60000L;
-        timeLeftInMillis = selectedDurationInMillis;
-        updateTimerDisplay();
-        Toast.makeText(this, "Timer set to " + minutes + " minute" + (minutes == 1 ? "" : "s") + ".", Toast.LENGTH_SHORT).show();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (countDownTimer != null) {
-            countDownTimer.cancel();
-        }
-    }
-
-    private ArrayList<String> splitMultiline(String rawValue) {
-        ArrayList<String> values = new ArrayList<>();
-        if (rawValue == null || rawValue.trim().isEmpty()) {
-            return values;
-        }
-        String[] lines = rawValue.split("\\r?\\n|\\|");
-        for (String line : lines) {
-            for (String part : line.split(",")) {
-                String trimmed = part.trim();
-                if (!trimmed.isEmpty()) {
-                    values.add(trimmed);
-                }
-            }
-        }
-        return values;
+        cancelTimer();
     }
 }

@@ -40,10 +40,11 @@ public class AiRecipeHelper {
                         + "TITLE: ...\n"
                         + "DESCRIPTION: ...\n"
                         + "INGREDIENTS: item1, item2, item3\n"
-                        + "STEPS: step1 | step2 | step3\n"
+                        + "STEPS: step1 instruction|minutes || step2 instruction|minutes || step3 instruction|minutes\n"
                         + "TIME: ...\n"
                         + "BUDGET: Low/Medium/High\n"
-                        + "EQUIPMENT: ...";
+                        + "EQUIPMENT: ...\n"
+                        + "Use 0 minutes when a step does not need a timer.";
 
         Content content = new Content.Builder()
                 .addText(prompt)

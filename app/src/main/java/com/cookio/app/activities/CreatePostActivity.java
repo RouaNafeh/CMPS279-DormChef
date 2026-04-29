@@ -18,6 +18,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.cookio.app.R;
 import com.cookio.app.ai.AiRecipeHelper;
 import com.cookio.app.databinding.ActivityCreatePostBinding;
+import com.cookio.app.models.CookingStep;
+import com.cookio.app.models.CookingStepParser;
 import com.cookio.app.models.Post;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
@@ -57,7 +59,6 @@ public class CreatePostActivity extends AppCompatActivity {
     private String editingPostId = null;
     private String existingImageUrl = "";
 
-    // ── Image picker ──────────────────────────────────────────
     private final ActivityResultLauncher<String> imagePickerLauncher =
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
                 if (uri != null) {
@@ -65,7 +66,7 @@ public class CreatePostActivity extends AppCompatActivity {
                     binding.ivImagePreview.setImageURI(uri);
                     binding.ivImagePreview.setVisibility(View.VISIBLE);
                     binding.imagePlaceholder.setVisibility(View.GONE);
-                    binding.tvReselect.setVisibility(View.VISIBLE); // show "Change" button
+                    binding.tvReselect.setVisibility(View.VISIBLE);
                 }
             });
 
@@ -73,9 +74,9 @@ public class CreatePostActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        auth      = FirebaseAuth.getInstance();
+        auth = FirebaseAuth.getInstance();
         firestore = FirebaseFirestore.getInstance();
-        storage   = FirebaseStorage.getInstance(STORAGE_BUCKET_URL);
+        storage = FirebaseStorage.getInstance(STORAGE_BUCKET_URL);
 
         if (auth.getCurrentUser() == null) {
             startActivity(new Intent(this, LandingActivity.class)
@@ -95,20 +96,16 @@ public class CreatePostActivity extends AppCompatActivity {
         }
 
         binding.btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
-
-        // Image picker — tap container OR "Change" label to reselect
         binding.imagePickerContainer.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
         binding.tvReselect.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
 
-        // Start with one empty ingredient row, one empty equipment row, and one empty step row
         addIngredientRow("");
         addEquipmentRow("");
-        addStepRow("");
+        addStepRow(new CookingStep("", 0));
 
         binding.btnAddIngredient.setOnClickListener(v -> addIngredientRow(""));
         binding.btnAddEquipment.setOnClickListener(v -> addEquipmentRow(""));
-        binding.btnAddStep.setOnClickListener(v -> addStepRow(""));
-
+        binding.btnAddStep.setOnClickListener(v -> addStepRow(new CookingStep("", 0)));
         binding.btnPost.setOnClickListener(v -> validateAndPost());
 
         aiRecipeHelper = new AiRecipeHelper();
@@ -120,19 +117,19 @@ public class CreatePostActivity extends AppCompatActivity {
         }
     }
 
-    // ── Dynamic ingredient rows ───────────────────────────────
     private void addIngredientRow(String prefill) {
         View row = LayoutInflater.from(this)
                 .inflate(R.layout.item_dynamic_row, binding.ingredientsContainer, false);
 
-        EditText etRow    = row.findViewById(R.id.etRowInput);
+        EditText etRow = row.findViewById(R.id.etRowInput);
         ImageButton btnDel = row.findViewById(R.id.btnDeleteRow);
 
         etRow.setHint("e.g. 2 eggs");
-        if (!prefill.isEmpty()) etRow.setText(prefill);
+        if (!prefill.isEmpty()) {
+            etRow.setText(prefill);
+        }
 
         btnDel.setOnClickListener(v -> {
-            // Keep at least 1 row
             if (binding.ingredientsContainer.getChildCount() > 1) {
                 binding.ingredientsContainer.removeView(row);
             } else {
@@ -143,32 +140,6 @@ public class CreatePostActivity extends AppCompatActivity {
         binding.ingredientsContainer.addView(row);
     }
 
-    // ── Dynamic step rows ─────────────────────────────────────
-    private void addStepRow(String prefill) {
-        int stepNumber = binding.stepsContainer.getChildCount() + 1;
-
-        View row = LayoutInflater.from(this)
-                .inflate(R.layout.item_dynamic_row, binding.stepsContainer, false);
-
-        EditText etRow    = row.findViewById(R.id.etRowInput);
-        ImageButton btnDel = row.findViewById(R.id.btnDeleteRow);
-
-        etRow.setHint("Step " + stepNumber);
-        if (!prefill.isEmpty()) etRow.setText(prefill);
-
-        btnDel.setOnClickListener(v -> {
-            if (binding.stepsContainer.getChildCount() > 1) {
-                binding.stepsContainer.removeView(row);
-                // Re-number remaining steps
-                renumberSteps();
-            } else {
-                etRow.setText("");
-            }
-        });
-
-        binding.stepsContainer.addView(row);
-    }
-
     private void addEquipmentRow(String prefill) {
         View row = LayoutInflater.from(this)
                 .inflate(R.layout.item_dynamic_row, binding.equipmentContainer, false);
@@ -177,7 +148,9 @@ public class CreatePostActivity extends AppCompatActivity {
         ImageButton btnDel = row.findViewById(R.id.btnDeleteRow);
 
         etRow.setHint("e.g. pan, whisk, oven");
-        if (!prefill.isEmpty()) etRow.setText(prefill);
+        if (!prefill.isEmpty()) {
+            etRow.setText(prefill);
+        }
 
         btnDel.setOnClickListener(v -> {
             if (binding.equipmentContainer.getChildCount() > 1) {
@@ -190,44 +163,103 @@ public class CreatePostActivity extends AppCompatActivity {
         binding.equipmentContainer.addView(row);
     }
 
+    private void addStepRow(CookingStep step) {
+        int stepNumber = binding.stepsContainer.getChildCount() + 1;
+
+        View row = LayoutInflater.from(this)
+                .inflate(R.layout.item_step_timer_row, binding.stepsContainer, false);
+
+        EditText etInstruction = row.findViewById(R.id.etStepInstruction);
+        EditText etMinutes = row.findViewById(R.id.etStepMinutes);
+        ImageButton btnDelete = row.findViewById(R.id.btnDeleteStepRow);
+
+        etInstruction.setHint("Step " + stepNumber);
+        etInstruction.setText(step.getInstruction());
+        etMinutes.setText(String.valueOf(step.getMinutes()));
+
+        btnDelete.setOnClickListener(v -> {
+            if (binding.stepsContainer.getChildCount() > 1) {
+                binding.stepsContainer.removeView(row);
+                renumberSteps();
+            } else {
+                etInstruction.setText("");
+                etMinutes.setText("0");
+            }
+        });
+
+        binding.stepsContainer.addView(row);
+    }
+
     private void renumberSteps() {
         for (int i = 0; i < binding.stepsContainer.getChildCount(); i++) {
             View row = binding.stepsContainer.getChildAt(i);
-            EditText et = row.findViewById(R.id.etRowInput);
-            if (et.getText().toString().isEmpty()) {
-                et.setHint("Step " + (i + 1));
+            EditText etInstruction = row.findViewById(R.id.etStepInstruction);
+            if (etInstruction.getText().toString().isEmpty()) {
+                etInstruction.setHint("Step " + (i + 1));
             }
         }
     }
 
-    // ── Collect list values from containers ───────────────────
     private List<String> collectRows(LinearLayout container) {
         List<String> result = new ArrayList<>();
         for (int i = 0; i < container.getChildCount(); i++) {
             View row = container.getChildAt(i);
             EditText et = row.findViewById(R.id.etRowInput);
             String val = et.getText().toString().trim();
-            if (!val.isEmpty()) result.add(val);
+            if (!val.isEmpty()) {
+                result.add(val);
+            }
         }
         return result;
     }
 
-    // ── Validation ────────────────────────────────────────────
-    private void validateAndPost() {
-        String title       = text(binding.etTitle);
-        String description = text(binding.etDescription);
-        String cookTime    = text(binding.etCookTime);
-        String budget      = text(binding.etBudget);
+    private List<String> collectIngredientRows(LinearLayout container) {
+        return collectRows(container);
+    }
 
-        // 1. Title required
+    private List<CookingStep> collectStepRows() {
+        List<CookingStep> steps = new ArrayList<>();
+        for (int i = 0; i < binding.stepsContainer.getChildCount(); i++) {
+            View row = binding.stepsContainer.getChildAt(i);
+            EditText etInstruction = row.findViewById(R.id.etStepInstruction);
+            EditText etMinutes = row.findViewById(R.id.etStepMinutes);
+
+            String instruction = etInstruction.getText().toString().trim();
+            String minutesRaw = etMinutes.getText().toString().trim();
+
+            if (instruction.isEmpty()) {
+                continue;
+            }
+
+            int minutes;
+            try {
+                minutes = minutesRaw.isEmpty() ? 0 : Integer.parseInt(minutesRaw);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException(getString(R.string.step_time_invalid));
+            }
+
+            if (minutes < 0) {
+                throw new IllegalArgumentException(getString(R.string.step_time_invalid));
+            }
+
+            steps.add(new CookingStep(instruction, minutes));
+        }
+        return steps;
+    }
+
+    private void validateAndPost() {
+        String title = text(binding.etTitle);
+        String description = text(binding.etDescription);
+        String cookTime = text(binding.etCookTime);
+        String budget = text(binding.etBudget);
+
         if (TextUtils.isEmpty(title)) {
             binding.etTitle.setError("Title is required");
             binding.etTitle.requestFocus();
             return;
         }
 
-        // 2. At least 1 ingredient
-        List<String> ingredients = collectRows(binding.ingredientsContainer);
+        List<String> ingredients = collectIngredientRows(binding.ingredientsContainer);
         if (ingredients.isEmpty()) {
             Toast.makeText(this, "Add at least one ingredient", Toast.LENGTH_SHORT).show();
             return;
@@ -235,44 +267,52 @@ public class CreatePostActivity extends AppCompatActivity {
 
         List<String> equipment = collectRows(binding.equipmentContainer);
 
-        // 3. At least 1 step
-        List<String> steps = collectRows(binding.stepsContainer);
-        if (steps.isEmpty()) {
-            Toast.makeText(this, "Add at least one step", Toast.LENGTH_SHORT).show();
+        List<CookingStep> cookingSteps;
+        try {
+            cookingSteps = collectStepRows();
+        } catch (IllegalArgumentException e) {
+            Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
             return;
         }
 
+        if (cookingSteps.isEmpty()) {
+            Toast.makeText(this, R.string.step_instruction_required, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        List<String> encodedSteps = new ArrayList<>();
+        for (CookingStep step : cookingSteps) {
+            encodedSteps.add(step.encode());
+        }
+
         setLoading(true);
+        String imageUrl = selectedImageUri == null ? existingImageUrl : null;
         if (selectedImageUri != null) {
-            uploadImageThenSave(title, description, cookTime, budget, ingredients, equipment, steps);
+            uploadImageThenSave(title, description, cookTime, budget, ingredients, equipment, encodedSteps);
         } else {
-            savePostToFirestore(title, description, cookTime, budget, ingredients, equipment, steps, existingImageUrl);
+            savePostToFirestore(title, description, cookTime, budget, ingredients, equipment, encodedSteps, imageUrl);
         }
     }
 
-    // ── Step 1: Upload image with progress ───────────────────
     private void uploadImageThenSave(String title, String description, String cookTime,
                                      String budget, List<String> ingredients, List<String> equipment,
                                      List<String> steps) {
-
-        String uid      = auth.getCurrentUser().getUid();
+        String uid = auth.getCurrentUser().getUid();
         String filename = UUID.randomUUID().toString() + ".jpg";
         StorageReference ref = storage.getReference()
                 .child("posts").child(uid).child(filename);
 
-        // Show progress bar
         binding.uploadProgressBar.setVisibility(View.VISIBLE);
         binding.tvUploadProgress.setVisibility(View.VISIBLE);
-        binding.tvUploadProgress.setText("Uploading photo… 0%");
+        binding.tvUploadProgress.setText("Uploading photo... 0%");
 
         UploadTask uploadTask = ref.putFile(selectedImageUri);
 
-        // Track progress
         uploadTask.addOnProgressListener(snapshot -> {
             double pct = (100.0 * snapshot.getBytesTransferred()) / snapshot.getTotalByteCount();
             int progress = (int) pct;
             binding.uploadProgressBar.setProgress(progress);
-            binding.tvUploadProgress.setText("Uploading photo… " + progress + "%");
+            binding.tvUploadProgress.setText("Uploading photo... " + progress + "%");
         });
 
         uploadTask
@@ -292,19 +332,22 @@ public class CreatePostActivity extends AppCompatActivity {
                 });
     }
 
-    // ── Step 2: Save post to Firestore ────────────────────────
     private void savePostToFirestore(String title, String description, String cookTime,
                                      String budget, List<String> ingredients, List<String> equipment,
                                      List<String> steps, String imageUrl) {
-
         FirebaseUser user = auth.getCurrentUser();
-        if (user == null) { setLoading(false); return; }
+        if (user == null) {
+            setLoading(false);
+            return;
+        }
 
         firestore.collection("users").document(user.getUid())
                 .get()
                 .addOnSuccessListener(userDoc -> {
                     String username = userDoc.getString("username");
-                    if (username == null) username = "Unknown";
+                    if (username == null) {
+                        username = "Unknown";
+                    }
 
                     Post post = new Post(
                             user.getUid(), username, title, description,
@@ -362,7 +405,6 @@ public class CreatePostActivity extends AppCompatActivity {
                 });
     }
 
-    // ── Helpers ───────────────────────────────────────────────
     private String text(TextInputEditText et) {
         return et.getText() == null ? "" : et.getText().toString().trim();
     }
@@ -377,26 +419,14 @@ public class CreatePostActivity extends AppCompatActivity {
         ArrayList<String> equipment = getIntent().getStringArrayListExtra(EXTRA_POST_EQUIPMENT);
         ArrayList<String> steps = getIntent().getStringArrayListExtra(EXTRA_POST_STEPS);
 
-        replaceDynamicRows(
-                binding.ingredientsContainer,
-                ingredients != null ? ingredients : new ArrayList<>(),
-                true
-        );
-        replaceDynamicRows(
-                binding.equipmentContainer,
-                equipment != null ? equipment : new ArrayList<>(),
-                true
-        );
-        replaceDynamicRows(
-                binding.stepsContainer,
-                steps != null ? steps : new ArrayList<>(),
-                false
-        );
+        replaceIngredientRows(ingredients != null ? ingredients : new ArrayList<>());
+        replaceEquipmentRows(equipment != null ? equipment : new ArrayList<>());
+        replaceStepRows(CookingStepParser.parseList(steps));
     }
 
     private void setLoading(boolean loading) {
         binding.btnPost.setEnabled(!loading);
-        binding.btnPost.setText(loading ? "Posting…" : "Post Recipe");
+        binding.btnPost.setText(loading ? "Posting..." : (isEditMode ? "Save Changes" : "Post Recipe"));
         binding.btnAddIngredient.setEnabled(!loading);
         binding.btnAddEquipment.setEnabled(!loading);
         binding.btnAddStep.setEnabled(!loading);
@@ -404,7 +434,7 @@ public class CreatePostActivity extends AppCompatActivity {
     }
 
     private void generateWithAi() {
-        List<String> ingredientRows = collectRows(binding.ingredientsContainer);
+        List<String> ingredientRows = collectIngredientRows(binding.ingredientsContainer);
         String ingredients = TextUtils.join(", ", ingredientRows);
 
         if (ingredients.isEmpty()) {
@@ -421,7 +451,6 @@ public class CreatePostActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     binding.btnGenerateAi.setEnabled(true);
                     binding.btnGenerateAi.setText("Generate with AI");
-
                     showAiResult(result);
                 });
             }
@@ -450,45 +479,47 @@ public class CreatePostActivity extends AppCompatActivity {
         binding.etCookTime.setText(normalizeCookTime(extractSection(result, "TIME")));
         binding.etBudget.setText(normalizeBudget(extractSection(result, "BUDGET")));
 
-        replaceDynamicRows(
-                binding.ingredientsContainer,
-                splitAiList(extractSection(result, "INGREDIENTS"), ","),
-                true
-        );
-        replaceDynamicRows(
-                binding.equipmentContainer,
-                splitAiList(extractSection(result, "EQUIPMENT"), ","),
-                true
-        );
-        replaceDynamicRows(
-                binding.stepsContainer,
-                splitAiList(extractSection(result, "STEPS"), "\\|"),
-                false
-        );
+        replaceIngredientRows(splitAiList(extractSection(result, "INGREDIENTS"), ","));
+        replaceEquipmentRows(splitAiList(extractSection(result, "EQUIPMENT"), ","));
+        replaceStepRows(CookingStepParser.parseDelimited(extractSection(result, "STEPS")));
     }
 
-    private void replaceDynamicRows(LinearLayout container, List<String> values, boolean isIngredients) {
-        container.removeAllViews();
+    private void replaceIngredientRows(List<String> values) {
+        binding.ingredientsContainer.removeAllViews();
 
         if (values.isEmpty()) {
-            if (container == binding.equipmentContainer) {
-                addEquipmentRow("");
-            } else if (isIngredients) {
-                addIngredientRow("");
-            } else {
-                addStepRow("");
-            }
+            addIngredientRow("");
             return;
         }
 
         for (String value : values) {
-            if (container == binding.equipmentContainer) {
-                addEquipmentRow(value);
-            } else if (isIngredients) {
-                addIngredientRow(value);
-            } else {
-                addStepRow(value);
-            }
+            addIngredientRow(value);
+        }
+    }
+
+    private void replaceEquipmentRows(List<String> values) {
+        binding.equipmentContainer.removeAllViews();
+
+        if (values.isEmpty()) {
+            addEquipmentRow("");
+            return;
+        }
+
+        for (String value : values) {
+            addEquipmentRow(value);
+        }
+    }
+
+    private void replaceStepRows(List<CookingStep> values) {
+        binding.stepsContainer.removeAllViews();
+
+        if (values.isEmpty()) {
+            addStepRow(new CookingStep("", 0));
+            return;
+        }
+
+        for (CookingStep step : values) {
+            addStepRow(step);
         }
     }
 
@@ -534,7 +565,8 @@ public class CreatePostActivity extends AppCompatActivity {
         List<String> compact = new ArrayList<>();
 
         for (int i = 0; i < tokens.length - 1; i++) {
-            if (tokens[i].matches("\\d+") && (tokens[i + 1].equals("min") || tokens[i + 1].equals("hr"))) {
+            if (tokens[i].matches("\\d+")
+                    && (tokens[i + 1].equals("min") || tokens[i + 1].equals("hr"))) {
                 compact.add(tokens[i] + " " + tokens[i + 1]);
                 i++;
             }
