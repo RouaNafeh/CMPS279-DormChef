@@ -91,6 +91,7 @@ public class ProfileActivity extends AppCompatActivity {
                 this::openPostDetail
         );
         postAdapter.setOnPostDeleteListener(post -> showDeleteDialog(post));
+        postAdapter.setOnPostEditListener(this::showPostActionsDialog);
         binding.rvMyPosts.setNestedScrollingEnabled(false);
         binding.rvMyPosts.setAdapter(postAdapter);
 
@@ -171,6 +172,55 @@ public class ProfileActivity extends AppCompatActivity {
                 .setPositiveButton("Delete", (dialog, which) -> deletePost(post))
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    private void showPostActionsDialog(Post post) {
+        String[] options = {"Edit Post", "Delete Post"};
+
+        new AlertDialog.Builder(this)
+                .setTitle(post.getTitle())
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        openEditPost(post);
+                    } else if (which == 1) {
+                        showDeleteDialog(post);
+                    }
+                })
+                .show();
+    }
+
+    private void openEditPost(Post post) {
+        Intent intent = new Intent(this, CreatePostActivity.class);
+        intent.putExtra(CreatePostActivity.EXTRA_EDIT_MODE, true);
+        intent.putExtra(CreatePostActivity.EXTRA_POST_ID, post.getPostId());
+        intent.putExtra(CreatePostActivity.EXTRA_POST_TITLE, post.getTitle());
+        intent.putExtra(CreatePostActivity.EXTRA_POST_DESCRIPTION, post.getDescription());
+        intent.putExtra(CreatePostActivity.EXTRA_POST_COOK_TIME, post.getCookTime());
+        intent.putExtra(CreatePostActivity.EXTRA_POST_BUDGET, post.getBudget());
+        intent.putExtra(CreatePostActivity.EXTRA_POST_IMAGE_URL, post.getImageUrl());
+
+        if (post.getIngredients() != null) {
+            intent.putStringArrayListExtra(
+                    CreatePostActivity.EXTRA_POST_INGREDIENTS,
+                    new ArrayList<>(post.getIngredients())
+            );
+        }
+
+        if (post.getEquipment() != null) {
+            intent.putStringArrayListExtra(
+                    CreatePostActivity.EXTRA_POST_EQUIPMENT,
+                    new ArrayList<>(post.getEquipment())
+            );
+        }
+
+        if (post.getSteps() != null) {
+            intent.putStringArrayListExtra(
+                    CreatePostActivity.EXTRA_POST_STEPS,
+                    new ArrayList<>(post.getSteps())
+            );
+        }
+
+        startActivity(intent);
     }
 
     private void loadProfile() {
@@ -388,6 +438,13 @@ public class ProfileActivity extends AppCompatActivity {
             intent.putStringArrayListExtra(
                     PostDetailActivity.EXTRA_POST_INGREDIENTS,
                     new ArrayList<>(post.getIngredients())
+            );
+        }
+
+        if (post.getEquipment() != null) {
+            intent.putStringArrayListExtra(
+                    PostDetailActivity.EXTRA_POST_EQUIPMENT,
+                    new ArrayList<>(post.getEquipment())
             );
         }
 

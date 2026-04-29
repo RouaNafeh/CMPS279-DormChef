@@ -14,6 +14,7 @@ public class Post {
     private String cookTime;
     private String budget;
     private List<String> ingredients;
+    private List<String> equipment;
     private List<String> steps;
     private String imageUrl;
     @ServerTimestamp
@@ -24,7 +25,7 @@ public class Post {
     public Post() {}
 
     public Post(String uid, String username, String title, String description,
-                String cookTime, String budget, List<String> ingredients,
+                String cookTime, String budget, List<String> ingredients, List<String> equipment,
                 List<String> steps, String imageUrl) {
         this.uid         = uid;
         this.username    = username;
@@ -33,6 +34,7 @@ public class Post {
         this.cookTime    = cookTime;
         this.budget      = budget;
         this.ingredients = ingredients;
+        this.equipment   = equipment;
         this.steps       = steps;
         this.imageUrl    = imageUrl;
         this.likesCount  = 0;
@@ -46,6 +48,7 @@ public class Post {
     public String getCookTime()         { return cookTime; }
     public String getBudget()           { return budget; }
     public List<String> getIngredients(){ return ingredients; }
+    public List<String> getEquipment()  { return equipment; }
     public List<String> getSteps()      { return steps; }
     public String getImageUrl()         { return imageUrl; }
     public Date getCreatedAt()          { return createdAt; }

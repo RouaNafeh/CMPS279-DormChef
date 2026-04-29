@@ -1,5 +1,6 @@
 package com.cookio.app.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -24,6 +25,7 @@ public class PostDetailActivity extends AppCompatActivity {
     public static final String EXTRA_POST_BUDGET      = "post_budget";
     public static final String EXTRA_POST_USERNAME    = "post_username";
     public static final String EXTRA_POST_INGREDIENTS = "post_ingredients";
+    public static final String EXTRA_POST_EQUIPMENT   = "post_equipment";
     public static final String EXTRA_POST_STEPS       = "post_steps";
 
     @Override
@@ -44,6 +46,8 @@ public class PostDetailActivity extends AppCompatActivity {
         String username    = getIntent().getStringExtra(EXTRA_POST_USERNAME);
         ArrayList<String> ingredients =
                 getIntent().getStringArrayListExtra(EXTRA_POST_INGREDIENTS);
+        ArrayList<String> equipment =
+                getIntent().getStringArrayListExtra(EXTRA_POST_EQUIPMENT);
         ArrayList<String> steps =
                 getIntent().getStringArrayListExtra(EXTRA_POST_STEPS);
 
@@ -55,6 +59,9 @@ public class PostDetailActivity extends AppCompatActivity {
         TextView   tvCookTime    = findViewById(R.id.tvPostCookTime);
         TextView   tvBudget      = findViewById(R.id.tvPostBudget);
         ChipGroup  cgIngredients = findViewById(R.id.chipGroupIngredients);
+        ChipGroup  cgEquipment   = findViewById(R.id.chipGroupEquipment);
+        com.google.android.material.button.MaterialButton btnCookingMode =
+                findViewById(R.id.btnCookingMode);
         LinearLayout llSteps     = findViewById(R.id.stepsContainer);
 
         tvTitle.setText(title);
@@ -62,6 +69,16 @@ public class PostDetailActivity extends AppCompatActivity {
         tvDescription.setText(description);
         tvCookTime.setText(cookTime != null ? "⏱ " + cookTime : "");
         tvBudget.setText(budget != null ? "💰 " + budget : "");
+
+        btnCookingMode.setOnClickListener(v -> {
+            Intent intent = new Intent(this, TimerActivity.class);
+            intent.putExtra(TimerActivity.EXTRA_RECIPE_NAME, title);
+            intent.putExtra(
+                    TimerActivity.EXTRA_RECIPE_STEPS,
+                    steps == null ? "" : android.text.TextUtils.join("|", steps)
+            );
+            startActivity(intent);
+        });
 
         // Load image with Glide
         if (imageUrl != null && !imageUrl.trim().isEmpty()) {
@@ -89,11 +106,24 @@ public class PostDetailActivity extends AppCompatActivity {
             }
         }
 
+        if (equipment != null) {
+            for (String item : equipment) {
+                Chip chip = new Chip(this);
+                chip.setText(item);
+                chip.setClickable(false);
+                chip.setCheckable(false);
+                chip.setTextSize(13f);
+                chip.setChipBackgroundColorResource(R.color.chip_bg_selector);
+                chip.setTextColor(getColor(R.color.chip_text));
+                cgEquipment.addView(chip);
+            }
+        }
+
         // ── Populate steps ────────────────────────────────────────────────────
         if (steps != null) {
             for (int i = 0; i < steps.size(); i++) {
                 TextView stepView = new TextView(this);
-                stepView.setText((i + 1) + ". " + steps.get(i));
+                stepView.setText((i + 1) + ". " + stripExistingStepNumber(steps.get(i)));
                 stepView.setTextColor(getColor(R.color.textDark));
                 stepView.setTextSize(15f);
                 stepView.setLineSpacing(0f, 1.25f);
@@ -110,6 +140,13 @@ public class PostDetailActivity extends AppCompatActivity {
                 llSteps.addView(stepView);
             }
         }
+    }
+
+    private String stripExistingStepNumber(String step) {
+        if (step == null) {
+            return "";
+        }
+        return step.replaceFirst("^(?i)(step\\s*)?\\d+[\\.)\\-:]*\\s*", "").trim();
     }
 
     private int dpToPx(int dp) {

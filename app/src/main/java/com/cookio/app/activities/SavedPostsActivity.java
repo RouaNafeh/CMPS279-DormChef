@@ -213,6 +213,13 @@ public class SavedPostsActivity extends AppCompatActivity {
             );
         }
 
+        if (post.getEquipment() != null) {
+            intent.putStringArrayListExtra(
+                    PostDetailActivity.EXTRA_POST_EQUIPMENT,
+                    new ArrayList<>(post.getEquipment())
+            );
+        }
+
         if (post.getSteps() != null) {
             intent.putStringArrayListExtra(
                     PostDetailActivity.EXTRA_POST_STEPS,

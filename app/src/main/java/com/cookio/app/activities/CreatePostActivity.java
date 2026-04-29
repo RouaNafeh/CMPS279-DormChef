@@ -35,6 +35,16 @@ import java.util.UUID;
 public class CreatePostActivity extends AppCompatActivity {
 
     private static final String STORAGE_BUCKET_URL = "gs://cooksy-ef10e.firebasestorage.app";
+    public static final String EXTRA_EDIT_MODE = "edit_mode";
+    public static final String EXTRA_POST_ID = "edit_post_id";
+    public static final String EXTRA_POST_TITLE = "edit_post_title";
+    public static final String EXTRA_POST_DESCRIPTION = "edit_post_description";
+    public static final String EXTRA_POST_COOK_TIME = "edit_post_cook_time";
+    public static final String EXTRA_POST_BUDGET = "edit_post_budget";
+    public static final String EXTRA_POST_IMAGE_URL = "edit_post_image_url";
+    public static final String EXTRA_POST_INGREDIENTS = "edit_post_ingredients";
+    public static final String EXTRA_POST_EQUIPMENT = "edit_post_equipment";
+    public static final String EXTRA_POST_STEPS = "edit_post_steps";
 
     private AiRecipeHelper aiRecipeHelper;
     private ActivityCreatePostBinding binding;
@@ -43,6 +53,9 @@ public class CreatePostActivity extends AppCompatActivity {
     private FirebaseStorage storage;
 
     private Uri selectedImageUri = null;
+    private boolean isEditMode = false;
+    private String editingPostId = null;
+    private String existingImageUrl = "";
 
     // ── Image picker ──────────────────────────────────────────
     private final ActivityResultLauncher<String> imagePickerLauncher =
@@ -74,23 +87,37 @@ public class CreatePostActivity extends AppCompatActivity {
         binding = ActivityCreatePostBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        isEditMode = getIntent().getBooleanExtra(EXTRA_EDIT_MODE, false);
+        editingPostId = getIntent().getStringExtra(EXTRA_POST_ID);
+        existingImageUrl = getIntent().getStringExtra(EXTRA_POST_IMAGE_URL);
+        if (existingImageUrl == null) {
+            existingImageUrl = "";
+        }
+
         binding.btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
 
         // Image picker — tap container OR "Change" label to reselect
         binding.imagePickerContainer.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
         binding.tvReselect.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
 
-        // Start with one empty ingredient row and one empty step row
+        // Start with one empty ingredient row, one empty equipment row, and one empty step row
         addIngredientRow("");
+        addEquipmentRow("");
         addStepRow("");
 
         binding.btnAddIngredient.setOnClickListener(v -> addIngredientRow(""));
+        binding.btnAddEquipment.setOnClickListener(v -> addEquipmentRow(""));
         binding.btnAddStep.setOnClickListener(v -> addStepRow(""));
 
         binding.btnPost.setOnClickListener(v -> validateAndPost());
 
         aiRecipeHelper = new AiRecipeHelper();
         binding.btnGenerateAi.setOnClickListener(v -> generateWithAi());
+
+        if (isEditMode) {
+            binding.btnPost.setText("Save Changes");
+            populateEditData();
+        }
     }
 
     // ── Dynamic ingredient rows ───────────────────────────────
@@ -142,6 +169,27 @@ public class CreatePostActivity extends AppCompatActivity {
         binding.stepsContainer.addView(row);
     }
 
+    private void addEquipmentRow(String prefill) {
+        View row = LayoutInflater.from(this)
+                .inflate(R.layout.item_dynamic_row, binding.equipmentContainer, false);
+
+        EditText etRow = row.findViewById(R.id.etRowInput);
+        ImageButton btnDel = row.findViewById(R.id.btnDeleteRow);
+
+        etRow.setHint("e.g. pan, whisk, oven");
+        if (!prefill.isEmpty()) etRow.setText(prefill);
+
+        btnDel.setOnClickListener(v -> {
+            if (binding.equipmentContainer.getChildCount() > 1) {
+                binding.equipmentContainer.removeView(row);
+            } else {
+                etRow.setText("");
+            }
+        });
+
+        binding.equipmentContainer.addView(row);
+    }
+
     private void renumberSteps() {
         for (int i = 0; i < binding.stepsContainer.getChildCount(); i++) {
             View row = binding.stepsContainer.getChildAt(i);
@@ -185,6 +233,8 @@ public class CreatePostActivity extends AppCompatActivity {
             return;
         }
 
+        List<String> equipment = collectRows(binding.equipmentContainer);
+
         // 3. At least 1 step
         List<String> steps = collectRows(binding.stepsContainer);
         if (steps.isEmpty()) {
@@ -194,15 +244,16 @@ public class CreatePostActivity extends AppCompatActivity {
 
         setLoading(true);
         if (selectedImageUri != null) {
-            uploadImageThenSave(title, description, cookTime, budget, ingredients, steps);
+            uploadImageThenSave(title, description, cookTime, budget, ingredients, equipment, steps);
         } else {
-            savePostToFirestore(title, description, cookTime, budget, ingredients, steps, "");
+            savePostToFirestore(title, description, cookTime, budget, ingredients, equipment, steps, existingImageUrl);
         }
     }
 
     // ── Step 1: Upload image with progress ───────────────────
     private void uploadImageThenSave(String title, String description, String cookTime,
-                                     String budget, List<String> ingredients, List<String> steps) {
+                                     String budget, List<String> ingredients, List<String> equipment,
+                                     List<String> steps) {
 
         String uid      = auth.getCurrentUser().getUid();
         String filename = UUID.randomUUID().toString() + ".jpg";
@@ -230,7 +281,7 @@ public class CreatePostActivity extends AppCompatActivity {
                             binding.uploadProgressBar.setVisibility(View.GONE);
                             binding.tvUploadProgress.setVisibility(View.GONE);
                             savePostToFirestore(title, description, cookTime, budget,
-                                    ingredients, steps, downloadUri.toString());
+                                    ingredients, equipment, steps, downloadUri.toString());
                         }))
                 .addOnFailureListener(e -> {
                     binding.uploadProgressBar.setVisibility(View.GONE);
@@ -243,7 +294,7 @@ public class CreatePostActivity extends AppCompatActivity {
 
     // ── Step 2: Save post to Firestore ────────────────────────
     private void savePostToFirestore(String title, String description, String cookTime,
-                                     String budget, List<String> ingredients,
+                                     String budget, List<String> ingredients, List<String> equipment,
                                      List<String> steps, String imageUrl) {
 
         FirebaseUser user = auth.getCurrentUser();
@@ -257,26 +308,52 @@ public class CreatePostActivity extends AppCompatActivity {
 
                     Post post = new Post(
                             user.getUid(), username, title, description,
-                            cookTime, budget, ingredients, steps, imageUrl
+                            cookTime, budget, ingredients, equipment, steps, imageUrl
                     );
 
-                    firestore.collection("posts")
-                            .add(post)
-                            .addOnSuccessListener(docRef ->
-                                    docRef.update("postId", docRef.getId())
-                                            .addOnCompleteListener(t -> {
-                                                setLoading(false);
-                                                Toast.makeText(this,
-                                                        "Recipe posted!",
-                                                        Toast.LENGTH_SHORT).show();
-                                                finish();
-                                            }))
-                            .addOnFailureListener(e -> {
-                                setLoading(false);
-                                Toast.makeText(this,
-                                        "Failed to post: " + e.getMessage(),
-                                        Toast.LENGTH_LONG).show();
-                            });
+                    if (isEditMode && !TextUtils.isEmpty(editingPostId)) {
+                        firestore.collection("posts")
+                                .document(editingPostId)
+                                .update(
+                                        "title", post.getTitle(),
+                                        "description", post.getDescription(),
+                                        "cookTime", post.getCookTime(),
+                                        "budget", post.getBudget(),
+                                        "ingredients", post.getIngredients(),
+                                        "equipment", post.getEquipment(),
+                                        "steps", post.getSteps(),
+                                        "imageUrl", post.getImageUrl()
+                                )
+                                .addOnSuccessListener(unused -> {
+                                    setLoading(false);
+                                    Toast.makeText(this, "Post updated!", Toast.LENGTH_SHORT).show();
+                                    finish();
+                                })
+                                .addOnFailureListener(e -> {
+                                    setLoading(false);
+                                    Toast.makeText(this,
+                                            "Failed to update: " + e.getMessage(),
+                                            Toast.LENGTH_LONG).show();
+                                });
+                    } else {
+                        firestore.collection("posts")
+                                .add(post)
+                                .addOnSuccessListener(docRef ->
+                                        docRef.update("postId", docRef.getId())
+                                                .addOnCompleteListener(t -> {
+                                                    setLoading(false);
+                                                    Toast.makeText(this,
+                                                            "Recipe posted!",
+                                                            Toast.LENGTH_SHORT).show();
+                                                    finish();
+                                                }))
+                                .addOnFailureListener(e -> {
+                                    setLoading(false);
+                                    Toast.makeText(this,
+                                            "Failed to post: " + e.getMessage(),
+                                            Toast.LENGTH_LONG).show();
+                                });
+                    }
                 })
                 .addOnFailureListener(e -> {
                     setLoading(false);
@@ -290,10 +367,38 @@ public class CreatePostActivity extends AppCompatActivity {
         return et.getText() == null ? "" : et.getText().toString().trim();
     }
 
+    private void populateEditData() {
+        binding.etTitle.setText(getIntent().getStringExtra(EXTRA_POST_TITLE));
+        binding.etDescription.setText(getIntent().getStringExtra(EXTRA_POST_DESCRIPTION));
+        binding.etCookTime.setText(getIntent().getStringExtra(EXTRA_POST_COOK_TIME));
+        binding.etBudget.setText(getIntent().getStringExtra(EXTRA_POST_BUDGET));
+
+        ArrayList<String> ingredients = getIntent().getStringArrayListExtra(EXTRA_POST_INGREDIENTS);
+        ArrayList<String> equipment = getIntent().getStringArrayListExtra(EXTRA_POST_EQUIPMENT);
+        ArrayList<String> steps = getIntent().getStringArrayListExtra(EXTRA_POST_STEPS);
+
+        replaceDynamicRows(
+                binding.ingredientsContainer,
+                ingredients != null ? ingredients : new ArrayList<>(),
+                true
+        );
+        replaceDynamicRows(
+                binding.equipmentContainer,
+                equipment != null ? equipment : new ArrayList<>(),
+                true
+        );
+        replaceDynamicRows(
+                binding.stepsContainer,
+                steps != null ? steps : new ArrayList<>(),
+                false
+        );
+    }
+
     private void setLoading(boolean loading) {
         binding.btnPost.setEnabled(!loading);
         binding.btnPost.setText(loading ? "Posting…" : "Post Recipe");
         binding.btnAddIngredient.setEnabled(!loading);
+        binding.btnAddEquipment.setEnabled(!loading);
         binding.btnAddStep.setEnabled(!loading);
         binding.btnGenerateAi.setEnabled(!loading);
     }
@@ -351,6 +456,11 @@ public class CreatePostActivity extends AppCompatActivity {
                 true
         );
         replaceDynamicRows(
+                binding.equipmentContainer,
+                splitAiList(extractSection(result, "EQUIPMENT"), ","),
+                true
+        );
+        replaceDynamicRows(
                 binding.stepsContainer,
                 splitAiList(extractSection(result, "STEPS"), "\\|"),
                 false
@@ -361,7 +471,9 @@ public class CreatePostActivity extends AppCompatActivity {
         container.removeAllViews();
 
         if (values.isEmpty()) {
-            if (isIngredients) {
+            if (container == binding.equipmentContainer) {
+                addEquipmentRow("");
+            } else if (isIngredients) {
                 addIngredientRow("");
             } else {
                 addStepRow("");
@@ -370,7 +482,9 @@ public class CreatePostActivity extends AppCompatActivity {
         }
 
         for (String value : values) {
-            if (isIngredients) {
+            if (container == binding.equipmentContainer) {
+                addEquipmentRow(value);
+            } else if (isIngredients) {
                 addIngredientRow(value);
             } else {
                 addStepRow(value);

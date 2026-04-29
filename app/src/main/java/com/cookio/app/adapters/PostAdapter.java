@@ -45,6 +45,10 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         void onPostDelete(Post post);
     }
 
+    public interface OnPostEditListener {
+        void onPostEdit(Post post);
+    }
+
     private final Context context;
     private List<Post> postList;
     private final Set<String> savedPostIds;
@@ -56,6 +60,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
     private OnPostClickListener onPostClickListener;
 
     private OnPostDeleteListener onPostDeleteListener;
+    private OnPostEditListener onPostEditListener;
 
     public PostAdapter(Context context, List<Post> postList,
                        Set<String> savedPostIds, Set<String> likedPostIds,
@@ -109,6 +114,9 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         Post post = postList.get(position);
 
         holder.postTitle.setText(post.getTitle());
+        holder.postUsername.setText(post.getUsername() == null || post.getUsername().trim().isEmpty()
+                ? "by Chef"
+                : "by " + post.getUsername());
         holder.postDescription.setText(post.getDescription());
         holder.postCookTime.setText(post.getCookTime());
         holder.postBudget.setText(post.getBudget());
@@ -145,18 +153,25 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             }
         });
 
-        holder.deleteButton.setOnClickListener(v -> {
-            if (onPostDeleteListener != null) {
-                onPostDeleteListener.onPostDelete(post);
-            }
-        });
+        if (onPostDeleteListener != null || onPostEditListener != null) {
+            holder.deleteButton.setVisibility(View.VISIBLE);
+            holder.deleteButton.setOnClickListener(v -> {
+                if (onPostEditListener != null) {
+                    onPostEditListener.onPostEdit(post);
+                } else if (onPostDeleteListener != null) {
+                    onPostDeleteListener.onPostDelete(post);
+                }
+            });
+        } else {
+            holder.deleteButton.setVisibility(View.GONE);
+            holder.deleteButton.setOnClickListener(null);
+        }
 
         if (isGridMode) {
             holder.postDescription.setVisibility(View.GONE);
             holder.likeButton.setVisibility(View.GONE);
             holder.saveButton.setVisibility(View.GONE);
             holder.likesCount.setVisibility(View.GONE);
-            holder.deleteButton.setVisibility(View.VISIBLE);
             holder.postTitle.setMaxLines(2);
             holder.postTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);
         } else {
@@ -164,7 +179,6 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             holder.likeButton.setVisibility(View.VISIBLE);
             holder.saveButton.setVisibility(View.VISIBLE);
             holder.likesCount.setVisibility(View.VISIBLE);
-            holder.deleteButton.setVisibility(View.VISIBLE);
             holder.postTitle.setMaxLines(2);
         }
     }
@@ -263,7 +277,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
     }
 
     static class PostViewHolder extends RecyclerView.ViewHolder {
-        TextView postTitle, postDescription, postCookTime, postBudget, likesCount;
+        TextView postTitle, postUsername, postDescription, postCookTime, postBudget, likesCount;
         ImageView postImage;
         ImageButton saveButton, likeButton;
 
@@ -272,6 +286,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         public PostViewHolder(@NonNull View itemView) {
             super(itemView);
             postTitle = itemView.findViewById(R.id.post_title);
+            postUsername = itemView.findViewById(R.id.post_username);
             postDescription = itemView.findViewById(R.id.post_description);
             postCookTime = itemView.findViewById(R.id.post_time);
             postBudget = itemView.findViewById(R.id.post_budget);
@@ -290,6 +305,10 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
 
     public void setOnPostDeleteListener(OnPostDeleteListener listener) {
         this.onPostDeleteListener = listener;
+    }
+
+    public void setOnPostEditListener(OnPostEditListener listener) {
+        this.onPostEditListener = listener;
     }
 
     public void setGridMode(boolean isGridMode) {
