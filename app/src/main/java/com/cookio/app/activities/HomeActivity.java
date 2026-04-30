@@ -4,9 +4,11 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.cookio.app.R;
 import com.cookio.app.adapters.PostAdapter;
@@ -16,9 +18,9 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -37,6 +39,11 @@ public class HomeActivity extends AppCompatActivity {
     private PostAdapter postAdapter;
     private String currentQuery = "";
 
+    private static final int PAGE_SIZE = 10;
+    private DocumentSnapshot lastVisible = null;
+    private boolean isLoading = false;
+    private boolean isLastPage = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,7 +57,6 @@ public class HomeActivity extends AppCompatActivity {
             return;
         }
 
-
         db = FirebaseFirestore.getInstance();
 
         binding = ActivityHomeBinding.inflate(getLayoutInflater());
@@ -60,6 +66,7 @@ public class HomeActivity extends AppCompatActivity {
         setupSearch();
         setupActions();
         setupBottomNavigation();
+        binding.swipeRefreshLayout.setOnRefreshListener(this::refreshFeed);
     }
 
     @Override
@@ -79,6 +86,31 @@ public class HomeActivity extends AppCompatActivity {
         binding.recyclerCards.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerCards.setHasFixedSize(true);
         binding.recyclerCards.setAdapter(postAdapter);
+        binding.recyclerCards.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+
+                if (dy <= 0) {
+                    return;
+                }
+
+                LinearLayoutManager lm = (LinearLayoutManager) recyclerView.getLayoutManager();
+                if (lm == null) {
+                    return;
+                }
+
+                int visibleCount = lm.getChildCount();
+                int totalCount = lm.getItemCount();
+                int firstVisible = lm.findFirstVisibleItemPosition();
+
+                if (!isLoading && !isLastPage
+                        && (visibleCount + firstVisible + 3) >= totalCount
+                        && firstVisible >= 0) {
+                    loadNextPage(false);
+                }
+            }
+        });
     }
 
     private void setupSearch() {
@@ -129,13 +161,47 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
-    private void loadFeedData() {
-        db.collection("posts")
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    allPosts.clear();
+    private void refreshFeed() {
+        loadFeedData();
+    }
 
-                    for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+    private void loadFeedData() {
+        lastVisible = null;
+        isLastPage = false;
+        allPosts.clear();
+        loadNextPage(true);
+    }
+
+    private void loadNextPage(boolean isFirstPage) {
+        if (isLoading || isLastPage) {
+            return;
+        }
+        isLoading = true;
+
+        Query query = db.collection("posts")
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .limit(PAGE_SIZE);
+
+        if (lastVisible != null) {
+            query = query.startAfter(lastVisible);
+        }
+
+        query.get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<DocumentSnapshot> docs = queryDocumentSnapshots.getDocuments();
+
+                    if (docs.isEmpty()) {
+                        isLastPage = true;
+                        isLoading = false;
+                        if (isFirstPage) {
+                            loadSavedPostIds();
+                        } else {
+                            binding.swipeRefreshLayout.setRefreshing(false);
+                        }
+                        return;
+                    }
+
+                    for (DocumentSnapshot doc : docs) {
                         Post post = doc.toObject(Post.class);
                         if (post != null) {
                             post.setPostId(doc.getId());
@@ -143,24 +209,23 @@ public class HomeActivity extends AppCompatActivity {
                         }
                     }
 
-                    Collections.sort(allPosts, (first, second) -> {
-                        if (first.getCreatedAt() == null && second.getCreatedAt() == null) {
-                            return 0;
-                        }
-                        if (first.getCreatedAt() == null) {
-                            return 1;
-                        }
-                        if (second.getCreatedAt() == null) {
-                            return -1;
-                        }
-                        return second.getCreatedAt().compareTo(first.getCreatedAt());
-                    });
+                    lastVisible = docs.get(docs.size() - 1);
+                    if (docs.size() < PAGE_SIZE) {
+                        isLastPage = true;
+                    }
 
-                    loadSavedPostIds();
+                    isLoading = false;
+
+                    if (isFirstPage) {
+                        loadSavedPostIds();
+                    } else {
+                        filterAllContent(currentQuery);
+                    }
                 })
                 .addOnFailureListener(e -> {
+                    isLoading = false;
                     Toast.makeText(this, "Failed to load posts", Toast.LENGTH_SHORT).show();
-                    filterAllContent(currentQuery);
+                    binding.swipeRefreshLayout.setRefreshing(false);
                 });
     }
 
@@ -240,11 +305,9 @@ public class HomeActivity extends AppCompatActivity {
 
             for (Post post : allPosts) {
                 String title = post.getTitle() == null ? "" : post.getTitle().toLowerCase();
-                String description = post.getDescription() == null
-                        ? ""
-                        : post.getDescription().toLowerCase();
+                String username = post.getUsername() == null ? "" : post.getUsername().toLowerCase();
 
-                if (title.contains(query) || description.contains(query)) {
+                if (title.contains(query) || username.contains(query)) {
                     filteredPosts.add(post);
                 }
             }
@@ -255,6 +318,7 @@ public class HomeActivity extends AppCompatActivity {
         if (filteredPosts.isEmpty()) {
             Toast.makeText(this, "No recipes found", Toast.LENGTH_SHORT).show();
         }
+        binding.swipeRefreshLayout.setRefreshing(false);
     }
 
     private void openPostDetail(Post post) {
