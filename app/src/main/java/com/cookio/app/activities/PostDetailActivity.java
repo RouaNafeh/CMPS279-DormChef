@@ -38,6 +38,7 @@ public class PostDetailActivity extends AppCompatActivity {
     public static final String EXTRA_POST_COOK_TIME = "post_cook_time";
     public static final String EXTRA_POST_BUDGET = "post_budget";
     public static final String EXTRA_POST_USERNAME = "post_username";
+    public static final String EXTRA_POST_UID = "post_uid";
     public static final String EXTRA_POST_INGREDIENTS = "post_ingredients";
     public static final String EXTRA_POST_EQUIPMENT = "post_equipment";
     public static final String EXTRA_POST_STEPS = "post_steps";
@@ -48,6 +49,7 @@ public class PostDetailActivity extends AppCompatActivity {
 
     private String postId;
     private String currentUid;
+    private String authorUid;
     private int likesCount;
     private boolean isSaved;
     private boolean isLiked;
@@ -86,6 +88,7 @@ public class PostDetailActivity extends AppCompatActivity {
 
         findViewById(R.id.btnBack).setOnClickListener(v ->
                 getOnBackPressedDispatcher().onBackPressed());
+        tvUsername.setOnClickListener(v -> openPublicProfile());
         btnSavePost.setOnClickListener(v -> toggleSave());
         btnLikePost.setOnClickListener(v -> toggleLike());
         btnCookingMode.setOnClickListener(v -> openCookingMode());
@@ -115,6 +118,7 @@ public class PostDetailActivity extends AppCompatActivity {
     }
 
     private void bindStaticContentFromIntent() {
+        authorUid = getIntent().getStringExtra(EXTRA_POST_UID);
         tvTitle.setText(getIntent().getStringExtra(EXTRA_POST_TITLE));
         bindUsername(getIntent().getStringExtra(EXTRA_POST_USERNAME));
         tvDescription.setText(getIntent().getStringExtra(EXTRA_POST_DESCRIPTION));
@@ -146,6 +150,7 @@ public class PostDetailActivity extends AppCompatActivity {
                     }
 
                     tvTitle.setText(documentSnapshot.getString("title"));
+                    authorUid = documentSnapshot.getString("uid");
                     bindUsername(documentSnapshot.getString("username"));
                     tvDescription.setText(documentSnapshot.getString("description"));
                     tvCookTime.setText(safeText(documentSnapshot.getString("cookTime")));
@@ -446,6 +451,16 @@ public class PostDetailActivity extends AppCompatActivity {
                 TimerActivity.EXTRA_RECIPE_TIMED_STEPS,
                 new ArrayList<>(encodeSteps(cookingSteps))
         );
+        startActivity(intent);
+    }
+
+    private void openPublicProfile() {
+        if (authorUid == null || authorUid.trim().isEmpty()) {
+            return;
+        }
+
+        Intent intent = new Intent(this, PublicProfileActivity.class);
+        intent.putExtra(PublicProfileActivity.EXTRA_USER_ID, authorUid);
         startActivity(intent);
     }
 

@@ -3,8 +3,10 @@ package database;
 import com.cookio.app.models.Recipe;
 import com.cookio.app.models.User;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,6 +37,11 @@ public class FirestoreRepository {
 
     public interface OnBooleanResultListener {
         void onSuccess(boolean result);
+        void onFailure(Exception e);
+    }
+
+    public interface onFollowingIdsLoadedListener{
+        void onSuccess(List<String> userIds);
         void onFailure(Exception e);
     }
 
@@ -248,5 +255,104 @@ public class FirestoreRepository {
 
     private String valueOrDefault(String value, String fallback) {
         return value != null ? value : fallback;
+    }
+
+    //---Following system---
+    public void followUser(User currentUser, User targetUser, OnActionListener listener){
+        if(currentUser.getUid().equals(targetUser.getUid())){
+            listener.onFailure(new Exception("You cannot follow yourself"));
+            return;
+        }
+
+        WriteBatch batch = db.batch();
+        batch.set(db.collection("users")
+                .document(currentUser.getUid())
+                .collection("following")
+                .document(targetUser.getUid()),
+                targetUser
+        );
+
+        batch.set(db.collection("users")
+                .document(targetUser.getUid())
+                .collection("followers")
+                .document(currentUser.getUid()),
+                currentUser
+        );
+
+        batch.update(
+                db.collection("users")
+                        .document(currentUser.getUid()),
+                "followingCount",
+                FieldValue.increment(1)
+        );
+
+        batch.update(
+                db.collection("users").document(targetUser.getUid()),
+                "followerCount",
+                FieldValue.increment(1)
+        );
+
+        batch.commit()
+                .addOnSuccessListener(unused -> listener.onSuccess())
+                .addOnFailureListener(listener::onFailure);
+    }
+
+    public void unfollowUser(String currentUserId, String targetUserId, OnActionListener listener){
+        WriteBatch batch = db.batch();
+        batch.delete(db.collection("users")
+                        .document(currentUserId)
+                        .collection("following")
+                        .document(targetUserId)
+        );
+
+        batch.delete(db.collection("users")
+                        .document(targetUserId)
+                        .collection("followers")
+                        .document(currentUserId)
+        );
+
+        batch.update(
+                db.collection("users")
+                        .document(currentUserId),
+                "followingCount",
+                FieldValue.increment(-1)
+        );
+
+        batch.update(
+                db.collection("users").document(targetUserId),
+                "followerCount",
+                FieldValue.increment(-1)
+        );
+
+        batch.commit()
+                .addOnSuccessListener(unused -> listener.onSuccess())
+                .addOnFailureListener(listener::onFailure);
+    }
+
+    public void isFollowing(String currentUserId, String targetUserId, OnBooleanResultListener listener){
+        db.collection("users")
+                .document(currentUserId)
+                .collection("following")
+                .document(targetUserId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    listener.onSuccess(documentSnapshot.exists());
+                })
+                .addOnFailureListener(listener::onFailure);
+    }
+
+    public void getFollowingIds(String userId, onFollowingIdsLoadedListener listener){
+        db.collection("users")
+                .document(userId)
+                .collection("following")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<String> ids = new ArrayList<>();
+                    for(DocumentSnapshot doc : queryDocumentSnapshots){
+                        ids.add(doc.getId());
+                    }
+                    listener.onSuccess(ids);
+                })
+                .addOnFailureListener(listener::onFailure);
     }
 }

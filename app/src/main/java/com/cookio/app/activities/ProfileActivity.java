@@ -54,7 +54,6 @@ public class ProfileActivity extends AppCompatActivity {
     private final Set<String> likedPostIds = new HashSet<>();
 
     private PostAdapter postAdapter;
-    private int savedPostsCount = 0;
     private boolean isGrid = false;
 
     private final ActivityResultLauncher<String> profileImagePickerLauncher =
@@ -163,6 +162,8 @@ public class ProfileActivity extends AppCompatActivity {
         binding.tvEmail.setText(email);
         binding.tvUsername.setText(resolveDisplayName(null, email));
         binding.tvAvatarInitial.setText(resolveInitial(binding.tvUsername.getText().toString()));
+        binding.tvFollowersCount.setText("0");
+        binding.tvFollowingCount.setText("0");
     }
 
     private void showDeleteDialog(Post post) {
@@ -231,7 +232,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         binding.progressBar.setVisibility(View.VISIBLE);
         loadUserInfo(user);
-        loadSavedPosts();
+        loadSavedPostIds();
         loadMyPosts(user);
     }
 
@@ -244,10 +245,14 @@ public class ProfileActivity extends AppCompatActivity {
                     String username = documentSnapshot.getString("username");
                     String bio = documentSnapshot.getString("bio");
                     String profileImageUrl = documentSnapshot.getString("profileImageUrl");
+                    Long followerCount = documentSnapshot.getLong("followerCount");
+                    Long followingCount = documentSnapshot.getLong("followingCount");
                     binding.tvUsername.setText(resolveDisplayName(username, email));
                     binding.tvEmail.setText(email);
                     binding.tvBio.setText(resolveBio(bio));
                     binding.tvAvatarInitial.setText(resolveInitial(binding.tvUsername.getText().toString()));
+                    binding.tvFollowersCount.setText(String.valueOf(followerCount == null ? 0 : followerCount));
+                    binding.tvFollowingCount.setText(String.valueOf(followingCount == null ? 0 : followingCount));
                     loadProfilePhoto(profileImageUrl);
                 })
                 .addOnFailureListener(e -> Toast.makeText(
@@ -257,7 +262,7 @@ public class ProfileActivity extends AppCompatActivity {
                 ).show());
     }
 
-    private void loadSavedPosts() {
+    private void loadSavedPostIds() {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
             return;
@@ -272,11 +277,8 @@ public class ProfileActivity extends AppCompatActivity {
                     for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
                         savedPostIds.add(doc.getId());
                     }
-                    savedPostsCount = savedPostIds.size();
-                    binding.tvSavedCount.setText(String.valueOf(savedPostsCount));
                     postAdapter.notifyDataSetChanged();
-                })
-                .addOnFailureListener(e -> binding.tvSavedCount.setText("0"));
+                });
     }
 
     private void loadMyPosts(FirebaseUser user) {
@@ -285,13 +287,11 @@ public class ProfileActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     myPosts.clear();
-                    int totalLikes = 0;
 
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         Post post = doc.toObject(Post.class);
                         post.setPostId(doc.getId());
                         myPosts.add(post);
-                        totalLikes += post.getLikesCount();
                     }
 
                     Collections.sort(myPosts, (first, second) -> {
@@ -308,7 +308,6 @@ public class ProfileActivity extends AppCompatActivity {
                     });
 
                     binding.tvPostsCount.setText(String.valueOf(myPosts.size()));
-                    binding.tvLikesCount.setText(String.valueOf(totalLikes));
                     binding.tvPostsSectionMeta.setText(
                             String.format(Locale.getDefault(), "%d posts", myPosts.size())
                     );
@@ -433,6 +432,7 @@ public class ProfileActivity extends AppCompatActivity {
         intent.putExtra(PostDetailActivity.EXTRA_POST_COOK_TIME, post.getCookTime());
         intent.putExtra(PostDetailActivity.EXTRA_POST_BUDGET, post.getBudget());
         intent.putExtra(PostDetailActivity.EXTRA_POST_USERNAME, post.getUsername());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_UID, post.getUid());
         intent.putExtra(PostDetailActivity.EXTRA_POST_LIKES_COUNT, post.getLikesCount());
 
         if (post.getIngredients() != null) {

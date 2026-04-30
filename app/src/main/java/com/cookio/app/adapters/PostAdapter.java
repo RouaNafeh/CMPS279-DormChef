@@ -1,5 +1,6 @@
 package com.cookio.app.adapters;
 
+import android.content.Intent;
 import android.content.Context;
 import android.net.Uri;
 import android.view.LayoutInflater;
@@ -16,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.cookio.app.R;
+import com.cookio.app.activities.PublicProfileActivity;
 import com.cookio.app.models.Post;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
@@ -127,6 +129,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         holder.postUsername.setText(post.getUsername() == null || post.getUsername().trim().isEmpty()
                 ? "by Chef"
                 : "by " + post.getUsername());
+        holder.postAvatar.setText(resolveAvatarInitial(post.getUsername()));
         holder.postDescription.setText(post.getDescription());
         holder.postCookTime.setText(post.getCookTime());
         holder.postBudget.setText(post.getBudget());
@@ -162,6 +165,9 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
                 onPostClickListener.onPostClick(post);
             }
         });
+
+        holder.postUsername.setOnClickListener(v -> openPublicProfile(post));
+        holder.postAvatar.setOnClickListener(v -> openPublicProfile(post));
 
         if (onPostDeleteListener != null || onPostEditListener != null) {
             holder.deleteButton.setVisibility(View.VISIBLE);
@@ -402,8 +408,32 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
                 .start();
     }
 
+    private void openPublicProfile(Post post) {
+        if (post.getUid() == null || post.getUid().trim().isEmpty()) {
+            return;
+        }
+
+        Intent intent = new Intent(context, PublicProfileActivity.class);
+        intent.putExtra(PublicProfileActivity.EXTRA_USER_ID, post.getUid());
+        context.startActivity(intent);
+    }
+
+    private String resolveAvatarInitial(String username) {
+        if (username == null) {
+            return "C";
+        }
+
+        String trimmed = username.trim();
+        if (trimmed.isEmpty()) {
+            return "C";
+        }
+
+        return trimmed.substring(0, 1).toUpperCase();
+    }
+
     static class PostViewHolder extends RecyclerView.ViewHolder {
         TextView postTitle, postUsername, postDescription, postCookTime, postBudget, likesCount;
+        TextView postAvatar;
         ImageView postImage;
         ImageButton saveButton, likeButton;
         ImageButton deleteButton;
@@ -412,6 +442,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             super(itemView);
             postTitle = itemView.findViewById(R.id.post_title);
             postUsername = itemView.findViewById(R.id.post_username);
+            postAvatar = itemView.findViewById(R.id.post_avatar);
             postDescription = itemView.findViewById(R.id.post_description);
             postCookTime = itemView.findViewById(R.id.post_time);
             postBudget = itemView.findViewById(R.id.post_budget);

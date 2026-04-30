@@ -226,6 +226,7 @@ public class SavedPostsActivity extends AppCompatActivity {
         intent.putExtra(PostDetailActivity.EXTRA_POST_COOK_TIME, post.getCookTime());
         intent.putExtra(PostDetailActivity.EXTRA_POST_BUDGET, post.getBudget());
         intent.putExtra(PostDetailActivity.EXTRA_POST_USERNAME, post.getUsername());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_UID, post.getUid());
         intent.putExtra(PostDetailActivity.EXTRA_POST_LIKES_COUNT, post.getLikesCount());
 
         if (post.getIngredients() != null) {
