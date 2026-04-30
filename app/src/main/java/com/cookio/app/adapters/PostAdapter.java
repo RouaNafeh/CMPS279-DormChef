@@ -12,6 +12,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import com.cookio.app.utils.NotificationHelper;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -292,6 +293,23 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
                         R.string.post_unliked_message,
                         () -> restoreLikedPost(post, holder, postRef, likeRef, updatedLikeCount)
                 );
+            } else {
+                String myUsername = context.getSharedPreferences("cookio_prefs", Context.MODE_PRIVATE)
+                        .getString("username", "Chef");
+
+                String myPhotoUrl = context.getSharedPreferences("cookio_prefs", Context.MODE_PRIVATE)
+                        .getString("photoUrl", "");
+
+                if (post.getUid() != null && !post.getUid().equals(currentUid)) {
+                    NotificationHelper.sendLikeNotification(
+                            post.getUid(),
+                            currentUid,
+                            myUsername,
+                            myPhotoUrl,
+                            post.getPostId(),
+                            post.getTitle()
+                    );
+                }
             }
         }).addOnFailureListener(e -> {
             if (currentlyLiked) {

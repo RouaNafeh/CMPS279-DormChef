@@ -9,6 +9,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import com.cookio.app.utils.NotificationHelper;
 
 import com.bumptech.glide.Glide;
 import com.cookio.app.R;
@@ -41,6 +42,7 @@ public class PostDetailActivity extends AppCompatActivity {
     public static final String EXTRA_POST_INGREDIENTS = "post_ingredients";
     public static final String EXTRA_POST_STEPS = "post_steps";
     public static final String EXTRA_POST_LIKES_COUNT = "post_likes_count";
+    public static final String EXTRA_POST_UID = "post_uid";
 
     private FirebaseAuth auth;
     private FirebaseFirestore db;
@@ -289,6 +291,25 @@ public class PostDetailActivity extends AppCompatActivity {
             if (previouslyLiked) {
                 showUndoSnackbar(R.string.post_unliked_message,
                         () -> restoreLike(previousLikeCount));
+            } else {
+                String postOwnerUid = getIntent().getStringExtra(EXTRA_POST_UID);
+
+                String myUsername = getSharedPreferences("cookio_prefs", MODE_PRIVATE)
+                        .getString("username", "Chef");
+
+                String myPhotoUrl = getSharedPreferences("cookio_prefs", MODE_PRIVATE)
+                        .getString("photoUrl", "");
+
+                if (postOwnerUid != null && !postOwnerUid.equals(currentUid)) {
+                    NotificationHelper.sendLikeNotification(
+                            postOwnerUid,
+                            currentUid,
+                            myUsername,
+                            myPhotoUrl,
+                            postId,
+                            tvTitle.getText().toString()
+                    );
+                }
             }
         }).addOnFailureListener(e -> {
             isLiked = previouslyLiked;

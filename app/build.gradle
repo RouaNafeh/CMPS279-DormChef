@@ -53,4 +53,5 @@ dependencies {
     implementation 'com.google.firebase:firebase-ai'
     implementation 'com.google.guava:guava:31.0.1-android'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+    implementation 'com.google.firebase:firebase-messaging'
 }

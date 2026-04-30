@@ -377,6 +377,7 @@ public class ProfileActivity extends AppCompatActivity {
     private void openPostDetail(Post post) {
         Intent intent = new Intent(this, PostDetailActivity.class);
         intent.putExtra(PostDetailActivity.EXTRA_POST_ID, post.getPostId());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_UID, post.getUid());
         intent.putExtra(PostDetailActivity.EXTRA_POST_TITLE, post.getTitle());
         intent.putExtra(PostDetailActivity.EXTRA_POST_DESCRIPTION, post.getDescription());
         intent.putExtra(PostDetailActivity.EXTRA_POST_IMAGE_URL, post.getImageUrl());
