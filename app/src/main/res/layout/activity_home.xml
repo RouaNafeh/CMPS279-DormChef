@@ -95,7 +95,7 @@
                 android:background="@drawable/search_background"
                 app:iconifiedByDefault="false"
                 app:queryBackground="@android:color/transparent"
-                app:queryHint="Search by title or author…" />
+                app:queryHint="Search recipes, authors, ingredients…" />
 
             <ImageView
                 android:id="@+id/filter_btn"

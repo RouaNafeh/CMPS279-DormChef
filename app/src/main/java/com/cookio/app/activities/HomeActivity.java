@@ -304,11 +304,13 @@ public class HomeActivity extends AppCompatActivity {
             for (Post post : allPosts) {
                 String title = post.getTitle() == null ? "" : post.getTitle().toLowerCase();
                 String username = post.getUsername() == null ? "" : post.getUsername().toLowerCase();
+                String description = post.getDescription() == null ? "" : post.getDescription().toLowerCase();
 
-                if (title.contains(query) || username.contains(query)) {
+                if (title.contains(query) || username.contains(query) || description.contains(query)) {
                     filteredPosts.add(post);
                 }
-        }   }
+            }
+        }
 
         postAdapter.updateData(filteredPosts);
 
