@@ -382,7 +382,6 @@
                     <ImageView
                         android:layout_width="82dp"
                         android:layout_height="82dp"
-                        android:alpha="0.85"
                         android:src="@drawable/menu_book"
                         app:tint="@color/accent_pink" />
 

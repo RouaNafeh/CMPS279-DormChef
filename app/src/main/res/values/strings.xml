@@ -107,6 +107,7 @@
     <string name="logout_confirm_action">Log Out</string>
     <string name="profile_photo_content_desc">Profile photo</string>
     <string name="profile_photo_upload_failed">Failed to upload profile photo</string>
+    <string name="profile_photo_upload_failed_with_reason">Failed to upload profile photo: %1$s</string>
     <string name="profile_photo_updated">Profile photo updated</string>
     <string name="public_profile_back">Go back</string>
     <string name="public_profile_label">Cookbook Profile</string>
