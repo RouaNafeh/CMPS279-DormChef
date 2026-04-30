@@ -95,7 +95,7 @@
                 android:background="@drawable/search_background"
                 app:iconifiedByDefault="false"
                 app:queryBackground="@android:color/transparent"
-                app:queryHint="Search by title or author…" />
+                app:queryHint="Search by title or author..." />
 
             <ImageView
                 android:id="@+id/filter_btn"
@@ -171,7 +171,6 @@
                 tools:listitem="@layout/item_recipe" />
 
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-
     </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -185,11 +184,11 @@
         app:backgroundTint="@color/accent_pink"
         app:borderWidth="0dp"
         app:elevation="6dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:maxImageSize="24dp"
         app:rippleColor="@color/white"
-        app:tint="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:tint="@color/white" />
 
     <include
         android:id="@+id/bottomNavigation"

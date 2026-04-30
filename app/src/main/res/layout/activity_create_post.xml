@@ -189,21 +189,61 @@
                         android:layout_height="wrap_content"
                         android:text="Recipe Details" />
 
-                    <Button
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:background="@drawable/search_background"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="10dp"
+                        android:paddingTop="6dp"
+                        android:paddingEnd="10dp"
+                        android:paddingBottom="6dp">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_ai_spark"
+                            app:tint="@color/accent_pink" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="AI Assistant"
+                            android:textColor="@color/chip_text"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnGenerateAi"
+                        style="@style/AiFeatureButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:gravity="center"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:paddingStart="18dp"
+                        android:paddingTop="15dp"
+                        android:paddingEnd="18dp"
+                        android:paddingBottom="15dp"
                         android:text="Generate with AI"
                         android:textAllCaps="false"
-                        android:backgroundTint="@color/primary"
-                        android:textColor="@color/white" />
+                        app:icon="@drawable/ic_ai_spark"
+                        app:iconGravity="textStart"
+                        app:iconPadding="10dp"
+                        app:iconTint="@color/accent_pink" />
 
                     <TextView
                         style="@style/FilterSectionHint"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Get a clean recipe draft from a short idea like &quot;cheap spicy pasta for two&quot;." />
+                        android:text="Turn a short idea like &quot;cheap spicy pasta for two&quot; into a cleaner first draft." />
 
                     <com.google.android.material.textfield.TextInputLayout
                         style="@style/ModernInputLayout"
@@ -312,6 +352,55 @@
                         android:textAllCaps="false"
                         app:strokeColor="@color/primary"
                         android:textColor="@color/primary" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/borderSoft"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        style="@style/FilterSectionTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Equipment" />
+
+                    <TextView
+                        style="@style/FilterSectionHint"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="14dp"
+                        android:text="Optional. Add any tools needed for this recipe." />
+
+                    <LinearLayout
+                        android:id="@+id/equipmentContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnAddEquipment"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="+ Add Equipment"
+                        android:textAllCaps="false"
+                        android:textColor="@color/primary"
+                        app:strokeColor="@color/primary" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
