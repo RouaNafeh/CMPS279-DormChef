@@ -9,6 +9,7 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import com.cookio.app.utils.NotificationHelper;
 
 import com.bumptech.glide.Glide;
 import com.cookio.app.R;
@@ -267,6 +268,20 @@ public class PublicProfileActivity extends AppCompatActivity {
                     targetUser.setFollowerCount(targetUser.getFollowerCount() + 1);
                     binding.tvFollowersCount.setText(String.valueOf(targetUser.getFollowerCount()));
                     updateFollowButton();
+
+                    String myUsername = getSharedPreferences("cookio_prefs", MODE_PRIVATE)
+                            .getString("username", resolveDisplayName(currentUser.getUsername(), currentUser.getEmail()));
+
+                    String myPhotoUrl = getSharedPreferences("cookio_prefs", MODE_PRIVATE)
+                            .getString("photoUrl", currentUser.getProfileImageUrl());
+
+                    NotificationHelper.sendFollowNotification(
+                            targetUserId,
+                            currentUserId,
+                            myUsername,
+                            myPhotoUrl
+                    );
+
                     Toast.makeText(
                             PublicProfileActivity.this,
                             R.string.public_profile_follow_success,

@@ -44,7 +44,6 @@ public class PostDetailActivity extends AppCompatActivity {
     public static final String EXTRA_POST_EQUIPMENT = "post_equipment";
     public static final String EXTRA_POST_STEPS = "post_steps";
     public static final String EXTRA_POST_LIKES_COUNT = "post_likes_count";
-    public static final String EXTRA_POST_UID = "post_uid";
 
     private FirebaseAuth auth;
     private FirebaseFirestore db;
