@@ -115,6 +115,9 @@
     <string name="public_profile_self_subtitle">This is how your profile looks when viewed as a public page.</string>
     <string name="public_profile_follow_button">Follow</string>
     <string name="public_profile_following_button">Following</string>
+    <string name="public_profile_follow_loading_button">Loading...</string>
+    <string name="public_profile_follow_working_button">Please wait...</string>
+    <string name="public_profile_follow_retry_button">Retry Follow State</string>
     <string name="public_profile_followers_stat">Followers</string>
     <string name="public_profile_following_stat">Following</string>
     <string name="public_profile_posts_title">Recent Posts</string>
@@ -126,5 +129,18 @@
     <string name="public_profile_bio_empty">No bio added yet.</string>
     <string name="public_profile_load_failed">Failed to load public profile</string>
     <string name="public_profile_posts_failed">Failed to load public posts</string>
-    <string name="public_profile_follow_action_failed">Could not update follow state</string>
+    <string name="public_profile_follow_state_load_failed">Could not load follow state</string>
+    <string name="public_profile_follow_success">You are now following this cook</string>
+    <string name="public_profile_unfollow_success">You unfollowed this cook</string>
+    <string name="public_profile_follow_failed">Could not follow this cook</string>
+    <string name="public_profile_unfollow_failed">Could not unfollow this cook</string>
+    <string name="connections_label">Kitchen Circle</string>
+    <string name="connections_followers_title">Followers</string>
+    <string name="connections_following_title">Following</string>
+    <string name="connections_followers_subtitle">People keeping up with this cook.</string>
+    <string name="connections_following_subtitle">People this cook is following.</string>
+    <string name="connections_empty_title">No connections yet</string>
+    <string name="connections_followers_empty">No followers yet.</string>
+    <string name="connections_following_empty">Not following anyone yet.</string>
+    <string name="connections_load_failed">Failed to load connections</string>
 </resources>

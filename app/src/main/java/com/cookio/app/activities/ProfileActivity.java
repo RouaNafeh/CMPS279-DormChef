@@ -98,6 +98,8 @@ public class ProfileActivity extends AppCompatActivity {
         binding.btnSavedPosts.setOnClickListener(v ->
                 startActivity(new Intent(this, LikedPostsActivity.class)));
         binding.btnLogout.setOnClickListener(v -> showLogoutConfirmation());
+        binding.cardFollowers.setOnClickListener(v -> openConnections(UserConnectionsActivity.MODE_FOLLOWERS));
+        binding.cardFollowing.setOnClickListener(v -> openConnections(UserConnectionsActivity.MODE_FOLLOWING));
         binding.ivProfilePhoto.setOnClickListener(v -> profileImagePickerLauncher.launch("image/*"));
         binding.tvAvatarInitial.setOnClickListener(v -> profileImagePickerLauncher.launch("image/*"));
 
@@ -454,6 +456,18 @@ public class ProfileActivity extends AppCompatActivity {
             );
         }
 
+        startActivity(intent);
+    }
+
+    private void openConnections(String mode) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            return;
+        }
+
+        Intent intent = new Intent(this, UserConnectionsActivity.class);
+        intent.putExtra(UserConnectionsActivity.EXTRA_USER_ID, user.getUid());
+        intent.putExtra(UserConnectionsActivity.EXTRA_MODE, mode);
         startActivity(intent);
     }
 

@@ -324,10 +324,14 @@
                 </com.google.android.material.card.MaterialCardView>
 
                 <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardFollowers"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:layout_weight="1"
                     android:layout_marginHorizontal="6dp"
+                    android:foreground="?attr/selectableItemBackground"
                     app:cardBackgroundColor="@color/card_white"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="0dp"
@@ -361,10 +365,14 @@
                 </com.google.android.material.card.MaterialCardView>
 
                 <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardFollowing"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginStart="6dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
                     app:cardBackgroundColor="@color/card_white"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="0dp"
