@@ -158,51 +158,115 @@
                     android:textColor="@color/textGrey"
                     android:textSize="14sp" />
 
-                <TextView
+                <!-- INGREDIENTS DROPDOWN -->
+                <LinearLayout
+                    android:id="@+id/ingredientsHeader"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="20dp"
-                    android:layout_marginBottom="8dp"
-                    android:text="Ingredients"
-                    android:textColor="@color/textDark"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:background="@drawable/search_background"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="14dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Ingredients"
+                        android:textColor="@color/textDark"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/ingredientsArrow"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⌄"
+                        android:textColor="@color/textDark"
+                        android:textSize="22sp" />
+                </LinearLayout>
 
                 <com.google.android.material.chip.ChipGroup
                     android:id="@+id/chipGroupIngredients"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone" />
 
-                <TextView
+                <!-- EQUIPMENT DROPDOWN -->
+                <LinearLayout
+                    android:id="@+id/equipmentHeader"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
-                    android:layout_marginBottom="8dp"
-                    android:text="Equipment"
-                    android:textColor="@color/textDark"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/search_background"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="14dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Equipments"
+                        android:textColor="@color/textDark"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/equipmentArrow"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⌄"
+                        android:textColor="@color/textDark"
+                        android:textSize="22sp" />
+                </LinearLayout>
 
                 <com.google.android.material.chip.ChipGroup
                     android:id="@+id/chipGroupEquipment"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone" />
 
-                <TextView
+                <!-- STEPS DROPDOWN -->
+                <LinearLayout
+                    android:id="@+id/stepsHeader"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
-                    android:layout_marginBottom="8dp"
-                    android:text="Steps"
-                    android:textColor="@color/textDark"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/search_background"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="14dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Steps"
+                        android:textColor="@color/textDark"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/stepsArrow"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⌄"
+                        android:textColor="@color/textDark"
+                        android:textSize="22sp" />
+                </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/stepsContainer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical" />
+                    android:layout_marginTop="8dp"
+                    android:orientation="vertical"
+                    android:visibility="gone" />
+
             </LinearLayout>
         </androidx.cardview.widget.CardView>
     </LinearLayout>

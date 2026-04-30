@@ -87,6 +87,11 @@ public class PostDetailActivity extends AppCompatActivity {
         updateLikeButton();
         updateLikesCount();
 
+        setupDropdown(findViewById(R.id.ingredientsHeader), findViewById(R.id.chipGroupIngredients));
+        setupDropdown(findViewById(R.id.equipmentHeader), findViewById(R.id.chipGroupEquipment));
+        setupDropdown(findViewById(R.id.stepsHeader), findViewById(R.id.stepsContainer));
+
+
         findViewById(R.id.btnBack).setOnClickListener(v ->
                 getOnBackPressedDispatcher().onBackPressed());
         tvUsername.setOnClickListener(v -> openPublicProfile());
@@ -100,6 +105,15 @@ public class PostDetailActivity extends AppCompatActivity {
         super.onResume();
         loadPostDetails();
         loadEngagementState();
+    }
+    private void setupDropdown(View header, View content) {
+        header.setOnClickListener(v -> {
+            if (content.getVisibility() == View.GONE) {
+                content.setVisibility(View.VISIBLE);
+            } else {
+                content.setVisibility(View.GONE);
+            }
+        });
     }
 
     private void bindViews() {

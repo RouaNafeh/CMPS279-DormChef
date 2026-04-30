@@ -178,7 +178,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="22dp"
-        android:layout_marginBottom="86dp"
+        android:layout_marginBottom="110dp"
         android:contentDescription="Add recipe"
         android:src="@drawable/add_plus"
         app:backgroundTint="@color/accent_pink"
