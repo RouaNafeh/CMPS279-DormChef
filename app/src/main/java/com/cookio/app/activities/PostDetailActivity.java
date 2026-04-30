@@ -39,7 +39,9 @@ public class PostDetailActivity extends AppCompatActivity {
     public static final String EXTRA_POST_COOK_TIME = "post_cook_time";
     public static final String EXTRA_POST_BUDGET = "post_budget";
     public static final String EXTRA_POST_USERNAME = "post_username";
+    public static final String EXTRA_POST_UID = "post_uid";
     public static final String EXTRA_POST_INGREDIENTS = "post_ingredients";
+    public static final String EXTRA_POST_EQUIPMENT = "post_equipment";
     public static final String EXTRA_POST_STEPS = "post_steps";
     public static final String EXTRA_POST_LIKES_COUNT = "post_likes_count";
     public static final String EXTRA_POST_UID = "post_uid";
@@ -49,6 +51,7 @@ public class PostDetailActivity extends AppCompatActivity {
 
     private String postId;
     private String currentUid;
+    private String authorUid;
     private int likesCount;
     private boolean isSaved;
     private boolean isLiked;
@@ -61,6 +64,7 @@ public class PostDetailActivity extends AppCompatActivity {
     private TextView tvBudget;
     private TextView tvDetailLikesCount;
     private ChipGroup cgIngredients;
+    private ChipGroup cgEquipment;
     private LinearLayout llSteps;
     private MaterialButton btnSavePost;
     private MaterialButton btnLikePost;
@@ -86,7 +90,7 @@ public class PostDetailActivity extends AppCompatActivity {
 
         findViewById(R.id.btnBack).setOnClickListener(v ->
                 getOnBackPressedDispatcher().onBackPressed());
-
+        tvUsername.setOnClickListener(v -> openPublicProfile());
         btnSavePost.setOnClickListener(v -> toggleSave());
         btnLikePost.setOnClickListener(v -> toggleLike());
         btnCookingMode.setOnClickListener(v -> openCookingMode());
@@ -108,6 +112,7 @@ public class PostDetailActivity extends AppCompatActivity {
         tvBudget = findViewById(R.id.tvPostBudget);
         tvDetailLikesCount = findViewById(R.id.tvDetailLikesCount);
         cgIngredients = findViewById(R.id.chipGroupIngredients);
+        cgEquipment = findViewById(R.id.chipGroupEquipment);
         llSteps = findViewById(R.id.stepsContainer);
         btnSavePost = findViewById(R.id.btnSavePost);
         btnLikePost = findViewById(R.id.btnLikePost);
@@ -115,6 +120,7 @@ public class PostDetailActivity extends AppCompatActivity {
     }
 
     private void bindStaticContentFromIntent() {
+        authorUid = getIntent().getStringExtra(EXTRA_POST_UID);
         tvTitle.setText(getIntent().getStringExtra(EXTRA_POST_TITLE));
         bindUsername(getIntent().getStringExtra(EXTRA_POST_USERNAME));
         tvDescription.setText(getIntent().getStringExtra(EXTRA_POST_DESCRIPTION));
@@ -123,9 +129,12 @@ public class PostDetailActivity extends AppCompatActivity {
         bindImage(getIntent().getStringExtra(EXTRA_POST_IMAGE_URL));
 
         ArrayList<String> ingredients = getIntent().getStringArrayListExtra(EXTRA_POST_INGREDIENTS);
+        ArrayList<String> equipment = getIntent().getStringArrayListExtra(EXTRA_POST_EQUIPMENT);
         ArrayList<String> steps = getIntent().getStringArrayListExtra(EXTRA_POST_STEPS);
         cookingSteps = CookingStepParser.parseList(steps);
+
         bindIngredients(ingredients);
+        bindEquipment(equipment);
         bindSteps(cookingSteps);
     }
 
@@ -143,6 +152,7 @@ public class PostDetailActivity extends AppCompatActivity {
                     }
 
                     tvTitle.setText(documentSnapshot.getString("title"));
+                    authorUid = documentSnapshot.getString("uid");
                     bindUsername(documentSnapshot.getString("username"));
                     tvDescription.setText(documentSnapshot.getString("description"));
                     tvCookTime.setText(safeText(documentSnapshot.getString("cookTime")));
@@ -154,6 +164,7 @@ public class PostDetailActivity extends AppCompatActivity {
                     updateLikesCount();
 
                     bindIngredients(asStringList(documentSnapshot.get("ingredients")));
+                    bindEquipment(asStringList(documentSnapshot.get("equipment")));
                     cookingSteps = CookingStepParser.parseList(asStringList(documentSnapshot.get("steps")));
                     bindSteps(cookingSteps);
                 })
@@ -389,15 +400,32 @@ public class PostDetailActivity extends AppCompatActivity {
         }
 
         for (String ingredient : ingredients) {
-            Chip chip = new Chip(this);
-            chip.setText(ingredient);
-            chip.setClickable(false);
-            chip.setCheckable(false);
-            chip.setTextSize(13f);
-            chip.setChipBackgroundColorResource(R.color.chip_bg_selector);
-            chip.setTextColor(getColor(R.color.chip_text));
+            Chip chip = buildChip(ingredient);
             cgIngredients.addView(chip);
         }
+    }
+
+    private void bindEquipment(List<String> equipment) {
+        cgEquipment.removeAllViews();
+        if (equipment == null) {
+            return;
+        }
+
+        for (String item : equipment) {
+            Chip chip = buildChip(item);
+            cgEquipment.addView(chip);
+        }
+    }
+
+    private Chip buildChip(String text) {
+        Chip chip = new Chip(this);
+        chip.setText(text);
+        chip.setClickable(false);
+        chip.setCheckable(false);
+        chip.setTextSize(13f);
+        chip.setChipBackgroundColorResource(R.color.chip_bg_selector);
+        chip.setTextColor(getColor(R.color.chip_text));
+        return chip;
     }
 
     private void bindSteps(List<CookingStep> steps) {
@@ -410,7 +438,7 @@ public class PostDetailActivity extends AppCompatActivity {
             CookingStep step = steps.get(i);
             TextView stepView = new TextView(this);
             StringBuilder label = new StringBuilder();
-            label.append(i + 1).append(". ").append(step.getInstruction());
+            label.append(i + 1).append(". ").append(stripExistingStepNumber(step.getInstruction()));
             if (step.hasTimer()) {
                 label.append("\n").append(getString(R.string.cooking_minutes_label, step.getMinutes()));
             }
@@ -444,6 +472,16 @@ public class PostDetailActivity extends AppCompatActivity {
                 TimerActivity.EXTRA_RECIPE_TIMED_STEPS,
                 new ArrayList<>(encodeSteps(cookingSteps))
         );
+        startActivity(intent);
+    }
+
+    private void openPublicProfile() {
+        if (authorUid == null || authorUid.trim().isEmpty()) {
+            return;
+        }
+
+        Intent intent = new Intent(this, PublicProfileActivity.class);
+        intent.putExtra(PublicProfileActivity.EXTRA_USER_ID, authorUid);
         startActivity(intent);
     }
 
@@ -494,6 +532,13 @@ public class PostDetailActivity extends AppCompatActivity {
             encoded.add(step.encode());
         }
         return encoded;
+    }
+
+    private String stripExistingStepNumber(String step) {
+        if (step == null) {
+            return "";
+        }
+        return step.replaceFirst("^(?i)(step\\s*)?\\d+[\\.)\\-:]*\\s*", "").trim();
     }
 
     private int dpToPx(int dp) {

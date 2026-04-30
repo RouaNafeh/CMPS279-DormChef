@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -41,8 +42,7 @@ import java.util.Locale;
 import java.util.Set;
 
 public class ProfileActivity extends AppCompatActivity {
-
-    private static final String STORAGE_BUCKET_URL = "gs://cooksy-ef10e.firebasestorage.app";
+    private static final String TAG = "ProfileActivity";
 
     private ActivityProfileBinding binding;
     private FirebaseAuth auth;
@@ -54,7 +54,6 @@ public class ProfileActivity extends AppCompatActivity {
     private final Set<String> likedPostIds = new HashSet<>();
 
     private PostAdapter postAdapter;
-    private int savedPostsCount = 0;
     private boolean isGrid = false;
 
     private final ActivityResultLauncher<String> profileImagePickerLauncher =
@@ -70,7 +69,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
-        storage = FirebaseStorage.getInstance(STORAGE_BUCKET_URL);
+        storage = FirebaseStorage.getInstance();
 
         if (auth.getCurrentUser() == null) {
             Intent intent = new Intent(this, LandingActivity.class);
@@ -91,6 +90,7 @@ public class ProfileActivity extends AppCompatActivity {
                 this::openPostDetail
         );
         postAdapter.setOnPostDeleteListener(post -> showDeleteDialog(post));
+        postAdapter.setOnPostEditListener(this::showPostActionsDialog);
         binding.rvMyPosts.setNestedScrollingEnabled(false);
         binding.rvMyPosts.setAdapter(postAdapter);
 
@@ -100,6 +100,8 @@ public class ProfileActivity extends AppCompatActivity {
         binding.btnSavedPosts.setOnClickListener(v ->
                 startActivity(new Intent(this, LikedPostsActivity.class)));
         binding.btnLogout.setOnClickListener(v -> showLogoutConfirmation());
+        binding.cardFollowers.setOnClickListener(v -> openConnections(UserConnectionsActivity.MODE_FOLLOWERS));
+        binding.cardFollowing.setOnClickListener(v -> openConnections(UserConnectionsActivity.MODE_FOLLOWING));
         binding.ivProfilePhoto.setOnClickListener(v -> profileImagePickerLauncher.launch("image/*"));
         binding.tvAvatarInitial.setOnClickListener(v -> profileImagePickerLauncher.launch("image/*"));
 
@@ -162,6 +164,8 @@ public class ProfileActivity extends AppCompatActivity {
         binding.tvEmail.setText(email);
         binding.tvUsername.setText(resolveDisplayName(null, email));
         binding.tvAvatarInitial.setText(resolveInitial(binding.tvUsername.getText().toString()));
+        binding.tvFollowersCount.setText("0");
+        binding.tvFollowingCount.setText("0");
     }
 
     private void showDeleteDialog(Post post) {
@@ -173,6 +177,55 @@ public class ProfileActivity extends AppCompatActivity {
                 .show();
     }
 
+    private void showPostActionsDialog(Post post) {
+        String[] options = {"Edit Post", "Delete Post"};
+
+        new AlertDialog.Builder(this)
+                .setTitle(post.getTitle())
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        openEditPost(post);
+                    } else if (which == 1) {
+                        showDeleteDialog(post);
+                    }
+                })
+                .show();
+    }
+
+    private void openEditPost(Post post) {
+        Intent intent = new Intent(this, CreatePostActivity.class);
+        intent.putExtra(CreatePostActivity.EXTRA_EDIT_MODE, true);
+        intent.putExtra(CreatePostActivity.EXTRA_POST_ID, post.getPostId());
+        intent.putExtra(CreatePostActivity.EXTRA_POST_TITLE, post.getTitle());
+        intent.putExtra(CreatePostActivity.EXTRA_POST_DESCRIPTION, post.getDescription());
+        intent.putExtra(CreatePostActivity.EXTRA_POST_COOK_TIME, post.getCookTime());
+        intent.putExtra(CreatePostActivity.EXTRA_POST_BUDGET, post.getBudget());
+        intent.putExtra(CreatePostActivity.EXTRA_POST_IMAGE_URL, post.getImageUrl());
+
+        if (post.getIngredients() != null) {
+            intent.putStringArrayListExtra(
+                    CreatePostActivity.EXTRA_POST_INGREDIENTS,
+                    new ArrayList<>(post.getIngredients())
+            );
+        }
+
+        if (post.getEquipment() != null) {
+            intent.putStringArrayListExtra(
+                    CreatePostActivity.EXTRA_POST_EQUIPMENT,
+                    new ArrayList<>(post.getEquipment())
+            );
+        }
+
+        if (post.getSteps() != null) {
+            intent.putStringArrayListExtra(
+                    CreatePostActivity.EXTRA_POST_STEPS,
+                    new ArrayList<>(post.getSteps())
+            );
+        }
+
+        startActivity(intent);
+    }
+
     private void loadProfile() {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
@@ -181,7 +234,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         binding.progressBar.setVisibility(View.VISIBLE);
         loadUserInfo(user);
-        loadSavedPosts();
+        loadSavedPostIds();
         loadMyPosts(user);
     }
 
@@ -194,10 +247,14 @@ public class ProfileActivity extends AppCompatActivity {
                     String username = documentSnapshot.getString("username");
                     String bio = documentSnapshot.getString("bio");
                     String profileImageUrl = documentSnapshot.getString("profileImageUrl");
+                    Long followerCount = documentSnapshot.getLong("followerCount");
+                    Long followingCount = documentSnapshot.getLong("followingCount");
                     binding.tvUsername.setText(resolveDisplayName(username, email));
                     binding.tvEmail.setText(email);
                     binding.tvBio.setText(resolveBio(bio));
                     binding.tvAvatarInitial.setText(resolveInitial(binding.tvUsername.getText().toString()));
+                    binding.tvFollowersCount.setText(String.valueOf(followerCount == null ? 0 : followerCount));
+                    binding.tvFollowingCount.setText(String.valueOf(followingCount == null ? 0 : followingCount));
                     loadProfilePhoto(profileImageUrl);
                 })
                 .addOnFailureListener(e -> Toast.makeText(
@@ -207,7 +264,7 @@ public class ProfileActivity extends AppCompatActivity {
                 ).show());
     }
 
-    private void loadSavedPosts() {
+    private void loadSavedPostIds() {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
             return;
@@ -222,11 +279,8 @@ public class ProfileActivity extends AppCompatActivity {
                     for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
                         savedPostIds.add(doc.getId());
                     }
-                    savedPostsCount = savedPostIds.size();
-                    binding.tvSavedCount.setText(String.valueOf(savedPostsCount));
                     postAdapter.notifyDataSetChanged();
-                })
-                .addOnFailureListener(e -> binding.tvSavedCount.setText("0"));
+                });
     }
 
     private void loadMyPosts(FirebaseUser user) {
@@ -235,13 +289,11 @@ public class ProfileActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     myPosts.clear();
-                    int totalLikes = 0;
 
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         Post post = doc.toObject(Post.class);
                         post.setPostId(doc.getId());
                         myPosts.add(post);
-                        totalLikes += post.getLikesCount();
                     }
 
                     Collections.sort(myPosts, (first, second) -> {
@@ -258,7 +310,6 @@ public class ProfileActivity extends AppCompatActivity {
                     });
 
                     binding.tvPostsCount.setText(String.valueOf(myPosts.size()));
-                    binding.tvLikesCount.setText(String.valueOf(totalLikes));
                     binding.tvPostsSectionMeta.setText(
                             String.format(Locale.getDefault(), "%d posts", myPosts.size())
                     );
@@ -334,8 +385,7 @@ public class ProfileActivity extends AppCompatActivity {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) return;
 
-        binding.ivProfilePhoto.setEnabled(false);
-        binding.tvAvatarInitial.setEnabled(false);
+        setProfilePhotoUploadEnabled(false);
 
         StorageReference ref = storage.getReference()
                 .child("profileImages")
@@ -349,9 +399,7 @@ public class ProfileActivity extends AppCompatActivity {
                                         .document(user.getUid())
                                         .update("profileImageUrl", downloadUri.toString())
                                         .addOnSuccessListener(unused -> {
-                                            binding.ivProfilePhoto.setEnabled(true);
-                                            binding.tvAvatarInitial.setEnabled(true);
-
+                                            setProfilePhotoUploadEnabled(true);
                                             loadProfilePhoto(downloadUri.toString());
 
                                             Toast.makeText(this,
@@ -359,19 +407,33 @@ public class ProfileActivity extends AppCompatActivity {
                                                     Toast.LENGTH_SHORT).show();
                                         })
                                         .addOnFailureListener(e -> {
-                                            binding.ivProfilePhoto.setEnabled(true);
-                                            binding.tvAvatarInitial.setEnabled(true);
+                                            setProfilePhotoUploadEnabled(true);
+                                            Log.e(TAG, "Failed to save profileImageUrl to Firestore", e);
+                                            showProfilePhotoUploadError(e);
                                         })
-                        )
+                        ).addOnFailureListener(e -> {
+                            setProfilePhotoUploadEnabled(true);
+                            Log.e(TAG, "Failed to resolve uploaded profile photo download URL", e);
+                            showProfilePhotoUploadError(e);
+                        })
                 )
                 .addOnFailureListener(e -> {
-                    binding.ivProfilePhoto.setEnabled(true);
-                    binding.tvAvatarInitial.setEnabled(true);
-
-                    Toast.makeText(this,
-                            R.string.profile_photo_upload_failed,
-                            Toast.LENGTH_SHORT).show();
+                    setProfilePhotoUploadEnabled(true);
+                    Log.e(TAG, "Failed to upload profile photo to Firebase Storage", e);
+                    showProfilePhotoUploadError(e);
                 });
+    }
+
+    private void setProfilePhotoUploadEnabled(boolean enabled) {
+        binding.ivProfilePhoto.setEnabled(enabled);
+        binding.tvAvatarInitial.setEnabled(enabled);
+    }
+
+    private void showProfilePhotoUploadError(Exception e) {
+        String message = e == null || TextUtils.isEmpty(e.getMessage())
+                ? getString(R.string.profile_photo_upload_failed)
+                : getString(R.string.profile_photo_upload_failed_with_reason, e.getMessage());
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
     }
 
     private void openPostDetail(Post post) {
@@ -384,12 +446,20 @@ public class ProfileActivity extends AppCompatActivity {
         intent.putExtra(PostDetailActivity.EXTRA_POST_COOK_TIME, post.getCookTime());
         intent.putExtra(PostDetailActivity.EXTRA_POST_BUDGET, post.getBudget());
         intent.putExtra(PostDetailActivity.EXTRA_POST_USERNAME, post.getUsername());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_UID, post.getUid());
         intent.putExtra(PostDetailActivity.EXTRA_POST_LIKES_COUNT, post.getLikesCount());
 
         if (post.getIngredients() != null) {
             intent.putStringArrayListExtra(
                     PostDetailActivity.EXTRA_POST_INGREDIENTS,
                     new ArrayList<>(post.getIngredients())
+            );
+        }
+
+        if (post.getEquipment() != null) {
+            intent.putStringArrayListExtra(
+                    PostDetailActivity.EXTRA_POST_EQUIPMENT,
+                    new ArrayList<>(post.getEquipment())
             );
         }
 
@@ -400,6 +470,18 @@ public class ProfileActivity extends AppCompatActivity {
             );
         }
 
+        startActivity(intent);
+    }
+
+    private void openConnections(String mode) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            return;
+        }
+
+        Intent intent = new Intent(this, UserConnectionsActivity.class);
+        intent.putExtra(UserConnectionsActivity.EXTRA_USER_ID, user.getUid());
+        intent.putExtra(UserConnectionsActivity.EXTRA_MODE, mode);
         startActivity(intent);
     }
 
