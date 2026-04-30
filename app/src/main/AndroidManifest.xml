@@ -43,6 +43,9 @@
             android:name=".activities.HomeActivity"
             android:exported="false" />
         <activity
+            android:name=".activities.UserConnectionsActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.PublicProfileActivity"
             android:exported="false" />
         <activity

@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -41,8 +42,7 @@ import java.util.Locale;
 import java.util.Set;
 
 public class ProfileActivity extends AppCompatActivity {
-
-    private static final String STORAGE_BUCKET_URL = "gs://cooksy-ef10e.firebasestorage.app";
+    private static final String TAG = "ProfileActivity";
 
     private ActivityProfileBinding binding;
     private FirebaseAuth auth;
@@ -69,7 +69,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
-        storage = FirebaseStorage.getInstance(STORAGE_BUCKET_URL);
+        storage = FirebaseStorage.getInstance();
 
         if (auth.getCurrentUser() == null) {
             Intent intent = new Intent(this, LandingActivity.class);
@@ -100,6 +100,8 @@ public class ProfileActivity extends AppCompatActivity {
         binding.btnSavedPosts.setOnClickListener(v ->
                 startActivity(new Intent(this, LikedPostsActivity.class)));
         binding.btnLogout.setOnClickListener(v -> showLogoutConfirmation());
+        binding.cardFollowers.setOnClickListener(v -> openConnections(UserConnectionsActivity.MODE_FOLLOWERS));
+        binding.cardFollowing.setOnClickListener(v -> openConnections(UserConnectionsActivity.MODE_FOLLOWING));
         binding.ivProfilePhoto.setOnClickListener(v -> profileImagePickerLauncher.launch("image/*"));
         binding.tvAvatarInitial.setOnClickListener(v -> profileImagePickerLauncher.launch("image/*"));
 
@@ -383,8 +385,7 @@ public class ProfileActivity extends AppCompatActivity {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) return;
 
-        binding.ivProfilePhoto.setEnabled(false);
-        binding.tvAvatarInitial.setEnabled(false);
+        setProfilePhotoUploadEnabled(false);
 
         StorageReference ref = storage.getReference()
                 .child("profileImages")
@@ -398,9 +399,7 @@ public class ProfileActivity extends AppCompatActivity {
                                         .document(user.getUid())
                                         .update("profileImageUrl", downloadUri.toString())
                                         .addOnSuccessListener(unused -> {
-                                            binding.ivProfilePhoto.setEnabled(true);
-                                            binding.tvAvatarInitial.setEnabled(true);
-
+                                            setProfilePhotoUploadEnabled(true);
                                             loadProfilePhoto(downloadUri.toString());
 
                                             Toast.makeText(this,
@@ -408,19 +407,33 @@ public class ProfileActivity extends AppCompatActivity {
                                                     Toast.LENGTH_SHORT).show();
                                         })
                                         .addOnFailureListener(e -> {
-                                            binding.ivProfilePhoto.setEnabled(true);
-                                            binding.tvAvatarInitial.setEnabled(true);
+                                            setProfilePhotoUploadEnabled(true);
+                                            Log.e(TAG, "Failed to save profileImageUrl to Firestore", e);
+                                            showProfilePhotoUploadError(e);
                                         })
-                        )
+                        ).addOnFailureListener(e -> {
+                            setProfilePhotoUploadEnabled(true);
+                            Log.e(TAG, "Failed to resolve uploaded profile photo download URL", e);
+                            showProfilePhotoUploadError(e);
+                        })
                 )
                 .addOnFailureListener(e -> {
-                    binding.ivProfilePhoto.setEnabled(true);
-                    binding.tvAvatarInitial.setEnabled(true);
-
-                    Toast.makeText(this,
-                            R.string.profile_photo_upload_failed,
-                            Toast.LENGTH_SHORT).show();
+                    setProfilePhotoUploadEnabled(true);
+                    Log.e(TAG, "Failed to upload profile photo to Firebase Storage", e);
+                    showProfilePhotoUploadError(e);
                 });
+    }
+
+    private void setProfilePhotoUploadEnabled(boolean enabled) {
+        binding.ivProfilePhoto.setEnabled(enabled);
+        binding.tvAvatarInitial.setEnabled(enabled);
+    }
+
+    private void showProfilePhotoUploadError(Exception e) {
+        String message = e == null || TextUtils.isEmpty(e.getMessage())
+                ? getString(R.string.profile_photo_upload_failed)
+                : getString(R.string.profile_photo_upload_failed_with_reason, e.getMessage());
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
     }
 
     private void openPostDetail(Post post) {
@@ -456,6 +469,18 @@ public class ProfileActivity extends AppCompatActivity {
             );
         }
 
+        startActivity(intent);
+    }
+
+    private void openConnections(String mode) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            return;
+        }
+
+        Intent intent = new Intent(this, UserConnectionsActivity.class);
+        intent.putExtra(UserConnectionsActivity.EXTRA_USER_ID, user.getUid());
+        intent.putExtra(UserConnectionsActivity.EXTRA_MODE, mode);
         startActivity(intent);
     }
 

@@ -1,5 +1,8 @@
 package com.cookio.app.ai;
 
+import android.text.TextUtils;
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 
 import com.google.common.util.concurrent.FutureCallback;
@@ -15,6 +18,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 public class AiRecipeHelper {
+    private static final String TAG = "AiRecipeHelper";
 
     private final GenerativeModelFutures model;
     private final Executor executor = Executors.newSingleThreadExecutor();
@@ -64,10 +68,51 @@ public class AiRecipeHelper {
 
                     @Override
                     public void onFailure(@NonNull Throwable t) {
-                        callback.onError(new Exception(t));
+                        Throwable root = unwrapThrowable(t);
+                        Log.e(TAG, "AI generation failed", root);
+                        callback.onError(new Exception(buildReadableMessage(root), root));
                     }
                 },
                 executor
         );
+    }
+
+    private Throwable unwrapThrowable(Throwable throwable) {
+        Throwable current = throwable;
+        while (current.getCause() != null && current.getCause() != current) {
+            current = current.getCause();
+        }
+        return current;
+    }
+
+    private String buildReadableMessage(Throwable throwable) {
+        String message = throwable == null ? "" : throwable.getMessage();
+        if (TextUtils.isEmpty(message)) {
+            return "Unknown Firebase AI error";
+        }
+
+        String lowered = message.toLowerCase();
+
+        if (lowered.contains("permission") || lowered.contains("access denied")) {
+            return "Firebase AI is not enabled for this project or the app does not have permission to use it.";
+        }
+        if (lowered.contains("quota") || lowered.contains("429")) {
+            return "Firebase AI quota was exceeded. Check your plan, quotas, or billing setup.";
+        }
+        if (lowered.contains("payment credits are depleted")
+                || lowered.contains("credits are depleted")
+                || lowered.contains("insufficient balance")
+                || lowered.contains("billing account")
+                || lowered.contains("payment required")) {
+            return "AI generation is unavailable because the Google/Firebase project billing balance is depleted or billing is not fully set up. Refill or attach a valid billing account, or switch this Firebase project back to a supported free-tier Gemini setup.";
+        }
+        if (lowered.contains("api key")) {
+            return "Firebase AI setup is incomplete. Check the Gemini API provider setup in Firebase Console.";
+        }
+        if (lowered.contains("network") || lowered.contains("unable to resolve host")) {
+            return "Network error while contacting Firebase AI.";
+        }
+
+        return message;
     }
 }

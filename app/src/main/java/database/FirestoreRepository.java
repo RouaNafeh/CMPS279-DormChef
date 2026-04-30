@@ -6,6 +6,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.Transaction;
 import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
@@ -257,6 +258,13 @@ public class FirestoreRepository {
         return value != null ? value : fallback;
     }
 
+    private Map<String, Object> buildConnectionData(String userId) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("uid", userId);
+        data.put("createdAt", FieldValue.serverTimestamp());
+        return data;
+    }
+
     //---Following system---
     public void followUser(User currentUser, User targetUser, OnActionListener listener){
         if(currentUser.getUid().equals(targetUser.getUid())){
@@ -264,67 +272,76 @@ public class FirestoreRepository {
             return;
         }
 
-        WriteBatch batch = db.batch();
-        batch.set(db.collection("users")
-                .document(currentUser.getUid())
-                .collection("following")
-                .document(targetUser.getUid()),
-                targetUser
-        );
+        db.runTransaction(transaction -> {
+                    var followingRef = db.collection("users")
+                            .document(currentUser.getUid())
+                            .collection("following")
+                            .document(targetUser.getUid());
 
-        batch.set(db.collection("users")
-                .document(targetUser.getUid())
-                .collection("followers")
-                .document(currentUser.getUid()),
-                currentUser
-        );
+                    var followerRef = db.collection("users")
+                            .document(targetUser.getUid())
+                            .collection("followers")
+                            .document(currentUser.getUid());
 
-        batch.update(
-                db.collection("users")
-                        .document(currentUser.getUid()),
-                "followingCount",
-                FieldValue.increment(1)
-        );
+                    DocumentSnapshot existing = transaction.get(followingRef);
+                    if (existing.exists()) {
+                        return null;
+                    }
 
-        batch.update(
-                db.collection("users").document(targetUser.getUid()),
-                "followerCount",
-                FieldValue.increment(1)
-        );
-
-        batch.commit()
+                    transaction.set(followingRef, buildConnectionData(targetUser.getUid()));
+                    transaction.set(followerRef, buildConnectionData(currentUser.getUid()));
+                    transaction.update(
+                            db.collection("users").document(currentUser.getUid()),
+                            "followingCount",
+                            FieldValue.increment(1)
+                    );
+                    transaction.update(
+                            db.collection("users").document(targetUser.getUid()),
+                            "followerCount",
+                            FieldValue.increment(1)
+                    );
+                    return null;
+                })
                 .addOnSuccessListener(unused -> listener.onSuccess())
                 .addOnFailureListener(listener::onFailure);
     }
 
     public void unfollowUser(String currentUserId, String targetUserId, OnActionListener listener){
-        WriteBatch batch = db.batch();
-        batch.delete(db.collection("users")
-                        .document(currentUserId)
-                        .collection("following")
-                        .document(targetUserId)
-        );
+        if(currentUserId.equals(targetUserId)){
+            listener.onFailure(new Exception("You cannot unfollow yourself"));
+            return;
+        }
 
-        batch.delete(db.collection("users")
-                        .document(targetUserId)
-                        .collection("followers")
-                        .document(currentUserId)
-        );
+        db.runTransaction(transaction -> {
+                    var followingRef = db.collection("users")
+                            .document(currentUserId)
+                            .collection("following")
+                            .document(targetUserId);
 
-        batch.update(
-                db.collection("users")
-                        .document(currentUserId),
-                "followingCount",
-                FieldValue.increment(-1)
-        );
+                    var followerRef = db.collection("users")
+                            .document(targetUserId)
+                            .collection("followers")
+                            .document(currentUserId);
 
-        batch.update(
-                db.collection("users").document(targetUserId),
-                "followerCount",
-                FieldValue.increment(-1)
-        );
+                    DocumentSnapshot existing = transaction.get(followingRef);
+                    if (!existing.exists()) {
+                        return null;
+                    }
 
-        batch.commit()
+                    transaction.delete(followingRef);
+                    transaction.delete(followerRef);
+                    transaction.update(
+                            db.collection("users").document(currentUserId),
+                            "followingCount",
+                            FieldValue.increment(-1)
+                    );
+                    transaction.update(
+                            db.collection("users").document(targetUserId),
+                            "followerCount",
+                            FieldValue.increment(-1)
+                    );
+                    return null;
+                })
                 .addOnSuccessListener(unused -> listener.onSuccess())
                 .addOnFailureListener(listener::onFailure);
     }

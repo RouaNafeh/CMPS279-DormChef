@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
@@ -35,8 +36,8 @@ import java.util.List;
 import java.util.UUID;
 
 public class CreatePostActivity extends AppCompatActivity {
+    private static final String TAG = "CreatePostActivity";
 
-    private static final String STORAGE_BUCKET_URL = "gs://cooksy-ef10e.firebasestorage.app";
     public static final String EXTRA_EDIT_MODE = "edit_mode";
     public static final String EXTRA_POST_ID = "edit_post_id";
     public static final String EXTRA_POST_TITLE = "edit_post_title";
@@ -76,7 +77,7 @@ public class CreatePostActivity extends AppCompatActivity {
 
         auth = FirebaseAuth.getInstance();
         firestore = FirebaseFirestore.getInstance();
-        storage = FirebaseStorage.getInstance(STORAGE_BUCKET_URL);
+        storage = FirebaseStorage.getInstance();
 
         if (auth.getCurrentUser() == null) {
             startActivity(new Intent(this, LandingActivity.class)
@@ -460,9 +461,10 @@ public class CreatePostActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     binding.btnGenerateAi.setEnabled(true);
                     binding.btnGenerateAi.setText("Generate with AI");
+                    Log.e(TAG, "AI generation failed", e);
                     Toast.makeText(CreatePostActivity.this,
                             "AI generation failed: " + e.getMessage(),
-                            Toast.LENGTH_SHORT).show();
+                            Toast.LENGTH_LONG).show();
                 });
             }
         });

@@ -50,6 +50,7 @@ public class PublicProfileActivity extends AppCompatActivity {
     private User currentUser;
     private User targetUser;
     private boolean isFollowing = false;
+    private boolean isFollowStateLoaded = false;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -100,6 +101,8 @@ public class PublicProfileActivity extends AppCompatActivity {
     private void setupActions() {
         binding.btnBack.setOnClickListener(v -> finish());
         binding.btnFollow.setOnClickListener(v -> toggleFollow());
+        binding.cardFollowers.setOnClickListener(v -> openConnections(UserConnectionsActivity.MODE_FOLLOWERS));
+        binding.cardFollowing.setOnClickListener(v -> openConnections(UserConnectionsActivity.MODE_FOLLOWING));
     }
 
     private void populateFallbackState() {
@@ -111,6 +114,8 @@ public class PublicProfileActivity extends AppCompatActivity {
         binding.tvFollowersCount.setText("0");
         binding.tvFollowingCount.setText("0");
         binding.tvPostsSectionMeta.setText(getString(R.string.profile_posts_section_meta));
+        binding.btnFollow.setEnabled(false);
+        binding.btnFollow.setText(R.string.public_profile_follow_loading_button);
     }
 
     private void loadUsers() {
@@ -148,6 +153,7 @@ public class PublicProfileActivity extends AppCompatActivity {
                     binding.tvPostsSectionTitle.setText(R.string.public_profile_posts_self_title);
                 } else {
                     binding.btnFollow.setVisibility(View.VISIBLE);
+                    setFollowButtonLoading(true);
                     loadFollowState();
                 }
             }
@@ -181,17 +187,31 @@ public class PublicProfileActivity extends AppCompatActivity {
             @Override
             public void onSuccess(boolean result) {
                 isFollowing = result;
+                isFollowStateLoaded = true;
+                setFollowButtonLoading(false);
                 updateFollowButton();
             }
 
             @Override
             public void onFailure(Exception e) {
+                isFollowStateLoaded = false;
+                setFollowButtonLoading(false);
                 updateFollowButton();
+                Toast.makeText(
+                        PublicProfileActivity.this,
+                        R.string.public_profile_follow_state_load_failed,
+                        Toast.LENGTH_SHORT
+                ).show();
             }
         });
     }
 
     private void updateFollowButton() {
+        if (!isFollowStateLoaded) {
+            binding.btnFollow.setText(R.string.public_profile_follow_retry_button);
+            return;
+        }
+
         binding.btnFollow.setText(
                 isFollowing
                         ? getString(R.string.public_profile_following_button)
@@ -200,29 +220,40 @@ public class PublicProfileActivity extends AppCompatActivity {
     }
 
     private void toggleFollow() {
+        if (!isFollowStateLoaded) {
+            setFollowButtonLoading(true);
+            loadFollowState();
+            return;
+        }
+
         if (currentUser == null || targetUser == null || currentUserId.equals(targetUserId)) {
             return;
         }
 
-        binding.btnFollow.setEnabled(false);
+        setFollowButtonLoading(true);
 
         if (isFollowing) {
             repository.unfollowUser(currentUserId, targetUserId, new FirestoreRepository.OnActionListener() {
                 @Override
                 public void onSuccess() {
                     isFollowing = false;
-                    binding.btnFollow.setEnabled(true);
+                    setFollowButtonLoading(false);
                     targetUser.setFollowerCount(Math.max(0, targetUser.getFollowerCount() - 1));
                     binding.tvFollowersCount.setText(String.valueOf(targetUser.getFollowerCount()));
                     updateFollowButton();
+                    Toast.makeText(
+                            PublicProfileActivity.this,
+                            R.string.public_profile_unfollow_success,
+                            Toast.LENGTH_SHORT
+                    ).show();
                 }
 
                 @Override
                 public void onFailure(Exception e) {
-                    binding.btnFollow.setEnabled(true);
+                    setFollowButtonLoading(false);
                     Toast.makeText(
                             PublicProfileActivity.this,
-                            R.string.public_profile_follow_action_failed,
+                            R.string.public_profile_unfollow_failed,
                             Toast.LENGTH_SHORT
                     ).show();
                 }
@@ -232,23 +263,37 @@ public class PublicProfileActivity extends AppCompatActivity {
                 @Override
                 public void onSuccess() {
                     isFollowing = true;
-                    binding.btnFollow.setEnabled(true);
+                    setFollowButtonLoading(false);
                     targetUser.setFollowerCount(targetUser.getFollowerCount() + 1);
                     binding.tvFollowersCount.setText(String.valueOf(targetUser.getFollowerCount()));
                     updateFollowButton();
+                    Toast.makeText(
+                            PublicProfileActivity.this,
+                            R.string.public_profile_follow_success,
+                            Toast.LENGTH_SHORT
+                    ).show();
                 }
 
                 @Override
                 public void onFailure(Exception e) {
-                    binding.btnFollow.setEnabled(true);
+                    setFollowButtonLoading(false);
                     Toast.makeText(
                             PublicProfileActivity.this,
-                            R.string.public_profile_follow_action_failed,
+                            R.string.public_profile_follow_failed,
                             Toast.LENGTH_SHORT
                     ).show();
                 }
             });
         }
+    }
+
+    private void setFollowButtonLoading(boolean loading) {
+        binding.btnFollow.setEnabled(!loading);
+        binding.btnFollow.setText(
+                loading
+                        ? getString(R.string.public_profile_follow_working_button)
+                        : binding.btnFollow.getText()
+        );
     }
 
     private void loadUserPosts() {
@@ -407,6 +452,17 @@ public class PublicProfileActivity extends AppCompatActivity {
             );
         }
 
+        startActivity(intent);
+    }
+
+    private void openConnections(String mode) {
+        if (TextUtils.isEmpty(targetUserId)) {
+            return;
+        }
+
+        Intent intent = new Intent(this, UserConnectionsActivity.class);
+        intent.putExtra(UserConnectionsActivity.EXTRA_USER_ID, targetUserId);
+        intent.putExtra(UserConnectionsActivity.EXTRA_MODE, mode);
         startActivity(intent);
     }
 
