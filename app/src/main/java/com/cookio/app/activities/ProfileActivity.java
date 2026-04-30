@@ -42,8 +42,6 @@ import java.util.Set;
 
 public class ProfileActivity extends AppCompatActivity {
 
-    private static final String STORAGE_BUCKET_URL = "gs://cooksy-ef10e.firebasestorage.app";
-
     private ActivityProfileBinding binding;
     private FirebaseAuth auth;
     private FirebaseFirestore db;
@@ -69,7 +67,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
-        storage = FirebaseStorage.getInstance(STORAGE_BUCKET_URL);
+        storage = FirebaseStorage.getInstance();
 
         if (auth.getCurrentUser() == null) {
             Intent intent = new Intent(this, LandingActivity.class);
