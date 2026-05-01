@@ -213,7 +213,6 @@ public class SavedPostsActivity extends AppCompatActivity {
             }
         }
         savedPostIds.remove(postId);
-        likedPostIds.remove(postId);
         finishLoading();
     }
 

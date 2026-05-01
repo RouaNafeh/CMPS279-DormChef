@@ -1,6 +1,7 @@
 package com.cookio.app.activities;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
@@ -350,7 +351,7 @@ public class PostDetailActivity extends AppCompatActivity {
         }
 
         isLiked = true;
-        likesCount = previousLikeCount + 1;
+        likesCount = previousLikeCount;
         updateLikeButton();
         updateLikesCount();
         animateLikeButton();
@@ -362,11 +363,11 @@ public class PostDetailActivity extends AppCompatActivity {
             Map<String, Object> likeData = new HashMap<>();
             likeData.put("likedAt", FieldValue.serverTimestamp());
             transaction.set(likeRef, likeData);
-            transaction.update(postRef, "likesCount", previousLikeCount + 1);
+            transaction.update(postRef, "likesCount", previousLikeCount);
             return null;
         }).addOnFailureListener(e -> {
             isLiked = false;
-            likesCount = previousLikeCount;
+            likesCount = Math.max(0, previousLikeCount - 1);
             updateLikeButton();
             updateLikesCount();
             Toast.makeText(this, R.string.post_detail_like_failed, Toast.LENGTH_SHORT).show();
@@ -375,14 +376,21 @@ public class PostDetailActivity extends AppCompatActivity {
 
     private void updateSaveButton() {
         btnSavePost.setIconResource(isSaved ? R.drawable.ic_save_filled : R.drawable.ic_save_outline);
+        btnSavePost.setIconTint(ColorStateList.valueOf(getColor(R.color.primary)));
     }
 
     private void updateLikeButton() {
         btnLikePost.setIconResource(isLiked ? R.drawable.heart_filled : R.drawable.heart);
+        btnLikePost.setIconTint(ColorStateList.valueOf(getColor(isLiked ? R.color.red : R.color.accent_pink)));
     }
 
     private void updateLikesCount() {
-        tvDetailLikesCount.setText(getString(R.string.post_detail_likes_count, likesCount));
+        tvDetailLikesCount.setText(getString(
+                likesCount == 1
+                        ? R.string.post_detail_like_count_singular
+                        : R.string.post_detail_like_count_plural,
+                likesCount
+        ));
     }
 
     private void bindImage(String imageUrl) {

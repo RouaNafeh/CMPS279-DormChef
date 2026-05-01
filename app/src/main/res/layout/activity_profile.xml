@@ -6,13 +6,13 @@
     android:layout_height="match_parent"
     android:background="@color/secondary">
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollProfile"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
         android:fillViewport="true"
-        android:paddingBottom="12dp"
+        android:paddingBottom="24dp"
         app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -504,10 +504,11 @@
                 android:layout_marginTop="10dp"
                 android:clipToPadding="false"
                 android:nestedScrollingEnabled="false"
-                android:paddingBottom="8dp"
+                android:overScrollMode="never"
+                android:paddingBottom="32dp"
                 tools:listitem="@layout/item_post" />
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
     <include
         android:id="@+id/bottomNavigation"
