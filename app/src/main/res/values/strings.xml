@@ -24,7 +24,8 @@
     <string name="post_unliked_message">Post removed from liked posts</string>
     <string name="post_detail_save">Save post</string>
     <string name="post_detail_like">Like post</string>
-    <string name="post_detail_likes_count">%1$d likes</string>
+    <string name="post_detail_like_count_singular">%1$d like</string>
+    <string name="post_detail_like_count_plural">%1$d likes</string>
     <string name="post_detail_author">by %1$s</string>
     <string name="post_detail_loading_failed">Failed to load post details</string>
     <string name="post_detail_like_failed">Failed to update like</string>
