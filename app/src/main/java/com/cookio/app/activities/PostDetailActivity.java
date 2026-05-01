@@ -609,17 +609,15 @@ public class PostDetailActivity extends AppCompatActivity {
     }
 
     private void updateLikesCount() {
-<<<<<<< HEAD
+
         String text = likesCount == 1 ? "1 like" : likesCount + " likes";
         tvDetailLikesCount.setText(text);
-=======
         tvDetailLikesCount.setText(getString(
                 likesCount == 1
                         ? R.string.post_detail_like_count_singular
                         : R.string.post_detail_like_count_plural,
                 likesCount
         ));
->>>>>>> 43ed521cfa3f9e8b4fcc743d7dbd8ca8e4d16496
     }
 
     private void bindImage(String imageUrl) {
