@@ -79,6 +79,26 @@
             app:layout_constraintEnd_toStartOf="@id/action_column"
             app:layout_constraintStart_toStartOf="@id/author_row"
             app:layout_constraintTop_toBottomOf="@id/author_row" />
+        <LinearLayout
+            android:id="@+id/post_rating_row"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp"
+            android:gravity="center_vertical"
+            app:layout_constraintStart_toStartOf="@id/post_title"
+            app:layout_constraintTop_toBottomOf="@id/post_title"
+            app:layout_constraintEnd_toStartOf="@id/action_column">
+
+            <TextView
+                android:id="@+id/post_rating_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⭐ 0.0 (0)"
+                android:textSize="12sp"
+                android:textColor="@color/textGrey" />
+
+        </LinearLayout>
 
         <LinearLayout
             android:id="@+id/action_column"
@@ -145,8 +165,9 @@
             android:textSize="14sp"
             app:layout_constraintEnd_toStartOf="@id/action_column"
             app:layout_constraintStart_toStartOf="@id/post_title"
-            app:layout_constraintTop_toBottomOf="@id/post_title" />
+            app:layout_constraintTop_toBottomOf="@id/post_rating_row">
 
+        </TextView>
         <LinearLayout
             android:id="@+id/meta_row"
             android:layout_width="0dp"

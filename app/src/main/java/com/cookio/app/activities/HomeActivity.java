@@ -3,6 +3,12 @@ package com.cookio.app.activities;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -19,6 +25,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -43,6 +50,8 @@ public class HomeActivity extends AppCompatActivity {
     private DocumentSnapshot lastVisible = null;
     private boolean isLoading = false;
     private boolean isLastPage = false;
+    private boolean filterActive = false;
+    private List<Post> lastFilteredPosts = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,7 +81,10 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        loadFeedData();
+
+        if (!filterActive) {
+            loadFeedData();
+        }
     }
 
     private void setupRecyclerView() {
@@ -132,8 +144,7 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void setupActions() {
-        binding.filterBtn.setOnClickListener(v ->
-                startActivity(new Intent(this, FilterActivity.class)));
+        binding.filterBtn.setOnClickListener(v -> showFilterSheet());
 
         binding.btnQuickAddRecipe.setOnClickListener(v ->
                 startActivity(new Intent(this, CreatePostActivity.class)));
@@ -160,8 +171,95 @@ public class HomeActivity extends AppCompatActivity {
             return false;
         });
     }
+    private void showFilterSheet() {
+        BottomSheetDialog dialog = new BottomSheetDialog(this);
+        View view = getLayoutInflater().inflate(R.layout.bottom_sheet_filter, null, false);        dialog.setContentView(view);
+
+        Button btnSortRating = view.findViewById(R.id.btnSortRating);
+        Button btnSortTime = view.findViewById(R.id.btnSortTime);
+        Button btnApply = view.findViewById(R.id.btnApply);
+        Button btnClear = view.findViewById(R.id.btnClear);
+        EditText etIngredient = view.findViewById(R.id.etIngredient);
+        RadioGroup radioBudget = view.findViewById(R.id.radioBudget);
+
+        final String[] sort = {""};
+
+        btnSortRating.setAlpha(0.7f);
+        btnSortTime.setAlpha(0.7f);
+
+        btnSortRating.setOnClickListener(v -> {
+            sort[0] = "rating";
+            btnSortRating.setAlpha(1f);
+            btnSortTime.setAlpha(0.45f);
+        });
+
+        btnSortTime.setOnClickListener(v -> {
+            sort[0] = "time";
+            btnSortTime.setAlpha(1f);
+            btnSortRating.setAlpha(0.45f);
+        });
+
+        btnApply.setOnClickListener(v -> {
+            String ingredient = etIngredient.getText().toString().toLowerCase();
+
+            List<Post> filtered = new ArrayList<>();
+
+            for (Post p : allPosts) {
+
+                boolean matches = true;
+
+                // INGREDIENT FILTER
+                if (!ingredient.isEmpty()) {
+                    matches = p.getIngredients().toString().toLowerCase().contains(ingredient);
+                }
+
+                // BUDGET FILTER
+                int selectedId = radioBudget.getCheckedRadioButtonId();
+                if (selectedId != -1) {
+                    RadioButton selected = view.findViewById(selectedId);
+                    String budget = selected.getText().toString();
+
+                    if (!p.getBudget().equalsIgnoreCase(budget)) {
+                        matches = false;
+                    }
+                }
+
+                if (matches) filtered.add(p);
+            }
+
+            // SORT
+            if (sort[0].equals("rating")) {
+                filtered.sort((p1, p2) -> Float.compare(p2.getAvgRating(), p1.getAvgRating()));
+            }
+
+            if (sort[0].equals("time")) {
+                filtered.sort((p1, p2) ->
+                        Integer.compare(parseCookTime(p1.getCookTime()), parseCookTime(p2.getCookTime()))
+                );
+            }
+
+            filterActive = true;
+            lastFilteredPosts.clear();
+            lastFilteredPosts.addAll(filtered);
+
+            postAdapter.updateData(lastFilteredPosts);
+            dialog.dismiss();
+        });
+
+        btnClear.setOnClickListener(v -> {
+            filterActive = false;
+            lastFilteredPosts.clear();
+
+            postAdapter.updateData(allPosts);
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
 
     private void refreshFeed() {
+        filterActive = false;
+        lastFilteredPosts.clear();
         loadFeedData();
     }
 
@@ -355,5 +453,23 @@ public class HomeActivity extends AppCompatActivity {
         }
 
         startActivity(intent);
+    }
+    private int parseCookTime(String time) {
+        if (time == null || time.trim().isEmpty()) return Integer.MAX_VALUE;
+
+        String t = time.toLowerCase().trim();
+
+        if (t.contains("hour")) return 60;
+        if (t.contains("one hour")) return 60;
+
+        java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("\\d+")
+                .matcher(t);
+
+        if (matcher.find()) {
+            return Integer.parseInt(matcher.group());
+        }
+
+        return Integer.MAX_VALUE;
     }
 }
