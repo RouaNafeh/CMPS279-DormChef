@@ -69,7 +69,6 @@ public class PostDetailActivity extends AppCompatActivity {
 
     private ImageView ivImage;
     private TextView tvTitle;
-    private String authorUid;
     private TextView tvUsername;
     private TextView tvDescription;
     private TextView tvCookTime;
@@ -204,6 +203,32 @@ public class PostDetailActivity extends AppCompatActivity {
                     .addOnSuccessListener(doc -> {
                         etComment.setText("");
                         ratingBarComment.setRating(0);
+
+                        String myPhotoUrl = getSharedPreferences("cookio_prefs", MODE_PRIVATE)
+                                .getString("photoUrl", "");
+
+                        if (authorUid != null && currentUid != null && !authorUid.equals(currentUid)) {
+                            NotificationHelper.sendCommentNotification(
+                                    authorUid,
+                                    currentUid,
+                                    username,
+                                    myPhotoUrl,
+                                    postId,
+                                    tvTitle.getText().toString(),
+                                    text
+                            );
+
+                            NotificationHelper.sendReviewNotification(
+                                    authorUid,
+                                    currentUid,
+                                    username,
+                                    myPhotoUrl,
+                                    postId,
+                                    tvTitle.getText().toString(),
+                                    Math.round(rating)
+                            );
+                        }
+
                         Toast.makeText(this, "Review added", Toast.LENGTH_SHORT).show();
                     });
         });

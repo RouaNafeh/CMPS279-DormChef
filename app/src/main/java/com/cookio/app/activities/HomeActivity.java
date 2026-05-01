@@ -82,9 +82,12 @@ public class HomeActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
+        updateNotificationDot();
+
         if (!filterActive) {
             loadFeedData();
         }
+
     }
 
     private void setupRecyclerView() {
@@ -148,6 +151,11 @@ public class HomeActivity extends AppCompatActivity {
 
         binding.btnQuickAddRecipe.setOnClickListener(v ->
                 startActivity(new Intent(this, CreatePostActivity.class)));
+
+        binding.btnNotifications.setOnClickListener(v -> {
+            binding.viewNotificationDot.setVisibility(View.GONE);
+            startActivity(new Intent(this, NotificationsActivity.class));
+        });
     }
 
     private void setupBottomNavigation() {
@@ -480,5 +488,17 @@ public class HomeActivity extends AppCompatActivity {
         Intent intent = new Intent(this, PublicProfileActivity.class);
         intent.putExtra(PublicProfileActivity.EXTRA_USER_ID, authorUid);
         startActivity(intent);
+    }
+
+    private void updateNotificationDot() {
+        if (auth.getCurrentUser() == null) return;
+
+        String uid = auth.getCurrentUser().getUid();
+
+        NotificationsActivity.getUnreadCount(uid, count -> {
+            runOnUiThread(() -> {
+                binding.viewNotificationDot.setVisibility(count > 0 ? View.VISIBLE : View.GONE);
+            });
+        });
     }
 }

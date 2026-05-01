@@ -141,6 +141,7 @@ public class NotificationsActivity extends AppCompatActivity {
                     intent.putExtra(PostDetailActivity.EXTRA_POST_COOK_TIME,   doc.getString("cookTime"));
                     intent.putExtra(PostDetailActivity.EXTRA_POST_BUDGET,      doc.getString("budget"));
                     intent.putExtra(PostDetailActivity.EXTRA_POST_USERNAME,    doc.getString("username"));
+                    intent.putExtra(PostDetailActivity.EXTRA_POST_UID, doc.getString("uid"));
                     Long likes = doc.getLong("likesCount");
                     intent.putExtra(PostDetailActivity.EXTRA_POST_LIKES_COUNT,
                             likes != null ? likes.intValue() : 0);
@@ -157,6 +158,15 @@ public class NotificationsActivity extends AppCompatActivity {
                         ArrayList<String> stpList = new ArrayList<>();
                         for (Object o : (List<?>) stp) { if (o instanceof String) stpList.add((String) o); }
                         intent.putStringArrayListExtra(PostDetailActivity.EXTRA_POST_STEPS, stpList);
+                    }
+                    Object eqp = doc.get("equipment");
+
+                    if (eqp instanceof List) {
+                        ArrayList<String> eqpList = new ArrayList<>();
+                        for (Object o : (List<?>) eqp) {
+                            if (o instanceof String) eqpList.add((String) o);
+                        }
+                        intent.putStringArrayListExtra(PostDetailActivity.EXTRA_POST_EQUIPMENT, eqpList);
                     }
                     startActivity(intent);
                 })
