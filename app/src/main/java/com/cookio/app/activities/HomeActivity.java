@@ -404,8 +404,9 @@ public class HomeActivity extends AppCompatActivity {
             for (Post post : allPosts) {
                 String title = post.getTitle() == null ? "" : post.getTitle().toLowerCase();
                 String username = post.getUsername() == null ? "" : post.getUsername().toLowerCase();
+                String description = post.getDescription() == null ? "" : post.getDescription().toLowerCase();
 
-                if (title.contains(query) || username.contains(query)) {
+                if (title.contains(query) || username.contains(query) || description.contains(query)) {
                     filteredPosts.add(post);
                 }
             }
@@ -454,6 +455,7 @@ public class HomeActivity extends AppCompatActivity {
 
         startActivity(intent);
     }
+
     private int parseCookTime(String time) {
         if (time == null || time.trim().isEmpty()) return Integer.MAX_VALUE;
 
@@ -471,5 +473,12 @@ public class HomeActivity extends AppCompatActivity {
         }
 
         return Integer.MAX_VALUE;
+    }
+
+    private void openPublicProfile(String authorUid) {
+        if (authorUid == null || authorUid.isEmpty()) return;
+        Intent intent = new Intent(this, PublicProfileActivity.class);
+        intent.putExtra(PublicProfileActivity.EXTRA_USER_ID, authorUid);
+        startActivity(intent);
     }
 }

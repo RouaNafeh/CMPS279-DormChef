@@ -75,7 +75,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
     private OnPostEditListener onPostEditListener;
     private OnPostSaveStateChangedListener onPostSaveStateChangedListener;
     private OnPostLikeStateChangedListener onPostLikeStateChangedListener;
-
+    private OnAuthorClickListener onAuthorClickListener;
     public PostAdapter(Context context, List<Post> postList,
                        Set<String> savedPostIds, Set<String> likedPostIds,
                        OnPostClickListener clickListener) {
@@ -176,6 +176,12 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
 
         holder.saveButton.setOnClickListener(v -> toggleSave(post, holder));
         holder.likeButton.setOnClickListener(v -> toggleLike(post, holder));
+
+        holder.postImage.setOnClickListener(v -> {
+            if (onAuthorClickListener != null && post.getUid() != null) {
+                onAuthorClickListener.onAuthorClick(post.getUid(), post.getUsername());
+            }
+        });
 
         holder.itemView.setOnClickListener(v -> {
             if (onPostClickListener != null) {
@@ -555,6 +561,12 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         this.onPostUnsavedListener = listener;
     }
 
+    public interface OnAuthorClickListener {
+        void onAuthorClick(String authorUid, String authorUsername);
+    }
+    public void setOnAuthorClickListener(OnAuthorClickListener listener) {
+        this.onAuthorClickListener = listener;
+    }
     public void setOnPostDeleteListener(OnPostDeleteListener listener) {
         this.onPostDeleteListener = listener;
     }
