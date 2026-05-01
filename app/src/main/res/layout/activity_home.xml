@@ -92,6 +92,67 @@
 
                 <LinearLayout
                     android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="10dp"
+                    android:src="@drawable/logo_cropped" />
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Search quick dishes, open filters, or jump straight into sharing a new post."
+            android:textColor="@color/textMuted"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.SearchView
+                android:id="@+id/search_bar"
+                android:layout_width="0dp"
+                android:layout_height="54dp"
+                android:layout_weight="1"
+                android:background="@drawable/search_background"
+                app:iconifiedByDefault="false"
+                app:queryBackground="@android:color/transparent"
+                app:queryHint="Search recipes, authors, ingredients…" />
+
+            <ImageView
+                android:id="@+id/filter_btn"
+                android:layout_width="54dp"
+                android:layout_height="54dp"
+                android:layout_marginStart="10dp"
+                android:background="@drawable/search_background"
+                android:padding="14dp"
+                android:src="@drawable/filter"
+                app:tint="@color/textDark" />
+        </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="@color/card_white"
+            app:cardCornerRadius="28dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/borderSoft"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_profile_header"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="18dp"
                     android:gravity="center_vertical"
@@ -178,24 +239,34 @@
 
         </androidx.core.widget.NestedScrollView>
 
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerCards"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingBottom="100dp"
+                tools:listitem="@layout/item_recipe" />
+
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btnQuickAddRecipe"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="22dp"
-        android:layout_marginBottom="12dp"
+        android:layout_marginBottom="86dp"
         android:contentDescription="Add recipe"
         android:src="@drawable/add_plus"
         app:backgroundTint="@color/accent_pink"
         app:borderWidth="0dp"
         app:elevation="6dp"
-        app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
-        app:layout_constraintEnd_toEndOf="parent"
         app:maxImageSize="24dp"
         app:rippleColor="@color/white"
-        app:tint="@color/white" />
+        app:tint="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <include
         android:id="@+id/bottomNavigation"

@@ -86,6 +86,7 @@ public class HomeActivity extends AppCompatActivity {
         binding.recyclerCards.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerCards.setHasFixedSize(true);
         binding.recyclerCards.setAdapter(postAdapter);
+        postAdapter.setOnAuthorClickListener((authorUid, authorUsername) -> openPublicProfile(authorUid));
         binding.recyclerCards.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
@@ -306,8 +307,9 @@ public class HomeActivity extends AppCompatActivity {
             for (Post post : allPosts) {
                 String title = post.getTitle() == null ? "" : post.getTitle().toLowerCase();
                 String username = post.getUsername() == null ? "" : post.getUsername().toLowerCase();
+                String description = post.getDescription() == null ? "" : post.getDescription().toLowerCase();
 
-                if (title.contains(query) || username.contains(query)) {
+                if (title.contains(query) || username.contains(query) || description.contains(query)) {
                     filteredPosts.add(post);
                 }
             }
@@ -354,6 +356,12 @@ public class HomeActivity extends AppCompatActivity {
             );
         }
 
+        startActivity(intent);
+    }
+    private void openPublicProfile(String authorUid) {
+        if (authorUid == null || authorUid.isEmpty()) return;
+        Intent intent = new Intent(this, PublicProfileActivity.class);
+        intent.putExtra(PublicProfileActivity.EXTRA_USER_ID, authorUid);
         startActivity(intent);
     }
 }

@@ -69,6 +69,7 @@ public class PostDetailActivity extends AppCompatActivity {
 
     private ImageView ivImage;
     private TextView tvTitle;
+    private String authorUid;
     private TextView tvUsername;
     private TextView tvDescription;
     private TextView tvCookTime;
@@ -636,9 +637,22 @@ public class PostDetailActivity extends AppCompatActivity {
     private void bindUsername(String username) {
         if (username == null || username.trim().isEmpty()) {
             tvUsername.setText("");
+            tvUsername.setOnClickListener(null);
             return;
         }
         tvUsername.setText(getString(R.string.post_detail_author, username));
+        tvUsername.setOnClickListener(v -> openAuthorProfile());
+    }
+    private void openAuthorProfile() {
+        if (authorUid == null || authorUid.isEmpty()) return;
+
+        if (currentUid != null && authorUid.equals(currentUid)) {
+            startActivity(new Intent(this, ProfileActivity.class));
+        } else {
+            Intent intent = new Intent(this, PublicProfileActivity.class);
+            intent.putExtra(PublicProfileActivity.EXTRA_USER_ID, authorUid);
+            startActivity(intent);
+        }
     }
 
     private void bindIngredients(List<String> ingredients) {
