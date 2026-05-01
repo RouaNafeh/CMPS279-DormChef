@@ -1,5 +1,7 @@
 package com.cookio.app.activities;
 
+import com.cookio.app.utils.NotificationHelper;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -7,9 +9,12 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.RatingBar;
+import android.widget.EditText;
 
 import androidx.appcompat.app.AppCompatActivity;
-import com.cookio.app.utils.NotificationHelper;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.bumptech.glide.Glide;
 import com.cookio.app.R;
@@ -24,11 +29,17 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.cookio.app.models.Comment;
+import com.cookio.app.adapters.CommentAdapter;
+import com.google.firebase.firestore.Query;
+
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
 public class PostDetailActivity extends AppCompatActivity {
 
@@ -69,6 +80,17 @@ public class PostDetailActivity extends AppCompatActivity {
     private MaterialButton btnLikePost;
     private MaterialButton btnCookingMode;
     private List<CookingStep> cookingSteps = new ArrayList<>();
+    private Set<String> likedCommentIds = new HashSet<>();
+    private RecyclerView rvComments;
+    private EditText etComment;
+    private MaterialButton btnSendComment;
+    private CommentAdapter commentAdapter;
+    private RatingBar ratingBarComment;
+    private RatingBar ratingBarAvg;
+
+    private TextView tvAvgRating;
+
+    private List<Comment> commentList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,6 +112,26 @@ public class PostDetailActivity extends AppCompatActivity {
         setupDropdown(findViewById(R.id.ingredientsHeader), findViewById(R.id.chipGroupIngredients));
         setupDropdown(findViewById(R.id.equipmentHeader), findViewById(R.id.chipGroupEquipment));
         setupDropdown(findViewById(R.id.stepsHeader), findViewById(R.id.stepsContainer));
+
+        rvComments = findViewById(R.id.rvComments);
+        etComment = findViewById(R.id.etComment);
+        btnSendComment = findViewById(R.id.btnSendComment);
+        ratingBarComment = findViewById(R.id.ratingBarComment);
+        ratingBarAvg = findViewById(R.id.ratingBarAvg);
+        tvAvgRating = findViewById(R.id.tvAvgRating);
+
+        rvComments.setLayoutManager(new LinearLayoutManager(this));
+        commentAdapter = new CommentAdapter(
+                commentList,
+                likedCommentIds,
+                currentUid,
+                this::likeComment,
+                this::deleteComment
+        );        rvComments.setAdapter(commentAdapter);
+
+        loadComments();
+        setupCommentButton();
+        updateAverageRating();
 
 
         findViewById(R.id.btnBack).setOnClickListener(v ->
@@ -130,6 +172,188 @@ public class PostDetailActivity extends AppCompatActivity {
         btnSavePost = findViewById(R.id.btnSavePost);
         btnLikePost = findViewById(R.id.btnLikePost);
         btnCookingMode = findViewById(R.id.btnCookingMode);
+    }
+    private void setupCommentButton() {
+        btnSendComment.setOnClickListener(v -> {
+            String text = etComment.getText().toString().trim();
+
+            if (text.isEmpty()) {
+                Toast.makeText(this, "Write a comment first", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String username = getSharedPreferences("cookio_prefs", MODE_PRIVATE)
+                    .getString("username", "Chef");
+
+            float rating = ratingBarComment.getRating();
+
+            if (rating == 0) {
+                Toast.makeText(this, "Please choose a rating", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            Comment comment = new Comment(currentUid, username, text, rating);
+
+            db.collection("posts")
+                    .document(postId)
+                    .collection("comments")
+                    .document(currentUid)
+                    .set(comment)
+                    .addOnSuccessListener(doc -> {
+                        etComment.setText("");
+                        ratingBarComment.setRating(0);
+                        Toast.makeText(this, "Review added", Toast.LENGTH_SHORT).show();
+                    });
+        });
+    }
+
+    private void loadComments() {
+        db.collection("posts")
+                .document(postId)
+                .collection("comments")
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .addSnapshotListener((value, error) -> {
+                    if (value == null) return;
+
+                    commentList.clear();
+
+                    for (DocumentSnapshot doc : value) {
+                        Comment comment = doc.toObject(Comment.class);
+                        if (comment != null) {
+                            comment.setId(doc.getId());
+                            commentList.add(comment);
+                        }
+                    }
+
+                    loadLikedCommentIds();
+                });
+    }
+    private void loadLikedCommentIds() {
+        if (currentUid == null || postId == null || commentList.isEmpty()) {
+            likedCommentIds.clear();
+            commentAdapter.notifyDataSetChanged();
+            return;
+        }
+
+        likedCommentIds.clear();
+
+        final int[] remaining = {commentList.size()};
+
+        for (Comment comment : commentList) {
+            db.collection("posts")
+                    .document(postId)
+                    .collection("comments")
+                    .document(comment.getId())
+                    .collection("likes")
+                    .document(currentUid)
+                    .get()
+                    .addOnSuccessListener(doc -> {
+                        if (doc.exists()) {
+                            likedCommentIds.add(comment.getId());
+                        }
+
+                        remaining[0]--;
+                        if (remaining[0] == 0) {
+                            commentAdapter.notifyDataSetChanged();
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        remaining[0]--;
+                        if (remaining[0] == 0) {
+                            commentAdapter.notifyDataSetChanged();
+                        }
+                    });
+        }
+    }
+
+    private void likeComment(Comment comment) {
+        if (currentUid == null || comment.getId() == null) {
+            return;
+        }
+
+        DocumentReference commentRef = db.collection("posts")
+                .document(postId)
+                .collection("comments")
+                .document(comment.getId());
+
+        DocumentReference likeRef = commentRef
+                .collection("likes")
+                .document(currentUid);
+
+        db.runTransaction(transaction -> {
+            DocumentSnapshot likeSnap = transaction.get(likeRef);
+            DocumentSnapshot commentSnap = transaction.get(commentRef);
+
+            Long currentLikesObj = commentSnap.getLong("likesCount");
+            long currentLikes = currentLikesObj == null ? 0 : currentLikesObj;
+
+            if (likeSnap.exists()) {
+                transaction.delete(likeRef);
+                transaction.update(commentRef, "likesCount", Math.max(0, currentLikes - 1));
+            } else {
+                Map<String, Object> likeData = new HashMap<>();
+                likeData.put("likedAt", FieldValue.serverTimestamp());
+
+                transaction.set(likeRef, likeData);
+                transaction.update(commentRef, "likesCount", currentLikes + 1);
+            }
+
+            return null;
+        });
+    }
+    private void deleteComment(Comment comment) {
+        if (currentUid == null || comment.getId() == null) {
+            return;
+        }
+
+        if (!currentUid.equals(comment.getUserId())) {
+            Toast.makeText(this, "You can only delete your own comment", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        db.collection("posts")
+                .document(postId)
+                .collection("comments")
+                .document(comment.getId())
+                .delete()
+                .addOnSuccessListener(unused ->
+                        Toast.makeText(this, "Comment deleted", Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to delete comment", Toast.LENGTH_SHORT).show());
+    }
+
+    private void updateAverageRating() {
+        db.collection("posts")
+                .document(postId)
+                .collection("comments")
+                .addSnapshotListener((value, error) -> {
+                    if (value == null || value.isEmpty()) {
+                        ratingBarAvg.setRating(0);
+                        tvAvgRating.setText("New");
+                        return;
+                    }
+
+                    float total = 0;
+                    int count = 0;
+
+                    for (DocumentSnapshot doc : value) {
+                        Comment c = doc.toObject(Comment.class);
+                        if (c != null) {
+                            total += c.getRating();
+                            count++;
+                        }
+                    }
+
+                    if (count == 0) {
+                        ratingBarAvg.setRating(0);
+                        tvAvgRating.setText("New");
+                        return;
+                    }
+
+                    float avg = total / count;
+                    ratingBarAvg.setRating(avg);
+                    tvAvgRating.setText(String.format("%.1f (%d reviews)", avg, count));
+                });
     }
 
     private void bindStaticContentFromIntent() {
@@ -382,7 +606,8 @@ public class PostDetailActivity extends AppCompatActivity {
     }
 
     private void updateLikesCount() {
-        tvDetailLikesCount.setText(getString(R.string.post_detail_likes_count, likesCount));
+        String text = likesCount == 1 ? "1 like" : likesCount + " likes";
+        tvDetailLikesCount.setText(text);
     }
 
     private void bindImage(String imageUrl) {

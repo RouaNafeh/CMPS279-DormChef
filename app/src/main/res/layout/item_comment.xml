@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="14dp"
+    android:layout_marginBottom="10dp"
+    android:background="@drawable/bg_equip_item">
+
+    <TextView
+        android:id="@+id/tvCommentUsername"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Chef"
+        android:textStyle="bold"
+        android:textColor="@color/textDark"
+        android:textSize="14sp" />
+
+    <RatingBar
+        android:id="@+id/ratingBarItem"
+        android:layout_width="150dp"
+        android:layout_height="32dp"
+        android:numStars="5"
+        android:stepSize="1"
+        android:isIndicator="true"
+        android:scaleX="0.5"
+        android:scaleY="0.5"
+        android:transformPivotX="0dp"
+        android:progressTint="#FFC107"
+        android:secondaryProgressTint="#FFC107"
+        android:progressBackgroundTint="#D0D0D0" />
+
+    <TextView
+        android:id="@+id/tvCommentText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Comment text"
+        android:textColor="@color/textDark"
+        android:textSize="14sp"
+        android:layout_marginTop="-6dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/btnLikeComment"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="♡ Like"
+            android:textSize="13sp"
+            android:textColor="@color/primary" />
+
+        <TextView
+            android:id="@+id/tvCommentLikeCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textSize="13sp"
+            android:layout_marginStart="8dp"
+            android:textColor="@color/textDark" />
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/btnDeleteComment"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Delete"
+            android:textSize="13sp"
+            android:textColor="@android:color/holo_red_dark"
+            android:visibility="gone" />
+    </LinearLayout>
+
+</LinearLayout>

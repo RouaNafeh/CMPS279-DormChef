@@ -54,11 +54,41 @@
                     android:textSize="22sp"
                     android:textStyle="bold" />
 
+                <LinearLayout
+                    android:id="@+id/layoutAvgRating"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center_vertical">
+
+                    <RatingBar
+                        android:id="@+id/ratingBarAvg"
+                        style="?android:attr/ratingBarStyleSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:numStars="5"
+                        android:stepSize="0.1"
+                        android:isIndicator="true"
+                        android:progressTint="#FFC107"
+                        android:secondaryProgressTint="#FFC107"
+                        android:progressBackgroundTint="#D0D0D0" />
+
+                    <TextView
+                        android:id="@+id/tvAvgRating"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="New"
+                        android:textSize="11sp"
+                        android:layout_marginStart="8dp"
+                        android:textColor="@color/textDark" />
+                </LinearLayout>
+
                 <TextView
                     android:id="@+id/tvPostUsername"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="2dp"
                     android:text="by username"
                     android:textColor="@color/textGrey"
                     android:textSize="13sp" />
@@ -73,33 +103,43 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnSavePost"
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="40dp"
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_weight="1"
                         android:minWidth="0dp"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
                         android:text="@string/post_detail_save"
                         android:textAllCaps="false"
+                        android:textSize="12sp"
                         android:textColor="@color/textDark"
                         app:backgroundTint="@color/white"
                         app:cornerRadius="18dp"
                         app:icon="@drawable/ic_save_outline"
-                        app:iconPadding="8dp"
+                        app:iconPadding="5dp"
+                        app:iconSize="16dp"
                         app:iconTint="@color/textDark"
                         app:strokeColor="@color/borderSoft" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnLikePost"
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="40dp"
-                        android:layout_marginStart="10dp"
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
                         android:minWidth="0dp"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
                         android:text="@string/post_detail_like"
                         android:textAllCaps="false"
+                        android:textSize="12sp"
                         android:textColor="@color/textDark"
                         app:backgroundTint="@color/white"
                         app:cornerRadius="18dp"
                         app:icon="@drawable/heart"
-                        app:iconPadding="8dp"
+                        app:iconPadding="5dp"
+                        app:iconSize="16dp"
                         app:iconTint="@color/textDark"
                         app:strokeColor="@color/borderSoft" />
 
@@ -107,13 +147,11 @@
                         android:id="@+id/tvDetailLikesCount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:background="@drawable/bg_fav_count"
-                        android:paddingHorizontal="12dp"
-                        android:paddingVertical="6dp"
+                        android:layout_marginStart="8dp"
+                        android:singleLine="true"
                         android:text="0 likes"
                         android:textColor="@color/primary"
-                        android:textSize="12sp"
+                        android:textSize="11sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
@@ -158,7 +196,6 @@
                     android:textColor="@color/textGrey"
                     android:textSize="14sp" />
 
-                <!-- INGREDIENTS DROPDOWN -->
                 <LinearLayout
                     android:id="@+id/ingredientsHeader"
                     android:layout_width="match_parent"
@@ -194,7 +231,6 @@
                     android:layout_marginTop="8dp"
                     android:visibility="gone" />
 
-                <!-- EQUIPMENT DROPDOWN -->
                 <LinearLayout
                     android:id="@+id/equipmentHeader"
                     android:layout_width="match_parent"
@@ -209,7 +245,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Equipments"
+                        android:text="Equipment"
                         android:textColor="@color/textDark"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -230,7 +266,6 @@
                     android:layout_marginTop="8dp"
                     android:visibility="gone" />
 
-                <!-- STEPS DROPDOWN -->
                 <LinearLayout
                     android:id="@+id/stepsHeader"
                     android:layout_width="match_parent"
@@ -266,6 +301,73 @@
                     android:layout_marginTop="8dp"
                     android:orientation="vertical"
                     android:visibility="gone" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Reviews &amp; Comments"
+                    android:textStyle="bold"
+                    android:textSize="17sp"
+                    android:layout_marginTop="16dp"
+                    android:textColor="@color/textDark" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etComment"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:hint="Write a comment..."
+                        android:textSize="13sp"
+                        android:maxLines="1"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="8dp">
+
+                    <RatingBar
+                        android:id="@+id/ratingBarComment"
+                        style="?android:attr/ratingBarStyleSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:numStars="5"
+                        android:stepSize="1"
+                        android:rating="0"
+                        android:isIndicator="false"
+                        android:progressTint="#FFC107"
+                        android:secondaryProgressTint="#FFC107"
+                        android:progressBackgroundTint="#D0D0D0" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSendComment"
+                        android:layout_width="78dp"
+                        android:layout_height="36dp"
+                        android:layout_marginStart="10dp"
+                        android:text="Post"
+                        android:textAllCaps="false"
+                        android:textSize="12sp"
+                        android:gravity="center"
+                        android:paddingStart="0dp"
+                        android:paddingEnd="0dp"
+                        app:cornerRadius="18dp" />
+                </LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvComments"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:nestedScrollingEnabled="false" />
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
