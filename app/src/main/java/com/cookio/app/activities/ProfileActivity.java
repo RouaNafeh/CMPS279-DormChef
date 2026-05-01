@@ -249,6 +249,14 @@ public class ProfileActivity extends AppCompatActivity {
                     String profileImageUrl = documentSnapshot.getString("profileImageUrl");
                     Long followerCount = documentSnapshot.getLong("followerCount");
                     Long followingCount = documentSnapshot.getLong("followingCount");
+
+
+                    getSharedPreferences("cookio_prefs", MODE_PRIVATE)
+                            .edit()
+                            .putString("username", resolveDisplayName(username, email))
+                            .putString("photoUrl", profileImageUrl == null ? "" : profileImageUrl)
+                            .apply();
+
                     binding.tvUsername.setText(resolveDisplayName(username, email));
                     binding.tvEmail.setText(email);
                     binding.tvBio.setText(resolveBio(bio));
