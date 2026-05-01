@@ -6,13 +6,13 @@
     android:layout_height="match_parent"
     android:background="@color/secondary">
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollProfile"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
         android:fillViewport="true"
-        android:paddingBottom="12dp"
+        android:paddingBottom="24dp"
         app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -324,10 +324,14 @@
                 </com.google.android.material.card.MaterialCardView>
 
                 <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardFollowers"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:layout_weight="1"
                     android:layout_marginHorizontal="6dp"
+                    android:foreground="?attr/selectableItemBackground"
                     app:cardBackgroundColor="@color/card_white"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="0dp"
@@ -341,7 +345,7 @@
                         android:padding="16dp">
 
                         <TextView
-                            android:id="@+id/tvSavedCount"
+                            android:id="@+id/tvFollowersCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/genty_sans_regular"
@@ -354,18 +358,18 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="@string/profile_saved_stat"
+                            android:text="@string/profile_followers_stat"
                             android:textColor="@color/textMuted"
                             android:textSize="13sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
                 <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardFollowing"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginStart="6dp"
-                    android:id="@+id/cardLikedPosts"
                     android:clickable="true"
                     android:focusable="true"
                     android:foreground="?attr/selectableItemBackground"
@@ -382,7 +386,7 @@
                         android:padding="16dp">
 
                         <TextView
-                            android:id="@+id/tvLikesCount"
+                            android:id="@+id/tvFollowingCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/genty_sans_regular"
@@ -395,7 +399,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="@string/profile_likes_stat"
+                            android:text="@string/profile_following_stat"
                             android:textColor="@color/textMuted"
                             android:textSize="13sp" />
                     </LinearLayout>
@@ -500,10 +504,11 @@
                 android:layout_marginTop="10dp"
                 android:clipToPadding="false"
                 android:nestedScrollingEnabled="false"
-                android:paddingBottom="8dp"
+                android:overScrollMode="never"
+                android:paddingBottom="32dp"
                 tools:listitem="@layout/item_post" />
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
     <include
         android:id="@+id/bottomNavigation"

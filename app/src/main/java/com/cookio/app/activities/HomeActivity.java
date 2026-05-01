@@ -4,9 +4,11 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.cookio.app.R;
 import com.cookio.app.adapters.PostAdapter;
@@ -22,8 +24,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -56,7 +56,6 @@ public class HomeActivity extends AppCompatActivity {
             finish();
             return;
         }
-
 
         db = FirebaseFirestore.getInstance();
 
@@ -93,10 +92,14 @@ public class HomeActivity extends AppCompatActivity {
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
 
-                if (dy <= 0) return;
+                if (dy <= 0) {
+                    return;
+                }
 
                 LinearLayoutManager lm = (LinearLayoutManager) recyclerView.getLayoutManager();
-                if (lm == null) return;
+                if (lm == null) {
+                    return;
+                }
 
                 int visibleCount = lm.getChildCount();
                 int totalCount = lm.getItemCount();
@@ -164,7 +167,6 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void loadFeedData() {
-        // Reset pagination state — this is page 1
         lastVisible = null;
         isLastPage = false;
         allPosts.clear();
@@ -172,10 +174,12 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void loadNextPage(boolean isFirstPage) {
-        if (isLoading || isLastPage) return;
+        if (isLoading || isLastPage) {
+            return;
+        }
         isLoading = true;
 
-        com.google.firebase.firestore.Query query = db.collection("posts")
+        Query query = db.collection("posts")
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .limit(PAGE_SIZE);
 
@@ -225,8 +229,6 @@ public class HomeActivity extends AppCompatActivity {
                     binding.swipeRefreshLayout.setRefreshing(false);
                 });
     }
-
-
 
     private void loadSavedPostIds() {
         if (auth.getCurrentUser() == null) {
@@ -330,12 +332,20 @@ public class HomeActivity extends AppCompatActivity {
         intent.putExtra(PostDetailActivity.EXTRA_POST_COOK_TIME, post.getCookTime());
         intent.putExtra(PostDetailActivity.EXTRA_POST_BUDGET, post.getBudget());
         intent.putExtra(PostDetailActivity.EXTRA_POST_USERNAME, post.getUsername());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_UID, post.getUid());
         intent.putExtra(PostDetailActivity.EXTRA_POST_LIKES_COUNT, post.getLikesCount());
 
         if (post.getIngredients() != null) {
             intent.putStringArrayListExtra(
                     PostDetailActivity.EXTRA_POST_INGREDIENTS,
                     new ArrayList<>(post.getIngredients())
+            );
+        }
+
+        if (post.getEquipment() != null) {
+            intent.putStringArrayListExtra(
+                    PostDetailActivity.EXTRA_POST_EQUIPMENT,
+                    new ArrayList<>(post.getEquipment())
             );
         }
 

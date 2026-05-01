@@ -1,6 +1,7 @@
 package com.cookio.app.activities;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
@@ -9,6 +10,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import com.cookio.app.utils.NotificationHelper;
 
 import com.bumptech.glide.Glide;
 import com.cookio.app.R;
@@ -38,7 +40,9 @@ public class PostDetailActivity extends AppCompatActivity {
     public static final String EXTRA_POST_COOK_TIME = "post_cook_time";
     public static final String EXTRA_POST_BUDGET = "post_budget";
     public static final String EXTRA_POST_USERNAME = "post_username";
+    public static final String EXTRA_POST_UID = "post_uid";
     public static final String EXTRA_POST_INGREDIENTS = "post_ingredients";
+    public static final String EXTRA_POST_EQUIPMENT = "post_equipment";
     public static final String EXTRA_POST_STEPS = "post_steps";
     public static final String EXTRA_POST_LIKES_COUNT = "post_likes_count";
 
@@ -47,6 +51,7 @@ public class PostDetailActivity extends AppCompatActivity {
 
     private String postId;
     private String currentUid;
+    private String authorUid;
     private int likesCount;
     private boolean isSaved;
     private boolean isLiked;
@@ -60,6 +65,7 @@ public class PostDetailActivity extends AppCompatActivity {
     private TextView tvBudget;
     private TextView tvDetailLikesCount;
     private ChipGroup cgIngredients;
+    private ChipGroup cgEquipment;
     private LinearLayout llSteps;
     private MaterialButton btnSavePost;
     private MaterialButton btnLikePost;
@@ -83,9 +89,14 @@ public class PostDetailActivity extends AppCompatActivity {
         updateLikeButton();
         updateLikesCount();
 
+        setupDropdown(findViewById(R.id.ingredientsHeader), findViewById(R.id.chipGroupIngredients));
+        setupDropdown(findViewById(R.id.equipmentHeader), findViewById(R.id.chipGroupEquipment));
+        setupDropdown(findViewById(R.id.stepsHeader), findViewById(R.id.stepsContainer));
+
+
         findViewById(R.id.btnBack).setOnClickListener(v ->
                 getOnBackPressedDispatcher().onBackPressed());
-
+        tvUsername.setOnClickListener(v -> openPublicProfile());
         btnSavePost.setOnClickListener(v -> toggleSave());
         btnLikePost.setOnClickListener(v -> toggleLike());
         btnCookingMode.setOnClickListener(v -> openCookingMode());
@@ -97,6 +108,15 @@ public class PostDetailActivity extends AppCompatActivity {
         loadPostDetails();
         loadEngagementState();
     }
+    private void setupDropdown(View header, View content) {
+        header.setOnClickListener(v -> {
+            if (content.getVisibility() == View.GONE) {
+                content.setVisibility(View.VISIBLE);
+            } else {
+                content.setVisibility(View.GONE);
+            }
+        });
+    }
 
     private void bindViews() {
         ivImage = findViewById(R.id.ivPostImage);
@@ -107,6 +127,7 @@ public class PostDetailActivity extends AppCompatActivity {
         tvBudget = findViewById(R.id.tvPostBudget);
         tvDetailLikesCount = findViewById(R.id.tvDetailLikesCount);
         cgIngredients = findViewById(R.id.chipGroupIngredients);
+        cgEquipment = findViewById(R.id.chipGroupEquipment);
         llSteps = findViewById(R.id.stepsContainer);
         btnSavePost = findViewById(R.id.btnSavePost);
         btnLikePost = findViewById(R.id.btnLikePost);
@@ -114,6 +135,7 @@ public class PostDetailActivity extends AppCompatActivity {
     }
 
     private void bindStaticContentFromIntent() {
+        authorUid = getIntent().getStringExtra(EXTRA_POST_UID);
         tvTitle.setText(getIntent().getStringExtra(EXTRA_POST_TITLE));
         bindUsername(getIntent().getStringExtra(EXTRA_POST_USERNAME));
         tvDescription.setText(getIntent().getStringExtra(EXTRA_POST_DESCRIPTION));
@@ -122,9 +144,12 @@ public class PostDetailActivity extends AppCompatActivity {
         bindImage(getIntent().getStringExtra(EXTRA_POST_IMAGE_URL));
 
         ArrayList<String> ingredients = getIntent().getStringArrayListExtra(EXTRA_POST_INGREDIENTS);
+        ArrayList<String> equipment = getIntent().getStringArrayListExtra(EXTRA_POST_EQUIPMENT);
         ArrayList<String> steps = getIntent().getStringArrayListExtra(EXTRA_POST_STEPS);
         cookingSteps = CookingStepParser.parseList(steps);
+
         bindIngredients(ingredients);
+        bindEquipment(equipment);
         bindSteps(cookingSteps);
     }
 
@@ -154,6 +179,7 @@ public class PostDetailActivity extends AppCompatActivity {
                     updateLikesCount();
 
                     bindIngredients(asStringList(documentSnapshot.get("ingredients")));
+                    bindEquipment(asStringList(documentSnapshot.get("equipment")));
                     cookingSteps = CookingStepParser.parseList(asStringList(documentSnapshot.get("steps")));
                     bindSteps(cookingSteps);
                 })
@@ -291,6 +317,25 @@ public class PostDetailActivity extends AppCompatActivity {
             if (previouslyLiked) {
                 showUndoSnackbar(R.string.post_unliked_message,
                         () -> restoreLike(previousLikeCount));
+            } else {
+                String postOwnerUid = getIntent().getStringExtra(EXTRA_POST_UID);
+
+                String myUsername = getSharedPreferences("cookio_prefs", MODE_PRIVATE)
+                        .getString("username", "Chef");
+
+                String myPhotoUrl = getSharedPreferences("cookio_prefs", MODE_PRIVATE)
+                        .getString("photoUrl", "");
+
+                if (postOwnerUid != null && !postOwnerUid.equals(currentUid)) {
+                    NotificationHelper.sendLikeNotification(
+                            postOwnerUid,
+                            currentUid,
+                            myUsername,
+                            myPhotoUrl,
+                            postId,
+                            tvTitle.getText().toString()
+                    );
+                }
             }
         }).addOnFailureListener(e -> {
             isLiked = previouslyLiked;
@@ -307,7 +352,7 @@ public class PostDetailActivity extends AppCompatActivity {
         }
 
         isLiked = true;
-        likesCount = previousLikeCount + 1;
+        likesCount = previousLikeCount;
         updateLikeButton();
         updateLikesCount();
         animateLikeButton();
@@ -319,11 +364,11 @@ public class PostDetailActivity extends AppCompatActivity {
             Map<String, Object> likeData = new HashMap<>();
             likeData.put("likedAt", FieldValue.serverTimestamp());
             transaction.set(likeRef, likeData);
-            transaction.update(postRef, "likesCount", previousLikeCount + 1);
+            transaction.update(postRef, "likesCount", previousLikeCount);
             return null;
         }).addOnFailureListener(e -> {
             isLiked = false;
-            likesCount = previousLikeCount;
+            likesCount = Math.max(0, previousLikeCount - 1);
             updateLikeButton();
             updateLikesCount();
             Toast.makeText(this, R.string.post_detail_like_failed, Toast.LENGTH_SHORT).show();
@@ -332,14 +377,21 @@ public class PostDetailActivity extends AppCompatActivity {
 
     private void updateSaveButton() {
         btnSavePost.setIconResource(isSaved ? R.drawable.ic_save_filled : R.drawable.ic_save_outline);
+        btnSavePost.setIconTint(ColorStateList.valueOf(getColor(R.color.primary)));
     }
 
     private void updateLikeButton() {
         btnLikePost.setIconResource(isLiked ? R.drawable.heart_filled : R.drawable.heart);
+        btnLikePost.setIconTint(ColorStateList.valueOf(getColor(isLiked ? R.color.red : R.color.accent_pink)));
     }
 
     private void updateLikesCount() {
-        tvDetailLikesCount.setText(getString(R.string.post_detail_likes_count, likesCount));
+        tvDetailLikesCount.setText(getString(
+                likesCount == 1
+                        ? R.string.post_detail_like_count_singular
+                        : R.string.post_detail_like_count_plural,
+                likesCount
+        ));
     }
 
     private void bindImage(String imageUrl) {
@@ -383,15 +435,32 @@ public class PostDetailActivity extends AppCompatActivity {
         }
 
         for (String ingredient : ingredients) {
-            Chip chip = new Chip(this);
-            chip.setText(ingredient);
-            chip.setClickable(false);
-            chip.setCheckable(false);
-            chip.setTextSize(13f);
-            chip.setChipBackgroundColorResource(R.color.chip_bg_selector);
-            chip.setTextColor(getColor(R.color.chip_text));
+            Chip chip = buildChip(ingredient);
             cgIngredients.addView(chip);
         }
+    }
+
+    private void bindEquipment(List<String> equipment) {
+        cgEquipment.removeAllViews();
+        if (equipment == null) {
+            return;
+        }
+
+        for (String item : equipment) {
+            Chip chip = buildChip(item);
+            cgEquipment.addView(chip);
+        }
+    }
+
+    private Chip buildChip(String text) {
+        Chip chip = new Chip(this);
+        chip.setText(text);
+        chip.setClickable(false);
+        chip.setCheckable(false);
+        chip.setTextSize(13f);
+        chip.setChipBackgroundColorResource(R.color.chip_bg_selector);
+        chip.setTextColor(getColor(R.color.chip_text));
+        return chip;
     }
 
     private void bindSteps(List<CookingStep> steps) {
@@ -404,7 +473,7 @@ public class PostDetailActivity extends AppCompatActivity {
             CookingStep step = steps.get(i);
             TextView stepView = new TextView(this);
             StringBuilder label = new StringBuilder();
-            label.append(i + 1).append(". ").append(step.getInstruction());
+            label.append(i + 1).append(". ").append(stripExistingStepNumber(step.getInstruction()));
             if (step.hasTimer()) {
                 label.append("\n").append(getString(R.string.cooking_minutes_label, step.getMinutes()));
             }
@@ -438,6 +507,16 @@ public class PostDetailActivity extends AppCompatActivity {
                 TimerActivity.EXTRA_RECIPE_TIMED_STEPS,
                 new ArrayList<>(encodeSteps(cookingSteps))
         );
+        startActivity(intent);
+    }
+
+    private void openPublicProfile() {
+        if (authorUid == null || authorUid.trim().isEmpty()) {
+            return;
+        }
+
+        Intent intent = new Intent(this, PublicProfileActivity.class);
+        intent.putExtra(PublicProfileActivity.EXTRA_USER_ID, authorUid);
         startActivity(intent);
     }
 
@@ -488,6 +567,13 @@ public class PostDetailActivity extends AppCompatActivity {
             encoded.add(step.encode());
         }
         return encoded;
+    }
+
+    private String stripExistingStepNumber(String step) {
+        if (step == null) {
+            return "";
+        }
+        return step.replaceFirst("^(?i)(step\\s*)?\\d+[\\.)\\-:]*\\s*", "").trim();
     }
 
     private int dpToPx(int dp) {

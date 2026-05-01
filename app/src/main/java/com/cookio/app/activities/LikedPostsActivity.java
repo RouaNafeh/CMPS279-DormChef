@@ -256,12 +256,20 @@ public class LikedPostsActivity extends AppCompatActivity {
         intent.putExtra(PostDetailActivity.EXTRA_POST_COOK_TIME, post.getCookTime());
         intent.putExtra(PostDetailActivity.EXTRA_POST_BUDGET, post.getBudget());
         intent.putExtra(PostDetailActivity.EXTRA_POST_USERNAME, post.getUsername());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_UID, post.getUid());
         intent.putExtra(PostDetailActivity.EXTRA_POST_LIKES_COUNT, post.getLikesCount());
 
         if (post.getIngredients() != null) {
             intent.putStringArrayListExtra(
                     PostDetailActivity.EXTRA_POST_INGREDIENTS,
                     new ArrayList<>(post.getIngredients())
+            );
+        }
+
+        if (post.getEquipment() != null) {
+            intent.putStringArrayListExtra(
+                    PostDetailActivity.EXTRA_POST_EQUIPMENT,
+                    new ArrayList<>(post.getEquipment())
             );
         }
 

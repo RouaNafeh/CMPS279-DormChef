@@ -1,5 +1,6 @@
 package com.cookio.app.adapters;
 
+import android.content.Intent;
 import android.content.Context;
 import android.net.Uri;
 import android.view.LayoutInflater;
@@ -12,10 +13,12 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import com.cookio.app.utils.NotificationHelper;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.cookio.app.R;
+import com.cookio.app.activities.PublicProfileActivity;
 import com.cookio.app.models.Post;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
@@ -50,6 +53,10 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         void onPostDelete(Post post);
     }
 
+    public interface OnPostEditListener {
+        void onPostEdit(Post post);
+    }
+
     public interface OnPostLikeStateChangedListener {
         void onPostLikeStateChanged(Post post, boolean isLiked);
     }
@@ -64,6 +71,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
     private OnPostUnsavedListener onPostUnsavedListener;
     private OnPostClickListener onPostClickListener;
     private OnPostDeleteListener onPostDeleteListener;
+    private OnPostEditListener onPostEditListener;
     private OnPostSaveStateChangedListener onPostSaveStateChangedListener;
     private OnPostLikeStateChangedListener onPostLikeStateChangedListener;
     private OnAuthorClickListener onAuthorClickListener;
@@ -119,6 +127,10 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         Post post = postList.get(position);
 
         holder.postTitle.setText(post.getTitle());
+        holder.postUsername.setText(post.getUsername() == null || post.getUsername().trim().isEmpty()
+                ? "by Chef"
+                : "by " + post.getUsername());
+        holder.postAvatar.setText(resolveAvatarInitial(post.getUsername()));
         holder.postDescription.setText(post.getDescription());
         holder.postCookTime.setText(post.getCookTime());
         holder.postBudget.setText(post.getBudget());
@@ -161,18 +173,28 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             }
         });
 
-        holder.deleteButton.setOnClickListener(v -> {
-            if (onPostDeleteListener != null) {
-                onPostDeleteListener.onPostDelete(post);
-            }
-        });
+        holder.postUsername.setOnClickListener(v -> openPublicProfile(post));
+        holder.postAvatar.setOnClickListener(v -> openPublicProfile(post));
+
+        if (onPostDeleteListener != null || onPostEditListener != null) {
+            holder.deleteButton.setVisibility(View.VISIBLE);
+            holder.deleteButton.setOnClickListener(v -> {
+                if (onPostEditListener != null) {
+                    onPostEditListener.onPostEdit(post);
+                } else if (onPostDeleteListener != null) {
+                    onPostDeleteListener.onPostDelete(post);
+                }
+            });
+        } else {
+            holder.deleteButton.setVisibility(View.GONE);
+            holder.deleteButton.setOnClickListener(null);
+        }
 
         if (isGridMode) {
             holder.postDescription.setVisibility(View.GONE);
             holder.likeButton.setVisibility(View.GONE);
             holder.saveButton.setVisibility(View.GONE);
             holder.likesCount.setVisibility(View.GONE);
-            holder.deleteButton.setVisibility(View.VISIBLE);
             holder.postTitle.setMaxLines(2);
             holder.postTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);
         } else {
@@ -180,7 +202,6 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             holder.likeButton.setVisibility(View.VISIBLE);
             holder.saveButton.setVisibility(View.VISIBLE);
             holder.likesCount.setVisibility(View.VISIBLE);
-            holder.deleteButton.setVisibility(View.VISIBLE);
             holder.postTitle.setMaxLines(2);
         }
     }
@@ -298,6 +319,23 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
                         R.string.post_unliked_message,
                         () -> restoreLikedPost(post, holder, postRef, likeRef, updatedLikeCount)
                 );
+            } else {
+                String myUsername = context.getSharedPreferences("cookio_prefs", Context.MODE_PRIVATE)
+                        .getString("username", "Chef");
+
+                String myPhotoUrl = context.getSharedPreferences("cookio_prefs", Context.MODE_PRIVATE)
+                        .getString("photoUrl", "");
+
+                if (post.getUid() != null && !post.getUid().equals(currentUid)) {
+                    NotificationHelper.sendLikeNotification(
+                            post.getUid(),
+                            currentUid,
+                            myUsername,
+                            myPhotoUrl,
+                            post.getPostId(),
+                            post.getTitle()
+                    );
+                }
             }
         }).addOnFailureListener(e -> {
             if (currentlyLiked) {
@@ -394,16 +432,41 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
                 .start();
     }
 
+    private void openPublicProfile(Post post) {
+        if (post.getUid() == null || post.getUid().trim().isEmpty()) {
+            return;
+        }
+
+        Intent intent = new Intent(context, PublicProfileActivity.class);
+        intent.putExtra(PublicProfileActivity.EXTRA_USER_ID, post.getUid());
+        context.startActivity(intent);
+    }
+
+    private String resolveAvatarInitial(String username) {
+        if (username == null) {
+            return "C";
+        }
+
+        String trimmed = username.trim();
+        if (trimmed.isEmpty()) {
+            return "C";
+        }
+
+        return trimmed.substring(0, 1).toUpperCase();
+    }
+
     static class PostViewHolder extends RecyclerView.ViewHolder {
-        TextView postTitle, postDescription, postCookTime, postBudget, likesCount;
+        TextView postTitle, postUsername, postDescription, postCookTime, postBudget, likesCount;
+        TextView postAvatar;
         ImageView postImage;
         ImageButton saveButton, likeButton;
-
         ImageButton deleteButton;
 
         public PostViewHolder(@NonNull View itemView) {
             super(itemView);
             postTitle = itemView.findViewById(R.id.post_title);
+            postUsername = itemView.findViewById(R.id.post_username);
+            postAvatar = itemView.findViewById(R.id.post_avatar);
             postDescription = itemView.findViewById(R.id.post_description);
             postCookTime = itemView.findViewById(R.id.post_time);
             postBudget = itemView.findViewById(R.id.post_budget);
@@ -411,7 +474,6 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             postImage = itemView.findViewById(R.id.post_image);
             saveButton = itemView.findViewById(R.id.btn_save);
             likeButton = itemView.findViewById(R.id.btn_like);
-
             deleteButton = itemView.findViewById(R.id.btn_delete);
         }
     }
@@ -428,6 +490,10 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
     }
     public void setOnPostDeleteListener(OnPostDeleteListener listener) {
         this.onPostDeleteListener = listener;
+    }
+
+    public void setOnPostEditListener(OnPostEditListener listener) {
+        this.onPostEditListener = listener;
     }
 
     public void setOnPostSaveStateChangedListener(OnPostSaveStateChangedListener listener) {
