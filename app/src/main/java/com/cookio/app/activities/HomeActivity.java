@@ -87,6 +87,7 @@ public class HomeActivity extends AppCompatActivity {
         binding.recyclerCards.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerCards.setHasFixedSize(true);
         binding.recyclerCards.setAdapter(postAdapter);
+        postAdapter.setOnAuthorClickListener((authorUid, authorUsername) -> openPublicProfile(authorUid));
         binding.recyclerCards.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
@@ -345,6 +346,12 @@ public class HomeActivity extends AppCompatActivity {
             );
         }
 
+        startActivity(intent);
+    }
+    private void openPublicProfile(String authorUid) {
+        if (authorUid == null || authorUid.isEmpty()) return;
+        Intent intent = new Intent(this, PublicProfileActivity.class);
+        intent.putExtra(PublicProfileActivity.EXTRA_USER_ID, authorUid);
         startActivity(intent);
     }
 }
