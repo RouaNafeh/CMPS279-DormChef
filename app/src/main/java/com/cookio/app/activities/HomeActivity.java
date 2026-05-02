@@ -52,6 +52,8 @@ public class HomeActivity extends AppCompatActivity {
     private boolean isLastPage = false;
     private boolean filterActive = false;
     private List<Post> lastFilteredPosts = new ArrayList<>();
+    private boolean showFollowingOnly = false;
+    private final Set<String> followingUserIds = new HashSet<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -147,16 +149,27 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void setupActions() {
-        binding.filterBtn.setOnClickListener(v -> showFilterSheet());
+    binding.filterBtn.setOnClickListener(v -> showFilterSheet());
 
-        binding.btnQuickAddRecipe.setOnClickListener(v ->
-                startActivity(new Intent(this, CreatePostActivity.class)));
+    binding.btnQuickAddRecipe.setOnClickListener(v ->
+            startActivity(new Intent(this, CreatePostActivity.class)));
 
-        binding.btnNotifications.setOnClickListener(v -> {
-            binding.viewNotificationDot.setVisibility(View.GONE);
-            startActivity(new Intent(this, NotificationsActivity.class));
+    binding.btnNotifications.setOnClickListener(v -> {
+        binding.viewNotificationDot.setVisibility(View.GONE);
+        startActivity(new Intent(this, NotificationsActivity.class));
+    });
+    binding.btnAll.setOnClickListener(v -> {
+        showFollowingOnly = false;
+        filterAllContent(currentQuery);
+    });
+
+    binding.btnFollowing.setOnClickListener(v -> {
+        loadFollowingIds(() -> {
+            showFollowingOnly = true;
+            filterAllContent(currentQuery);
         });
-    }
+    });
+}
 
     private void setupBottomNavigation() {
         BottomNavigationView bottomNavigation = binding.bottomNavigation.bottomNavigation;
@@ -265,6 +278,34 @@ public class HomeActivity extends AppCompatActivity {
         dialog.show();
     }
 
+    private void loadFollowingIds(Runnable onComplete) {
+        if (auth.getCurrentUser() == null) {
+            onComplete.run();
+            return;
+        }
+
+        String uid = auth.getCurrentUser().getUid();
+
+        db.collection("users")
+                .document(uid)
+                .collection("following")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    followingUserIds.clear();
+
+                    for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                        followingUserIds.add(doc.getId());
+                    }
+
+                    onComplete.run();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to load following list", Toast.LENGTH_SHORT).show();
+                    onComplete.run();
+                });
+    }
+
+
     private void refreshFeed() {
         filterActive = false;
         lastFilteredPosts.clear();
@@ -275,7 +316,7 @@ public class HomeActivity extends AppCompatActivity {
         lastVisible = null;
         isLastPage = false;
         allPosts.clear();
-        loadNextPage(true);
+        loadFollowingIds(() -> loadNextPage(true));
     }
 
     private void loadNextPage(boolean isFirstPage) {
@@ -402,31 +443,57 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void filterAllContent(String text) {
-        filteredPosts.clear();
+    filteredPosts.clear();
 
-        if (text == null || text.trim().isEmpty()) {
-            filteredPosts.addAll(allPosts);
-        } else {
-            String query = text.toLowerCase().trim();
+    if (text == null || text.trim().isEmpty()) {
 
-            for (Post post : allPosts) {
-                String title = post.getTitle() == null ? "" : post.getTitle().toLowerCase();
-                String username = post.getUsername() == null ? "" : post.getUsername().toLowerCase();
-                String description = post.getDescription() == null ? "" : post.getDescription().toLowerCase();
+        for (Post post : allPosts) {
 
-                if (title.contains(query) || username.contains(query) || description.contains(query)) {
-                    filteredPosts.add(post);
+            if (showFollowingOnly) {
+                if (post.getUid() == null || !followingUserIds.contains(post.getUid())) {
+                    continue;
                 }
             }
+
+            filteredPosts.add(post);
         }
 
-        postAdapter.updateData(filteredPosts);
+    } else {
+        String query = text.toLowerCase().trim();
 
-        if (filteredPosts.isEmpty()) {
-            Toast.makeText(this, "No recipes found", Toast.LENGTH_SHORT).show();
+        for (Post post : allPosts) {
+            if (showFollowingOnly) {
+                if (post.getUid() == null || !followingUserIds.contains(post.getUid())) {
+                    continue;
+                }
+            }
+
+            String title = post.getTitle() == null ? "" : post.getTitle().toLowerCase();
+            String username = post.getUsername() == null ? "" : post.getUsername().toLowerCase();
+            String description = post.getDescription() == null ? "" : post.getDescription().toLowerCase();
+
+            if (title.contains(query) || username.contains(query) || description.contains(query)) {
+                filteredPosts.add(post);
+            }
         }
-        binding.swipeRefreshLayout.setRefreshing(false);
     }
+
+    postAdapter.updateData(filteredPosts);
+
+    if (filteredPosts.isEmpty()) {
+        if (showFollowingOnly) {
+            binding.tvEmptyState.setVisibility(View.VISIBLE);
+            binding.tvEmptyState.setText("Follow creators to see their recipes here");
+        } else {
+            binding.tvEmptyState.setVisibility(View.VISIBLE);
+            binding.tvEmptyState.setText("No recipes found");
+        }
+    } else {
+        binding.tvEmptyState.setVisibility(View.GONE);
+    }
+
+    binding.swipeRefreshLayout.setRefreshing(false);
+}
 
     private void openPostDetail(Post post) {
         Intent intent = new Intent(this, PostDetailActivity.class);
