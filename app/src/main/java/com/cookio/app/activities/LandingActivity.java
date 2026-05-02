@@ -7,7 +7,9 @@ import android.widget.Button;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.cookio.app.R;
+import com.cookio.app.utils.AuthVerificationHelper;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class LandingActivity extends AppCompatActivity {
     private FirebaseAuth auth;
@@ -18,10 +20,25 @@ public class LandingActivity extends AppCompatActivity {
         auth = FirebaseAuth.getInstance();
 
         if (auth.getCurrentUser() != null) {
-            Intent intent = new Intent(LandingActivity.this, HomeActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(intent);
-            finish();
+            AuthVerificationHelper.verifyBeforeEntering(this, auth, new AuthVerificationHelper.VerificationCallback() {
+                @Override
+                public void onVerified(FirebaseUser user) {
+                    Intent intent = new Intent(LandingActivity.this, HomeActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
+                }
+
+                @Override
+                public void onRejected() {
+                    auth.signOut();
+                    AuthVerificationHelper.redirectToLogin(
+                            LandingActivity.this,
+                            true,
+                            getString(R.string.email_verification_required)
+                    );
+                }
+            });
             return;
         }
 

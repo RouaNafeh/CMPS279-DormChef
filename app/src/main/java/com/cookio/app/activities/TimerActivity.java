@@ -2,6 +2,7 @@ package com.cookio.app.activities;
 
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -9,11 +10,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AlertDialog;
 
+import com.airbnb.lottie.LottieAnimationView;
 import com.cookio.app.R;
 import com.cookio.app.models.CookingStep;
 import com.cookio.app.models.CookingStepParser;
-import com.cookio.app.models.RecipeContent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,14 +91,10 @@ public class TimerActivity extends AppCompatActivity {
             String customSteps = getIntent().getStringExtra(EXTRA_RECIPE_STEPS);
             steps = CookingStepParser.parseDelimited(customSteps);
         }
-
-        if (steps.isEmpty()) {
-            steps = CookingStepParser.parseList(RecipeContent.getDetails(recipeTitle).getSteps());
-        }
     }
 
     private void setupClickListeners() {
-        btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
+        btnBack.setOnClickListener(v -> goToPreviousStep());
         btnStart.setOnClickListener(v -> startTimer());
         btnPause.setOnClickListener(v -> pauseTimer());
         btnReset.setOnClickListener(v -> resetTimer());
@@ -202,9 +200,46 @@ public class TimerActivity extends AppCompatActivity {
             currentStep++;
             loadCurrentStep();
         } else {
-            Toast.makeText(this, R.string.cooking_recipe_complete, Toast.LENGTH_LONG).show();
-            finish();
+            showCompletionDialog();
         }
+    }
+
+    private void goToPreviousStep() {
+        if (currentStep > 0) {
+            currentStep--;
+            loadCurrentStep();
+            return;
+        }
+
+        getOnBackPressedDispatcher().onBackPressed();
+    }
+
+    private void showCompletionDialog() {
+        cancelTimer();
+        timerRunning = false;
+
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_cooking_complete, null, false);
+        AlertDialog dialog = new AlertDialog.Builder(this).setView(dialogView).create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        TextView recipeView = dialogView.findViewById(R.id.tvCookingCompleteRecipe);
+        recipeView.setText(recipeTitle);
+        LottieAnimationView celebrationView = dialogView.findViewById(R.id.ivCookingCelebration);
+
+        dialogView.findViewById(R.id.btnCookingCompleteDone).setOnClickListener(v -> {
+            dialog.dismiss();
+            finish();
+        });
+
+        dialogView.findViewById(R.id.btnCookingCompleteStay).setOnClickListener(v -> dialog.dismiss());
+
+        dialog.setCancelable(true);
+        dialog.show();
+
+        celebrationView.playAnimation();
     }
 
     private void updateTimerDisplay() {

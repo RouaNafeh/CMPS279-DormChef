@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/secondary">
+    android:background="@drawable/bg_home_screen">
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefreshLayout"
@@ -24,214 +24,153 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingStart="18dp"
-                android:paddingTop="24dp"
-                android:paddingEnd="18dp"
+                android:paddingStart="16dp"
+                android:paddingTop="14dp"
+                android:paddingEnd="16dp"
                 android:paddingBottom="110dp">
 
-                <LinearLayout
+                <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:layout_marginBottom="10dp">
 
                     <LinearLayout
-                        android:layout_width="0dp"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
+                        android:orientation="vertical"
+                        >
                         <TextView
                             android:id="@+id/title"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="@font/nunito_variablefont_wght"
-                            android:letterSpacing="0.08"
+                            android:layout_centerVertical="true"
+                            android:fontFamily="@font/genty_sans_regular"
                             android:text="@string/app_name"
-                            android:textAllCaps="true"
-                            android:textColor="@color/primary"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-
+                            android:textColor="@color/textDark"
+                            android:textSize="24sp" />
                         <TextView
-                            android:id="@+id/sloganHome"
+                            android:id="@+id/subtitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:fontFamily="@font/genty_sans_regular"
-                            android:text="Cook from what you already have"
-                            android:textColor="@color/textDark"
-                            android:textSize="30sp" />
+                            android:layout_centerVertical="true"
+                            android:fontFamily="@font/poppins_medium"
+                            android:text="Fresh recipes"
+                            android:textColor="@color/textGrey"
+                            android:textSize="13sp" />
                     </LinearLayout>
 
-                    <FrameLayout
-                        android:layout_width="56dp"
-                        android:layout_height="56dp">
 
-                        <com.google.android.material.card.MaterialCardView
-                            android:layout_width="56dp"
-                            android:layout_height="56dp"
-                            app:cardBackgroundColor="@color/card_white"
-                            app:cardCornerRadius="20dp"
-                            app:cardElevation="0dp"
-                            app:strokeColor="@color/borderSoft"
-                            app:strokeWidth="1dp">
-
-                            <ImageView
-                                android:id="@+id/logoHome"
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:padding="10dp"
-                                android:src="@drawable/logo_cropped" />
-                        </com.google.android.material.card.MaterialCardView>
-                    </FrameLayout>
-
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Search quick dishes, open filters, or jump straight into sharing a new post."
-                    android:textColor="@color/textMuted"
-                    android:textSize="14sp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="18dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <androidx.appcompat.widget.SearchView
-                        android:id="@+id/searchBar"
-                        android:layout_width="0dp"
-                        android:layout_height="54dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/search_background"
-                        app:iconifiedByDefault="false"
-                        app:queryBackground="@android:color/transparent"
-                        app:queryHint="Search by title or author..." />
-
-                    <ImageView
-                        android:id="@+id/filterBtn"
-                        android:layout_width="54dp"
-                        android:layout_height="54dp"
-                        android:layout_marginStart="10dp"
-                        android:background="@drawable/search_background"
-                        android:padding="14dp"
-                        android:src="@drawable/filter"
-                        app:tint="@color/textDark" />
 
                     <FrameLayout
-                        android:layout_width="54dp"
-                        android:layout_height="54dp"
-                        android:layout_marginStart="10dp">
+                        android:layout_width="42dp"
+                        android:layout_height="42dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true">
 
                         <ImageView
                             android:id="@+id/btnNotifications"
-                            android:layout_width="54dp"
-                            android:layout_height="54dp"
-                            android:background="@drawable/search_background"
-                            android:padding="14dp"
+                            android:layout_width="42dp"
+                            android:layout_height="42dp"
+                            android:background="@drawable/bg_home_icon_button"
+                            android:padding="10dp"
                             android:src="@drawable/ic_bell"
                             app:tint="@color/textDark" />
 
                         <View
                             android:id="@+id/viewNotificationDot"
-                            android:layout_width="10dp"
-                            android:layout_height="10dp"
+                            android:layout_width="9dp"
+                            android:layout_height="9dp"
                             android:layout_gravity="top|end"
-                            android:layout_marginTop="10dp"
-                            android:layout_marginEnd="10dp"
+                            android:layout_marginTop="8dp"
+                            android:layout_marginEnd="8dp"
                             android:background="@drawable/bg_notification_dot"
                             android:visibility="gone" />
                     </FrameLayout>
+                </RelativeLayout>
 
-                </LinearLayout>
-
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:layout_marginTop="14dp"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="@color/borderSoft"
-                    app:strokeWidth="1dp"
-                    app:cardBackgroundColor="@color/card_white">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:orientation="horizontal"
-                        android:weightSum="2">
-
-                        <TextView
-                            android:id="@+id/btnAll"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:text="All"
-                            android:textStyle="bold"
-                            android:textColor="@color/textDark"
-                            android:background="@drawable/toggle_selected_bg"/>
-
-                        <TextView
-                            android:id="@+id/btnFollowing"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:text="Following"
-                            android:textStyle="bold"
-                            android:textColor="@color/textMuted"/>
-                    </LinearLayout>
-
-                </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.card.MaterialCardView
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    android:layout_marginBottom="12dp"
-                    app:cardBackgroundColor="@color/card_white"
-                    app:cardCornerRadius="24dp"
-                    app:cardElevation="0dp">
+                    android:layout_marginTop="2dp"
+                    android:background="@drawable/bg_home_search_surface"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="6dp">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:padding="16dp"
-                        android:orientation="vertical">
+                    <FrameLayout
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_marginStart="2dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/bg_home_icon_button">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Fresh picks"
-                            android:textSize="10sp"
-                            android:textStyle="bold" />
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_search"
+                            app:tint="@color/textGrey" />
+                    </FrameLayout>
 
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:text="Recipes that feel doable tonight"
-                            android:textSize="21sp" />
+                    <androidx.appcompat.widget.SearchView
+                        android:id="@+id/searchBar"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:background="@android:color/transparent"
+                        app:iconifiedByDefault="false"
+                        app:searchIcon="@null"
+                        app:queryBackground="@android:color/transparent"
+                        app:queryHint="Search recipes" />
 
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="Simple cards, fast filters, and a cleaner feed focused on what you can cook now."
-                            android:textSize="13sp" />
-                    </LinearLayout>
+                    <ImageView
+                        android:id="@+id/filterBtn"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="6dp"
+                        android:background="@drawable/bg_home_icon_button"
+                        android:padding="10dp"
+                        android:src="@drawable/filter"
+                        app:tint="@color/textDark" />
+                </LinearLayout>
 
-                </com.google.android.material.card.MaterialCardView>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_home_toggle_track"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="4dp">
+
+                    <TextView
+                        android:id="@+id/btnAll"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_home_toggle_active"
+                        android:gravity="center"
+                        android:text="All"
+                        android:textColor="@color/textDark"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/btnFollowing"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:text="Following"
+                        android:textColor="@color/textMuted"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
 
                 <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp">
 
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/recyclerCards"

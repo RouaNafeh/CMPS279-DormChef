@@ -39,7 +39,7 @@
                     android:background="@drawable/search_background"
                     android:contentDescription="@string/public_profile_back"
                     android:padding="12dp"
-                    android:src="@android:drawable/ic_media_previous"
+                    android:src="@drawable/arrow_back"
                     app:tint="@color/textDark" />
 
                 <TextView
@@ -108,7 +108,7 @@
                                 android:layout_height="72dp"
                                 android:contentDescription="@string/profile_photo_content_desc"
                                 android:scaleType="centerCrop"
-                                android:src="@drawable/logo_cropped"
+                                android:src="@drawable/logo"
                                 android:visibility="gone"
                                 app:shapeAppearanceOverlay="@style/RoundedImageView" />
 

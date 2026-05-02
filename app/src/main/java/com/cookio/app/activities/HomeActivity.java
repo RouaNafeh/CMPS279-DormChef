@@ -1,7 +1,11 @@
 package com.cookio.app.activities;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.TypedValue;
 import android.widget.Toast;
 import android.view.View;
 import android.widget.Button;
@@ -10,9 +14,12 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -20,6 +27,9 @@ import com.cookio.app.R;
 import com.cookio.app.adapters.PostAdapter;
 import com.cookio.app.databinding.ActivityHomeBinding;
 import com.cookio.app.models.Post;
+import com.cookio.app.utils.CookTimeFormatter;
+import com.cookio.app.utils.AuthVerificationHelper;
+import com.cookio.app.services.CookioMessagingService;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -54,6 +64,14 @@ public class HomeActivity extends AppCompatActivity {
     private List<Post> lastFilteredPosts = new ArrayList<>();
     private boolean showFollowingOnly = false;
     private final Set<String> followingUserIds = new HashSet<>();
+    private final ActivityResultLauncher<String> notificationPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+                if (granted) {
+                    CookioMessagingService.syncCurrentToken();
+                } else {
+                    Toast.makeText(this, R.string.notifications_permission_denied, Toast.LENGTH_SHORT).show();
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,6 +86,16 @@ public class HomeActivity extends AppCompatActivity {
             return;
         }
 
+        if (!auth.getCurrentUser().isEmailVerified()) {
+            auth.signOut();
+            AuthVerificationHelper.redirectToLogin(
+                    this,
+                    true,
+                    getString(R.string.email_verification_required)
+            );
+            return;
+        }
+
         db = FirebaseFirestore.getInstance();
 
         binding = ActivityHomeBinding.inflate(getLayoutInflater());
@@ -79,6 +107,7 @@ public class HomeActivity extends AppCompatActivity {
         updateTabUI(false);
         setupBottomNavigation();
         binding.swipeRefreshLayout.setOnRefreshListener(this::refreshFeed);
+        ensureNotificationSetup();
     }
 
     @Override
@@ -132,6 +161,14 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void setupSearch() {
+        EditText searchInput = binding.searchBar.findViewById(androidx.appcompat.R.id.search_src_text);
+        if (searchInput != null) {
+            searchInput.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            searchInput.setHintTextColor(getColor(R.color.textGrey));
+            searchInput.setTextColor(getColor(R.color.textDark));
+            searchInput.setPadding(0, 0, 0, 0);
+        }
+
         binding.searchBar.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
@@ -173,6 +210,25 @@ public class HomeActivity extends AppCompatActivity {
         });
     });
 }
+
+    private void ensureNotificationSetup() {
+        CookioMessagingService.syncCurrentToken();
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return;
+        }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
+            Toast.makeText(this, R.string.notifications_permission_rationale, Toast.LENGTH_SHORT).show();
+        }
+
+        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+    }
 
     private void setupBottomNavigation() {
         BottomNavigationView bottomNavigation = binding.bottomNavigation.bottomNavigation;
@@ -258,7 +314,10 @@ public class HomeActivity extends AppCompatActivity {
 
             if (sort[0].equals("time")) {
                 filtered.sort((p1, p2) ->
-                        Integer.compare(parseCookTime(p1.getCookTime()), parseCookTime(p2.getCookTime()))
+                        Integer.compare(
+                                CookTimeFormatter.toSortMinutes(p1.getCookTime()),
+                                CookTimeFormatter.toSortMinutes(p2.getCookTime())
+                        )
                 );
             }
 
@@ -551,25 +610,6 @@ public class HomeActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    private int parseCookTime(String time) {
-        if (time == null || time.trim().isEmpty()) return Integer.MAX_VALUE;
-
-        String t = time.toLowerCase().trim();
-
-        if (t.contains("hour")) return 60;
-        if (t.contains("one hour")) return 60;
-
-        java.util.regex.Matcher matcher = java.util.regex.Pattern
-                .compile("\\d+")
-                .matcher(t);
-
-        if (matcher.find()) {
-            return Integer.parseInt(matcher.group());
-        }
-
-        return Integer.MAX_VALUE;
-    }
-
     private void openPublicProfile(String authorUid) {
         if (authorUid == null || authorUid.isEmpty()) return;
         Intent intent = new Intent(this, PublicProfileActivity.class);
@@ -593,7 +633,7 @@ public class HomeActivity extends AppCompatActivity {
 
     if (followingSelected) {
 
-        binding.btnFollowing.setBackgroundResource(R.drawable.toggle_selected_bg);
+        binding.btnFollowing.setBackgroundResource(R.drawable.bg_home_toggle_active);
         binding.btnFollowing.setTextColor(getResources().getColor(R.color.textDark));
 
         binding.btnAll.setBackgroundResource(android.R.color.transparent);
@@ -601,7 +641,7 @@ public class HomeActivity extends AppCompatActivity {
 
     } else {
 
-        binding.btnAll.setBackgroundResource(R.drawable.toggle_selected_bg);
+        binding.btnAll.setBackgroundResource(R.drawable.bg_home_toggle_active);
         binding.btnAll.setTextColor(getResources().getColor(R.color.textDark));
 
         binding.btnFollowing.setBackgroundResource(android.R.color.transparent);

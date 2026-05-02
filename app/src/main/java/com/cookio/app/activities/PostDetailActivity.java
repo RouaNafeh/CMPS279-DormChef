@@ -21,6 +21,7 @@ import com.bumptech.glide.Glide;
 import com.cookio.app.R;
 import com.cookio.app.models.CookingStep;
 import com.cookio.app.models.CookingStepParser;
+import com.cookio.app.utils.CookTimeFormatter;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
@@ -110,9 +111,9 @@ public class PostDetailActivity extends AppCompatActivity {
         updateLikeButton();
         updateLikesCount();
 
-        setupDropdown(findViewById(R.id.ingredientsHeader), findViewById(R.id.chipGroupIngredients));
-        setupDropdown(findViewById(R.id.equipmentHeader), findViewById(R.id.chipGroupEquipment));
-        setupDropdown(findViewById(R.id.stepsHeader), findViewById(R.id.stepsContainer));
+        setupDropdown(findViewById(R.id.ingredientsHeader), findViewById(R.id.chipGroupIngredients), findViewById(R.id.ingredientsArrow));
+        setupDropdown(findViewById(R.id.equipmentHeader), findViewById(R.id.chipGroupEquipment), findViewById(R.id.equipmentArrow));
+        setupDropdown(findViewById(R.id.stepsHeader), findViewById(R.id.stepsContainer), findViewById(R.id.stepsArrow));
 
         rvComments = findViewById(R.id.rvComments);
         etComment = findViewById(R.id.etComment);
@@ -149,12 +150,14 @@ public class PostDetailActivity extends AppCompatActivity {
         loadPostDetails();
         loadEngagementState();
     }
-    private void setupDropdown(View header, View content) {
+    private void setupDropdown(View header, View content, View indicator) {
         header.setOnClickListener(v -> {
             if (content.getVisibility() == View.GONE) {
                 content.setVisibility(View.VISIBLE);
+                indicator.animate().rotation(180f).setDuration(180).start();
             } else {
                 content.setVisibility(View.GONE);
+                indicator.animate().rotation(0f).setDuration(180).start();
             }
         });
     }
@@ -176,6 +179,11 @@ public class PostDetailActivity extends AppCompatActivity {
     }
     private void setupCommentButton() {
         btnSendComment.setOnClickListener(v -> {
+            if (currentUid == null) {
+                Toast.makeText(this, getString(R.string.auth_failed_message), Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             String text = etComment.getText().toString().trim();
 
             if (text.isEmpty()) {
@@ -198,8 +206,7 @@ public class PostDetailActivity extends AppCompatActivity {
             db.collection("posts")
                     .document(postId)
                     .collection("comments")
-                    .document(currentUid)
-                    .set(comment)
+                    .add(comment)
                     .addOnSuccessListener(doc -> {
                         etComment.setText("");
                         ratingBarComment.setRating(0);
@@ -388,7 +395,7 @@ public class PostDetailActivity extends AppCompatActivity {
         tvTitle.setText(getIntent().getStringExtra(EXTRA_POST_TITLE));
         bindUsername(getIntent().getStringExtra(EXTRA_POST_USERNAME));
         tvDescription.setText(getIntent().getStringExtra(EXTRA_POST_DESCRIPTION));
-        tvCookTime.setText(safeText(getIntent().getStringExtra(EXTRA_POST_COOK_TIME)));
+        tvCookTime.setText(CookTimeFormatter.normalize(getIntent().getStringExtra(EXTRA_POST_COOK_TIME)));
         tvBudget.setText(safeText(getIntent().getStringExtra(EXTRA_POST_BUDGET)));
         bindImage(getIntent().getStringExtra(EXTRA_POST_IMAGE_URL));
 
@@ -419,7 +426,7 @@ public class PostDetailActivity extends AppCompatActivity {
                     authorUid = documentSnapshot.getString("uid");
                     bindUsername(documentSnapshot.getString("username"));
                     tvDescription.setText(documentSnapshot.getString("description"));
-                    tvCookTime.setText(safeText(documentSnapshot.getString("cookTime")));
+                    tvCookTime.setText(CookTimeFormatter.normalize(documentSnapshot.getString("cookTime")));
                     tvBudget.setText(safeText(documentSnapshot.getString("budget")));
                     bindImage(documentSnapshot.getString("imageUrl"));
 
@@ -650,12 +657,12 @@ public class PostDetailActivity extends AppCompatActivity {
         if (imageUrl != null && !imageUrl.trim().isEmpty()) {
             Glide.with(this)
                     .load(imageUrl)
-                    .placeholder(R.drawable.logo_cropped)
-                    .error(R.drawable.logo_cropped)
+                    .placeholder(R.drawable.logo)
+                    .error(R.drawable.logo)
                     .centerCrop()
                     .into(ivImage);
         } else {
-            ivImage.setImageResource(R.drawable.logo_cropped);
+            ivImage.setImageResource(R.drawable.logo);
         }
     }
 

@@ -12,6 +12,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -19,7 +20,9 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.cookio.app.R;
 import com.cookio.app.activities.PublicProfileActivity;
 import com.cookio.app.models.Post;
+import com.cookio.app.utils.CookTimeFormatter;
 import com.cookio.app.utils.NotificationHelper;
+import com.google.android.material.imageview.ShapeableImageView;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
@@ -67,6 +70,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
     private final Set<String> savedPostIds;
     private final Set<String> likedPostIds;
     private final String currentUid;
+    private final Map<String, String> profileImageUrlCache = new HashMap<>();
     private boolean isGridMode = false;
 
     private OnPostUnsavedListener onPostUnsavedListener;
@@ -146,19 +150,20 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
                 : "by " + post.getUsername());
         holder.postAvatar.setText(resolveAvatarInitial(post.getUsername()));
         holder.postDescription.setText(post.getDescription());
-        holder.postCookTime.setText(post.getCookTime());
+        holder.postCookTime.setText(CookTimeFormatter.normalize(post.getCookTime()));
         holder.postBudget.setText(post.getBudget());
         holder.likesCount.setText(String.valueOf(post.getLikesCount()));
 
         loadPostRating(post, holder);
+        bindAvatar(post, holder);
 
         String imageUrl = post.getImageUrl();
         Glide.with(holder.itemView)
                 .load(imageUrl != null && !imageUrl.trim().isEmpty()
                         ? Uri.parse(imageUrl)
-                        : R.drawable.logo_cropped)
-                .placeholder(R.drawable.logo_cropped)
-                .error(R.drawable.logo_cropped)
+                        : R.drawable.logo)
+                .placeholder(R.drawable.logo)
+                .error(R.drawable.logo)
                 .centerCrop()
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .into(holder.postImage);
@@ -219,7 +224,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             holder.postTitle.setMaxLines(2);
             holder.postTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);
         } else {
-            holder.postDescription.setVisibility(View.VISIBLE);
+            holder.postDescription.setVisibility(View.GONE);
             holder.likeButton.setVisibility(View.VISIBLE);
             holder.saveButton.setVisibility(View.VISIBLE);
             holder.likesCount.setVisibility(View.VISIBLE);
@@ -275,6 +280,76 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
                     post.setReviewsCount(0);
                     holder.postRating.setText("⭐ New");
                 });
+    }
+
+    private void bindAvatar(Post post, PostViewHolder holder) {
+        String profileImageUrl = post.getProfileImageUrl();
+        if (profileImageUrl != null && !profileImageUrl.trim().isEmpty()) {
+            showAvatarImage(holder, profileImageUrl);
+            cacheProfileImage(post.getUid(), profileImageUrl);
+            return;
+        }
+
+        String cachedUrl = post.getUid() == null ? null : profileImageUrlCache.get(post.getUid());
+        if (cachedUrl != null && !cachedUrl.trim().isEmpty()) {
+            showAvatarImage(holder, cachedUrl);
+            return;
+        }
+
+        showAvatarInitial(holder);
+        if (post.getUid() == null || post.getUid().trim().isEmpty()) {
+            return;
+        }
+
+        FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(post.getUid())
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    String fetchedUrl = documentSnapshot.getString("profileImageUrl");
+                    post.setProfileImageUrl(fetchedUrl);
+                    cacheProfileImage(post.getUid(), fetchedUrl);
+
+                    if (holder.getBindingAdapterPosition() == RecyclerView.NO_POSITION) {
+                        return;
+                    }
+
+                    if (fetchedUrl == null || fetchedUrl.trim().isEmpty()) {
+                        showAvatarInitial(holder);
+                    } else {
+                        showAvatarImage(holder, fetchedUrl);
+                    }
+                })
+                .addOnFailureListener(e -> showAvatarInitial(holder));
+    }
+
+    private void showAvatarImage(PostViewHolder holder, String imageUrl) {
+        holder.postAvatar.setVisibility(View.GONE);
+        holder.postAvatarImage.setVisibility(View.VISIBLE);
+
+        Glide.with(holder.itemView)
+                .load(imageUrl)
+                .placeholder(R.drawable.logo)
+                .error(R.drawable.logo)
+                .circleCrop()
+                .into(holder.postAvatarImage);
+    }
+
+    private void showAvatarInitial(PostViewHolder holder) {
+        holder.postAvatarImage.setImageDrawable(null);
+        holder.postAvatarImage.setVisibility(View.GONE);
+        holder.postAvatar.setVisibility(View.VISIBLE);
+    }
+
+    private void cacheProfileImage(@Nullable String uid, @Nullable String imageUrl) {
+        if (uid == null || uid.trim().isEmpty()) {
+            return;
+        }
+        if (imageUrl == null || imageUrl.trim().isEmpty()) {
+            profileImageUrlCache.remove(uid);
+            return;
+        }
+        profileImageUrlCache.put(uid, imageUrl);
     }
 
     @Override
@@ -535,6 +610,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
     static class PostViewHolder extends RecyclerView.ViewHolder {
         TextView postTitle, postUsername, postDescription, postCookTime, postBudget, likesCount, postRating;
         TextView postAvatar;
+        ShapeableImageView postAvatarImage;
         ImageView postImage;
         ImageButton saveButton, likeButton;
         ImageButton deleteButton;
@@ -545,6 +621,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             postTitle = itemView.findViewById(R.id.post_title);
             postUsername = itemView.findViewById(R.id.post_username);
             postAvatar = itemView.findViewById(R.id.post_avatar);
+            postAvatarImage = itemView.findViewById(R.id.post_avatar_image);
             postDescription = itemView.findViewById(R.id.post_description);
             postCookTime = itemView.findViewById(R.id.post_time);
             postBudget = itemView.findViewById(R.id.post_budget);

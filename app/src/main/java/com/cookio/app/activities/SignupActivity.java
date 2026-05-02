@@ -10,6 +10,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.cookio.app.R;
+import com.cookio.app.utils.AuthVerificationHelper;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
@@ -120,16 +121,30 @@ public class SignupActivity extends AppCompatActivity {
         userData.put("email", firebaseUser.getEmail());
         userData.put("bio", "");
         userData.put("profileImageUrl", "");
+        userData.put("followerCount", 0);
+        userData.put("followingCount", 0);
         userData.put("createdAt", FieldValue.serverTimestamp());
 
         firestore.collection("users")
                 .document(firebaseUser.getUid())
                 .set(userData)
                 .addOnSuccessListener(unused -> {
-                    setLoading(false);
-                    Intent intent = new Intent(SignupActivity.this, HomeActivity.class);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
+                    AuthVerificationHelper.sendVerificationEmail(
+                            this,
+                            firebaseUser,
+                            () -> {
+                                auth.signOut();
+                                setLoading(false);
+
+                                Intent intent = new Intent(SignupActivity.this, LoginActivity.class);
+                                intent.putExtra("prefill_email", firebaseUser.getEmail());
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                startActivity(intent);
+                                Toast.makeText(this, R.string.email_verification_sent, Toast.LENGTH_LONG).show();
+                                finish();
+                            },
+                            () -> setLoading(false)
+                    );
                 })
                 .addOnFailureListener(e -> {
                     setLoading(false);

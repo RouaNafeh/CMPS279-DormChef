@@ -19,7 +19,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scaleType="centerCrop"
-                android:src="@drawable/logo_cropped" />
+                android:src="@drawable/logo" />
 
             <ImageButton
                 android:id="@+id/btnBack"
@@ -29,7 +29,7 @@
                 android:background="@drawable/bg_back_button"
                 android:contentDescription="@string/back_to_landing"
                 android:padding="8dp"
-                android:src="@drawable/ic_android_black_24dp" />
+                android:src="@drawable/arrow_back" />
         </FrameLayout>
 
         <androidx.cardview.widget.CardView
@@ -58,30 +58,30 @@
                     android:id="@+id/layoutAvgRating"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
                     android:layout_marginTop="6dp"
-                    android:gravity="center_vertical">
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
                     <RatingBar
                         android:id="@+id/ratingBarAvg"
                         style="?android:attr/ratingBarStyleSmall"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:numStars="5"
-                        android:stepSize="0.1"
                         android:isIndicator="true"
+                        android:numStars="5"
+                        android:progressBackgroundTint="#D0D0D0"
                         android:progressTint="#FFC107"
                         android:secondaryProgressTint="#FFC107"
-                        android:progressBackgroundTint="#D0D0D0" />
+                        android:stepSize="0.1" />
 
                     <TextView
                         android:id="@+id/tvAvgRating"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="New"
-                        android:textSize="11sp"
                         android:layout_marginStart="8dp"
-                        android:textColor="@color/textDark" />
+                        android:text="New"
+                        android:textColor="@color/textDark"
+                        android:textSize="11sp" />
                 </LinearLayout>
 
                 <TextView
@@ -111,8 +111,8 @@
                         android:paddingEnd="8dp"
                         android:text="@string/post_detail_save"
                         android:textAllCaps="false"
-                        android:textSize="12sp"
                         android:textColor="@color/textDark"
+                        android:textSize="12sp"
                         android:textStyle="bold"
                         app:backgroundTint="@color/white"
                         app:cornerRadius="18dp"
@@ -134,8 +134,8 @@
                         android:paddingEnd="8dp"
                         android:text="@string/post_detail_like"
                         android:textAllCaps="false"
-                        android:textSize="12sp"
                         android:textColor="@color/textDark"
+                        android:textSize="12sp"
                         android:textStyle="bold"
                         app:backgroundTint="@color/white"
                         app:cornerRadius="18dp"
@@ -208,7 +208,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="20dp"
-                    android:background="@drawable/search_background"
+                    android:background="@drawable/bg_detail_section_header"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:padding="14dp">
@@ -222,13 +222,13 @@
                         android:textSize="16sp"
                         android:textStyle="bold" />
 
-                    <TextView
+                    <ImageView
                         android:id="@+id/ingredientsArrow"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="⌄"
-                        android:textColor="@color/textDark"
-                        android:textSize="22sp" />
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:rotation="0"
+                        android:src="@drawable/ic_chevron_wide"
+                        app:tint="@color/textDark" />
                 </LinearLayout>
 
                 <com.google.android.material.chip.ChipGroup
@@ -243,7 +243,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:background="@drawable/search_background"
+                    android:background="@drawable/bg_detail_section_header"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:padding="14dp">
@@ -257,13 +257,13 @@
                         android:textSize="16sp"
                         android:textStyle="bold" />
 
-                    <TextView
+                    <ImageView
                         android:id="@+id/equipmentArrow"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="⌄"
-                        android:textColor="@color/textDark"
-                        android:textSize="22sp" />
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:rotation="0"
+                        android:src="@drawable/ic_chevron_wide"
+                        app:tint="@color/textDark" />
                 </LinearLayout>
 
                 <com.google.android.material.chip.ChipGroup
@@ -278,7 +278,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:background="@drawable/search_background"
+                    android:background="@drawable/bg_detail_section_header"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:padding="14dp">
@@ -292,13 +292,13 @@
                         android:textSize="16sp"
                         android:textStyle="bold" />
 
-                    <TextView
+                    <ImageView
                         android:id="@+id/stepsArrow"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="⌄"
-                        android:textColor="@color/textDark"
-                        android:textSize="22sp" />
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:rotation="0"
+                        android:src="@drawable/ic_chevron_wide"
+                        app:tint="@color/textDark" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -312,60 +312,60 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Reviews &amp; Comments"
-                    android:textStyle="bold"
-                    android:textSize="17sp"
                     android:layout_marginTop="16dp"
-                    android:textColor="@color/textDark" />
+                    android:text="Reviews"
+                    android:textColor="@color/textDark"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
 
                 <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense">
+                    android:layout_marginTop="8dp">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etComment"
                         android:layout_width="match_parent"
                         android:layout_height="40dp"
-                        android:hint="Write a comment..."
-                        android:textSize="13sp"
+                        android:hint="Write a review..."
                         android:maxLines="1"
                         android:paddingStart="12dp"
-                        android:paddingEnd="12dp" />
+                        android:paddingEnd="12dp"
+                        android:textSize="13sp" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp"
                     android:gravity="center_vertical"
-                    android:layout_marginTop="8dp">
+                    android:orientation="horizontal">
 
                     <RatingBar
                         android:id="@+id/ratingBarComment"
                         style="?android:attr/ratingBarStyleSmall"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:numStars="5"
-                        android:stepSize="1"
-                        android:rating="0"
                         android:isIndicator="false"
+                        android:numStars="5"
+                        android:progressBackgroundTint="#D0D0D0"
                         android:progressTint="#FFC107"
+                        android:rating="0"
                         android:secondaryProgressTint="#FFC107"
-                        android:progressBackgroundTint="#D0D0D0" />
+                        android:stepSize="1" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnSendComment"
                         android:layout_width="78dp"
                         android:layout_height="36dp"
                         android:layout_marginStart="10dp"
-                        android:text="Post"
-                        android:textAllCaps="false"
-                        android:textSize="12sp"
                         android:gravity="center"
                         android:paddingStart="0dp"
                         android:paddingEnd="0dp"
+                        android:text="Post"
+                        android:textAllCaps="false"
+                        android:textSize="12sp"
                         app:cornerRadius="18dp" />
                 </LinearLayout>
 

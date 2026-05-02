@@ -22,6 +22,7 @@ import com.cookio.app.databinding.ActivityCreatePostBinding;
 import com.cookio.app.models.CookingStep;
 import com.cookio.app.models.CookingStepParser;
 import com.cookio.app.models.Post;
+import com.cookio.app.utils.CookTimeFormatter;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -251,7 +252,7 @@ public class CreatePostActivity extends AppCompatActivity {
     private void validateAndPost() {
         String title = text(binding.etTitle);
         String description = text(binding.etDescription);
-        String cookTime = text(binding.etCookTime);
+        String cookTime = CookTimeFormatter.normalize(text(binding.etCookTime));
         String budget = text(binding.etBudget);
 
         if (TextUtils.isEmpty(title)) {
@@ -349,11 +350,13 @@ public class CreatePostActivity extends AppCompatActivity {
                     if (username == null) {
                         username = "Unknown";
                     }
+                    String profileImageUrl = userDoc.getString("profileImageUrl");
 
                     Post post = new Post(
                             user.getUid(), username, title, description,
                             cookTime, budget, ingredients, equipment, steps, imageUrl
                     );
+                    post.setProfileImageUrl(profileImageUrl);
 
                     if (isEditMode && !TextUtils.isEmpty(editingPostId)) {
                         firestore.collection("posts")
@@ -366,7 +369,8 @@ public class CreatePostActivity extends AppCompatActivity {
                                         "ingredients", post.getIngredients(),
                                         "equipment", post.getEquipment(),
                                         "steps", post.getSteps(),
-                                        "imageUrl", post.getImageUrl()
+                                        "imageUrl", post.getImageUrl(),
+                                        "profileImageUrl", post.getProfileImageUrl()
                                 )
                                 .addOnSuccessListener(unused -> {
                                     setLoading(false);
@@ -478,11 +482,11 @@ public class CreatePostActivity extends AppCompatActivity {
     private void applyAiResult(String result) {
         binding.etTitle.setText(extractSection(result, "TITLE"));
         binding.etDescription.setText(extractSection(result, "DESCRIPTION"));
-        binding.etCookTime.setText(normalizeCookTime(extractSection(result, "TIME")));
+        binding.etCookTime.setText(CookTimeFormatter.normalize(extractSection(result, "TIME")));
         binding.etBudget.setText(normalizeBudget(extractSection(result, "BUDGET")));
 
-        replaceIngredientRows(splitAiList(extractSection(result, "INGREDIENTS"), ","));
-        replaceEquipmentRows(splitAiList(extractSection(result, "EQUIPMENT"), ","));
+        replaceIngredientRows(splitAiList(extractSection(result, "INGREDIENTS"), "\\|\\|"));
+        replaceEquipmentRows(splitAiList(extractSection(result, "EQUIPMENT"), "\\|\\|"));
         replaceStepRows(CookingStepParser.parseDelimited(extractSection(result, "STEPS")));
     }
 
@@ -541,45 +545,24 @@ public class CreatePostActivity extends AppCompatActivity {
             return items;
         }
 
-        for (String item : Arrays.asList(value.split(separatorRegex))) {
+        String normalized = value.replace("\r", "").trim();
+
+        if (normalized.contains("||")) {
+            separatorRegex = "\\|\\|";
+        } else if (normalized.contains("\n")) {
+            separatorRegex = "\\n";
+        }
+
+        for (String item : Arrays.asList(normalized.split(separatorRegex))) {
             String trimmed = item.trim();
+            if (trimmed.startsWith("- ")) {
+                trimmed = trimmed.substring(2).trim();
+            }
             if (!trimmed.isEmpty()) {
                 items.add(trimmed);
             }
         }
         return items;
-    }
-
-    private String normalizeCookTime(String rawTime) {
-        if (TextUtils.isEmpty(rawTime)) {
-            return "";
-        }
-
-        String normalized = rawTime.trim().toLowerCase();
-        normalized = normalized.replace("minutes", "min")
-                .replace("minute", "min")
-                .replace("mins", "min")
-                .replace("hours", "hr")
-                .replace("hour", "hr")
-                .replaceAll("\\s+", " ");
-
-        String[] tokens = normalized.split(" ");
-        List<String> compact = new ArrayList<>();
-
-        for (int i = 0; i < tokens.length - 1; i++) {
-            if (tokens[i].matches("\\d+")
-                    && (tokens[i + 1].equals("min") || tokens[i + 1].equals("hr"))) {
-                compact.add(tokens[i] + " " + tokens[i + 1]);
-                i++;
-            }
-        }
-
-        if (!compact.isEmpty()) {
-            String joined = TextUtils.join(" ", compact);
-            return joined.length() > 14 ? joined.substring(0, 14).trim() : joined;
-        }
-
-        return rawTime.length() > 14 ? rawTime.substring(0, 14).trim() : rawTime.trim();
     }
 
     private String normalizeBudget(String rawBudget) {

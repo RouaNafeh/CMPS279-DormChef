@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">DormChef</string>
+    <string name="app_name">Cookio</string>
     <string name="recipes_title">Recipes</string>
     <string name="filter_all">All</string>
     <string name="search_hint">Search recipes...</string>
@@ -45,6 +45,11 @@
     <string name="cooking_timer_done">Time\'s up! Move on when you\'re ready.</string>
     <string name="cooking_mode_missing_steps">No cooking steps available yet.</string>
     <string name="cooking_mode_button">Cooking Mode</string>
+    <string name="cooking_complete_eyebrow">You did it</string>
+    <string name="cooking_complete_title">Recipe complete!</string>
+    <string name="cooking_complete_message">That looks delicious. You made it all the way through, so take a second to enjoy the moment.</string>
+    <string name="cooking_complete_done">See recipe</string>
+    <string name="cooking_complete_stay">Stay here</string>
     <string name="step_time_label">Step time (min)</string>
     <string name="step_time_optional">Use 0 if no timer is needed.</string>
     <string name="step_instruction_required">Each step needs an instruction.</string>
@@ -53,6 +58,7 @@
     <string name="auth_subtitle">Share quick recipes, save ideas, and cook with your circle.</string>
     <string name="log_in">Log In</string>
     <string name="create_account">Create Account</string>
+    <string name="forgot_password">Forgot password?</string>
     <string name="email_label">Email</string>
     <string name="password_label">Password</string>
     <string name="username_label">Username</string>
@@ -67,9 +73,20 @@
     <string name="go_to_login">Already have an account? Log in</string>
     <string name="back_to_landing">Back</string>
     <string name="log_out">Log Out</string>
+    <string name="email_verification_sent">Verification email sent. Check your inbox before logging in.</string>
+    <string name="email_verification_resent">Verification email sent again.</string>
+    <string name="email_verification_required">Verify your email before entering the app.</string>
+    <string name="email_verification_check_failed">Could not verify your account state.</string>
+    <string name="email_verification_send_failed">Could not send verification email.</string>
+    <string name="email_verification_dialog_title">Verify your email</string>
+    <string name="email_verification_dialog_message">Your account exists, but the email is not verified yet. Check your inbox or resend the verification email now.</string>
+    <string name="email_verification_resend">Resend email</string>
     <string name="view_saved_posts">View Saved Posts</string>
     <string name="logging_in">Logging in...</string>
     <string name="creating_account">Creating account...</string>
+    <string name="password_reset_sent">Password reset email sent.</string>
+    <string name="password_reset_failed">Could not send reset email.</string>
+    <string name="enter_email_for_reset">Enter your email first.</string>
     <string name="error_username_required">Username is required.</string>
     <string name="error_email_required">Email is required.</string>
     <string name="error_password_required">Password is required.</string>
@@ -78,8 +95,12 @@
     <string name="user_profile_create_failed">Account created, but the user profile could not be saved.</string>
     <string name="profile_label">Your Space</string>
     <string name="profile_title">My Profile</string>
-    <string name="profile_subtitle">Track what you share, save what you love, and keep your kitchen identity in one place.</string>
+    <string name="profile_subtitle">Your posts, likes, and profile in one place.</string>
     <string name="profile_edit_button">Edit</string>
+    <string name="profile_account_button">Account</string>
+    <string name="profile_account_label">Account</string>
+    <string name="profile_account_title">Manage account</string>
+    <string name="profile_account_message">Quick access to session and account actions.</string>
     <string name="profile_create_post_button">Create Post</string>
     <string name="profile_saved_posts_button">Liked Posts</string>
     <string name="profile_bio_label">Bio</string>
@@ -106,10 +127,23 @@
     <string name="logout_confirm_title">Log out?</string>
     <string name="logout_confirm_message">You will need to log back in to access your profile, saved posts, and recipes.</string>
     <string name="logout_confirm_action">Log Out</string>
+    <string name="delete_account">Delete Account</string>
+    <string name="delete_account_confirm_title">Delete account?</string>
+    <string name="delete_account_confirm_message">This permanently deletes your profile, posts, likes, comments, saved posts, and account access.</string>
+    <string name="delete_account_confirm_action">Delete</string>
+    <string name="delete_account_progress">Deleting account...</string>
+    <string name="delete_account_success">Account deleted</string>
+    <string name="delete_account_failed">Failed to delete account</string>
+    <string name="delete_account_reauth_required">For security, log in again before deleting your account.</string>
+    <string name="delete_account_password_prompt">Enter your password to confirm account deletion.</string>
+    <string name="delete_account_password_hint">Current password</string>
+    <string name="delete_account_password_required">Password required to delete account.</string>
     <string name="profile_photo_content_desc">Profile photo</string>
     <string name="profile_photo_upload_failed">Failed to upload profile photo</string>
     <string name="profile_photo_upload_failed_with_reason">Failed to upload profile photo: %1$s</string>
     <string name="profile_photo_updated">Profile photo updated</string>
+    <string name="notifications_permission_denied">Notifications are off. Enable them in system settings if you want push alerts.</string>
+    <string name="notifications_permission_rationale">Allow notifications to get likes, follows, comments, and reviews.</string>
     <string name="public_profile_back">Go back</string>
     <string name="public_profile_label">Cookbook Profile</string>
     <string name="public_profile_title">Public Profile</string>
