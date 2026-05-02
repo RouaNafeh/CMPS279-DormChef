@@ -20,4 +20,6 @@
     <color name="separator_line">#E2EAEC</color>
     <color name="text_primary">#162033</color>
     <color name="textPrimaryOnLight">#4A5C65</color>
+    <color name="holo_red_dark_safe">#C62828</color>
+    <color name="holo_green_dark_safe">#2E7D32</color>
 </resources>
