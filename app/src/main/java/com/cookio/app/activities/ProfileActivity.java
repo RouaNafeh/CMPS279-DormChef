@@ -502,8 +502,14 @@ public class ProfileActivity extends AppCompatActivity {
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_profile_edit, null);
         TextInputEditText usernameInput = dialogView.findViewById(R.id.inputUsername);
         TextInputEditText bioInput = dialogView.findViewById(R.id.inputBio);
+        com.google.android.material.textfield.TextInputLayout usernameLayout =
+                dialogView.findViewById(R.id.inputUsernameLayout);
+        usernameLayout.setHelperTextEnabled(true);
 
-        usernameInput.setText(binding.tvUsername.getText());
+        String currentUsername = binding.tvUsername.getText().toString();
+        String currentUsernameKey = currentUsername.toLowerCase(Locale.ROOT);
+
+        usernameInput.setText(currentUsername);
         CharSequence currentBio = binding.tvBio.getText();
         if (!TextUtils.equals(currentBio, getString(R.string.profile_bio_empty))) {
             bioInput.setText(currentBio);
@@ -516,6 +522,64 @@ public class ProfileActivity extends AppCompatActivity {
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
+
+        // Live availability check (debounced)
+        final android.os.Handler debounceHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+        final Runnable[] pendingCheck = { null };
+
+        usernameInput.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                String typed = s.toString().trim();
+                String typedKey = typed.toLowerCase(Locale.ROOT);
+                usernameLayout.setError(null);
+
+                if (pendingCheck[0] != null) {
+                    debounceHandler.removeCallbacks(pendingCheck[0]);
+                }
+
+                if (TextUtils.isEmpty(typed)) {
+                    usernameLayout.setHelperText(null);
+                    return;
+                }
+
+                if (typed.length() < 3) {
+                    setHelper(usernameLayout, "Username must be at least 3 characters", R.color.textMuted);
+                    return;
+                }
+
+                // If user typed their CURRENT username (case-insensitive), no need to check
+                if (typedKey.equals(currentUsernameKey)) {
+                    setHelper(usernameLayout, "Same as your current username", R.color.textMuted);
+                    return;
+                }
+
+                setHelper(usernameLayout, "Checking availability…", R.color.textMuted);
+
+                pendingCheck[0] = () -> {
+                    db.collection("usernames")
+                            .document(typedKey)
+                            .get()
+                            .addOnSuccessListener(doc -> {
+                                String latestText = usernameInput.getText() == null
+                                        ? "" : usernameInput.getText().toString().trim().toLowerCase(Locale.ROOT);
+                                if (!latestText.equals(typedKey)) return;
+
+                                if (doc.exists()) {
+                                    setHelper(usernameLayout, "✗ Username already taken", R.color.holo_red_dark_safe);
+                                } else {
+                                    setHelper(usernameLayout, "✓ Username available", R.color.holo_green_dark_safe);
+                                }
+                            })
+                            .addOnFailureListener(e -> {
+                                setHelper(usernameLayout, "Could not verify availability", R.color.textMuted);
+                            });
+                };
+                debounceHandler.postDelayed(pendingCheck[0], 500);
+            }
+        });
 
         dialogView.findViewById(R.id.btnCancel).setOnClickListener(v -> dialog.dismiss());
         dialogView.findViewById(R.id.btnSave).setOnClickListener(v -> {
@@ -538,63 +602,107 @@ public class ProfileActivity extends AppCompatActivity {
                 return;
             }
 
-            v.setEnabled(false); // disable button
+            v.setEnabled(false);
 
-            updateProfile(user.getUid(), newName, newBio);
-
-            dialog.dismiss();
+            updateProfile(user.getUid(), currentUsername, newName, newBio, dialog, v);
         });
 
         dialog.show();
     }
 
-    private void updateProfile(String uid, String newName, String newBio) {
+    private void setHelper(com.google.android.material.textfield.TextInputLayout layout, String text, int colorRes) {
+        layout.setHelperText(text);
+        try {
+            int color = androidx.core.content.ContextCompat.getColor(this, colorRes);
+            layout.setHelperTextColor(android.content.res.ColorStateList.valueOf(color));
+        } catch (Exception ignored) {}
+    }
 
-        // 1. VALIDATION
+    private void updateProfile(String uid, String currentUsername, String newName, String newBio,
+                               AlertDialog dialog, View saveButton) {
+
         if (TextUtils.isEmpty(newName)) {
             Toast.makeText(this, "Username cannot be empty", Toast.LENGTH_SHORT).show();
+            saveButton.setEnabled(true);
             return;
         }
 
         if (newName.length() < 3) {
             Toast.makeText(this, "Username must be at least 3 characters", Toast.LENGTH_SHORT).show();
+            saveButton.setEnabled(true);
             return;
         }
 
-        // 2. UI LOCK
         binding.btnEdit.setEnabled(false);
         binding.progressBar.setVisibility(View.VISIBLE);
 
-        db.collection("users")
-                .document(uid)
-                .update("username", newName, "bio", newBio)
-                .addOnSuccessListener(unused -> {
+        String oldKey = currentUsername.toLowerCase(Locale.ROOT);
+        String newKey = newName.toLowerCase(Locale.ROOT);
 
-                    updateUsernameOnPosts(uid, newName, newBio);
+        // Case A: Same key (user didn't change username, or just changed casing)
+        // — only update display name + bio, no reservation changes
+        if (oldKey.equals(newKey)) {
+            db.collection("users")
+                    .document(uid)
+                    .update("username", newName, "usernameKey", newKey, "bio", newBio)
+                    .addOnSuccessListener(unused -> {
+                        updateUsernameOnPosts(uid, newName, newBio);
+                        binding.progressBar.setVisibility(View.GONE);
+                        binding.btnEdit.setEnabled(true);
+                        binding.tvUsername.setText(newName);
+                        binding.tvBio.setText(resolveBio(newBio));
+                        binding.tvAvatarInitial.setText(resolveInitial(newName));
+                        dialog.dismiss();
+                        Toast.makeText(this, "Profile updated successfully", Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e -> {
+                        binding.progressBar.setVisibility(View.GONE);
+                        binding.btnEdit.setEnabled(true);
+                        saveButton.setEnabled(true);
+                        Toast.makeText(this, "Failed to update profile", Toast.LENGTH_SHORT).show();
+                    });
+            return;
+        }
 
-                    // UI restore
-                    binding.progressBar.setVisibility(View.GONE);
-                    binding.btnEdit.setEnabled(true);
+        // Case B: Username actually changing — must check + reserve atomically
+        DocumentReference newReservation = db.collection("usernames").document(newKey);
+        DocumentReference oldReservation = db.collection("usernames").document(oldKey);
+        DocumentReference userRef = db.collection("users").document(uid);
 
-                    binding.tvUsername.setText(newName);
-                    binding.tvBio.setText(resolveBio(newBio));
-                    binding.tvAvatarInitial.setText(resolveInitial(newName));
+        db.runTransaction(transaction -> {
+            DocumentSnapshot existing = transaction.get(newReservation);
+            if (existing.exists()) {
+                throw new IllegalStateException("USERNAME_TAKEN");
+            }
 
-                    Toast.makeText(this,
-                            "Profile updated successfully",
-                            Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e -> {
+            java.util.Map<String, Object> reservationData = new java.util.HashMap<>();
+            reservationData.put("uid", uid);
+            reservationData.put("createdAt", com.google.firebase.firestore.FieldValue.serverTimestamp());
+            transaction.set(newReservation, reservationData);
 
-                    binding.progressBar.setVisibility(View.GONE);
-                    binding.btnEdit.setEnabled(true);
+            transaction.delete(oldReservation);
 
-                    Toast.makeText(this,
-                            "Failed to update profile",
-                            Toast.LENGTH_SHORT).show();
-                });
+            transaction.update(userRef, "username", newName, "usernameKey", newKey, "bio", newBio);
+            return null;
+        }).addOnSuccessListener(unused -> {
+            updateUsernameOnPosts(uid, newName, newBio);
+            binding.progressBar.setVisibility(View.GONE);
+            binding.btnEdit.setEnabled(true);
+            binding.tvUsername.setText(newName);
+            binding.tvBio.setText(resolveBio(newBio));
+            binding.tvAvatarInitial.setText(resolveInitial(newName));
+            dialog.dismiss();
+            Toast.makeText(this, "Profile updated successfully", Toast.LENGTH_SHORT).show();
+        }).addOnFailureListener(e -> {
+            binding.progressBar.setVisibility(View.GONE);
+            binding.btnEdit.setEnabled(true);
+            saveButton.setEnabled(true);
+            String message = "USERNAME_TAKEN".equals(e.getMessage())
+                    ? "Username already taken"
+                    : "Failed to update profile";
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        });
     }
-
     private void deleteSavedFromAllUsers(String postId) {
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
