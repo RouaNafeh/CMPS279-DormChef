@@ -78,6 +78,7 @@
             android:id="@+id/recyclerViewRecipes"
             android:layout_width="match_parent"
             android:layout_height="0dp"
+            android:layout_weight="1"
             android:layout_marginTop="12dp"
             android:clipToPadding="false"
             android:paddingBottom="12dp" />

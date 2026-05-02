@@ -41,9 +41,6 @@
             android:name=".activities.FavoritesActivity"
             android:exported="false" />
         <activity
-            android:name=".activities.FilterActivity"
-            android:exported="false" />
-        <activity
             android:name=".activities.HomeActivity"
             android:exported="false" />
         <activity

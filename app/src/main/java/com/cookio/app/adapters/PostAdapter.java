@@ -1,7 +1,7 @@
 package com.cookio.app.adapters;
 
-import android.content.Intent;
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,13 +13,13 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-import com.cookio.app.utils.NotificationHelper;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.cookio.app.R;
 import com.cookio.app.activities.PublicProfileActivity;
 import com.cookio.app.models.Post;
+import com.cookio.app.utils.NotificationHelper;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
@@ -29,6 +29,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -97,6 +98,19 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         this.postList = newList;
         notifyDataSetChanged();
     }
+    public void sortByRating() {
+        postList.sort((p1, p2) -> {
+            int ratingCompare = Float.compare(p2.getAvgRating(), p1.getAvgRating());
+
+            if (ratingCompare != 0) {
+                return ratingCompare;
+            }
+
+            return Integer.compare(p2.getReviewsCount(), p1.getReviewsCount());
+        });
+
+        notifyDataSetChanged();
+    }
 
     public void removePostFromUI(String postId) {
         for (int i = 0; i < postList.size(); i++) {
@@ -135,6 +149,8 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         holder.postCookTime.setText(post.getCookTime());
         holder.postBudget.setText(post.getBudget());
         holder.likesCount.setText(String.valueOf(post.getLikesCount()));
+
+        loadPostRating(post, holder);
 
         String imageUrl = post.getImageUrl();
         Glide.with(holder.itemView)
@@ -195,6 +211,11 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             holder.likeButton.setVisibility(View.GONE);
             holder.saveButton.setVisibility(View.GONE);
             holder.likesCount.setVisibility(View.GONE);
+
+            if (holder.postRating != null) {
+                holder.postRating.setVisibility(View.GONE);
+            }
+
             holder.postTitle.setMaxLines(2);
             holder.postTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);
         } else {
@@ -202,8 +223,58 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             holder.likeButton.setVisibility(View.VISIBLE);
             holder.saveButton.setVisibility(View.VISIBLE);
             holder.likesCount.setVisibility(View.VISIBLE);
+
+            if (holder.postRating != null) {
+                holder.postRating.setVisibility(View.VISIBLE);
+            }
+
             holder.postTitle.setMaxLines(2);
         }
+    }
+
+    private void loadPostRating(Post post, PostViewHolder holder) {
+        if (post.getPostId() == null || holder.postRating == null) {
+            return;
+        }
+
+        FirebaseFirestore.getInstance()
+                .collection("posts")
+                .document(post.getPostId())
+                .collection("comments")
+                .get()
+                .addOnSuccessListener(query -> {
+                    int count = 0;
+                    float total = 0f;
+
+                    for (DocumentSnapshot doc : query.getDocuments()) {
+                        Double rating = doc.getDouble("rating");
+
+                        if (rating != null && rating > 0) {
+                            total += rating.floatValue();
+                            count++;
+                        }
+                    }
+
+                    if (count == 0) {
+                        post.setAvgRating(0f);
+                        post.setReviewsCount(0);
+                        holder.postRating.setText("⭐ New");
+                    } else {
+                        float avg = total / count;
+
+                        post.setAvgRating(avg);
+                        post.setReviewsCount(count);
+
+                        holder.postRating.setText(
+                                "⭐ " + String.format(Locale.getDefault(), "%.1f", avg) + " (" + count + ")"
+                        );
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    post.setAvgRating(0f);
+                    post.setReviewsCount(0);
+                    holder.postRating.setText("⭐ New");
+                });
     }
 
     @Override
@@ -313,6 +384,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             if (onPostLikeStateChangedListener != null) {
                 onPostLikeStateChangedListener.onPostLikeStateChanged(post, !currentlyLiked);
             }
+
             if (currentlyLiked) {
                 showUndoSnackbar(
                         holder.itemView,
@@ -347,6 +419,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
                 holder.likeButton.setImageResource(R.drawable.heart);
                 post.setLikesCount(Math.max(0, updatedLikeCount - 1));
             }
+
             holder.likesCount.setText(String.valueOf(post.getLikesCount()));
             Toast.makeText(context, "Failed to update like", Toast.LENGTH_SHORT).show();
         });
@@ -368,9 +441,11 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
                 .addOnFailureListener(e -> {
                     savedPostIds.remove(post.getPostId());
                     holder.saveButton.setImageResource(R.drawable.ic_save_outline);
+
                     if (onPostSaveStateChangedListener != null) {
                         onPostSaveStateChangedListener.onPostSaveStateChanged(post, false);
                     }
+
                     Toast.makeText(context, "Failed to restore saved post", Toast.LENGTH_SHORT).show();
                 });
     }
@@ -398,9 +473,11 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             post.setLikesCount(previousLikeCount);
             holder.likeButton.setImageResource(R.drawable.heart);
             holder.likesCount.setText(String.valueOf(post.getLikesCount()));
+
             if (onPostLikeStateChangedListener != null) {
                 onPostLikeStateChangedListener.onPostLikeStateChanged(post, false);
             }
+
             Toast.makeText(context, "Failed to restore like", Toast.LENGTH_SHORT).show();
         });
     }
@@ -456,7 +533,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
     }
 
     static class PostViewHolder extends RecyclerView.ViewHolder {
-        TextView postTitle, postUsername, postDescription, postCookTime, postBudget, likesCount;
+        TextView postTitle, postUsername, postDescription, postCookTime, postBudget, likesCount, postRating;
         TextView postAvatar;
         ImageView postImage;
         ImageButton saveButton, likeButton;
@@ -464,6 +541,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
 
         public PostViewHolder(@NonNull View itemView) {
             super(itemView);
+
             postTitle = itemView.findViewById(R.id.post_title);
             postUsername = itemView.findViewById(R.id.post_username);
             postAvatar = itemView.findViewById(R.id.post_avatar);
@@ -471,6 +549,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             postCookTime = itemView.findViewById(R.id.post_time);
             postBudget = itemView.findViewById(R.id.post_budget);
             likesCount = itemView.findViewById(R.id.likes_count);
+            postRating = itemView.findViewById(R.id.post_rating_text);
             postImage = itemView.findViewById(R.id.post_image);
             saveButton = itemView.findViewById(R.id.btn_save);
             likeButton = itemView.findViewById(R.id.btn_like);

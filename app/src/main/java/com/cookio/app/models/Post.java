@@ -20,6 +20,8 @@ public class Post {
     @ServerTimestamp
     private Date createdAt;
     private int likesCount;
+    private float avgRating;
+    private int reviewsCount;
 
     // Required empty constructor for Firestore deserialization
     public Post() {}
@@ -53,6 +55,10 @@ public class Post {
     public String getImageUrl()         { return imageUrl; }
     public Date getCreatedAt()          { return createdAt; }
     public int getLikesCount()          { return likesCount; }
+    public float getAvgRating() { return avgRating; }
+    public int getReviewsCount() { return reviewsCount; }
+    public void setAvgRating(float avgRating) { this.avgRating = avgRating; }
+    public void setReviewsCount(int reviewsCount) { this.reviewsCount = reviewsCount; }
 
     public void setPostId(String postId)        { this.postId = postId; }
     public void setLikesCount(int likesCount)   { this.likesCount = likesCount; }

@@ -18,6 +18,8 @@ public class Recipe {
     private String steps;
     private String imageUrl;
     private long createdAt;
+    private float avgRating;
+    private int reviewsCount;
 
     public Recipe() {
     }
@@ -193,4 +195,9 @@ public class Recipe {
     public void setCreatedAt(long createdAt) {
         this.createdAt = createdAt;
     }
+    public float getAvgRating() { return avgRating; }
+    public int getReviewsCount() { return reviewsCount; }
+
+    public void setAvgRating(float avgRating) { this.avgRating = avgRating; }
+    public void setReviewsCount(int reviewsCount) { this.reviewsCount = reviewsCount; }
 }
