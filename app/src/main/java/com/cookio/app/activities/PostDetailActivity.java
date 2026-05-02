@@ -69,7 +69,7 @@ public class PostDetailActivity extends AppCompatActivity {
 
     private ImageView ivImage;
     private TextView tvTitle;
-    private String authorUid;
+
     private TextView tvUsername;
     private TextView tvDescription;
     private TextView tvCookTime;
