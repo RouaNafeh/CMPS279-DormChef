@@ -5,8 +5,10 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Toast;
+import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -23,10 +25,14 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.cookio.app.models.Post;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.EmailAuthProvider;
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException;
 import androidx.recyclerview.widget.GridLayoutManager;
+import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.WriteBatch;
@@ -35,7 +41,6 @@ import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -43,6 +48,21 @@ import java.util.Set;
 
 public class ProfileActivity extends AppCompatActivity {
     private static final String TAG = "ProfileActivity";
+
+    private interface CompletionListener {
+        void onSuccess();
+        void onFailure(Exception e);
+    }
+
+    private interface RefsListener {
+        void onSuccess(List<DocumentReference> refs);
+        void onFailure(Exception e);
+    }
+
+    private interface PostsListener {
+        void onSuccess(List<Post> posts);
+        void onFailure(Exception e);
+    }
 
     private ActivityProfileBinding binding;
     private FirebaseAuth auth;
@@ -99,7 +119,7 @@ public class ProfileActivity extends AppCompatActivity {
                 startActivity(new Intent(this, CreatePostActivity.class)));
         binding.btnSavedPosts.setOnClickListener(v ->
                 startActivity(new Intent(this, LikedPostsActivity.class)));
-        binding.btnLogout.setOnClickListener(v -> showLogoutConfirmation());
+        binding.btnProfileMenu.setOnClickListener(v -> showProfileMenu());
         binding.cardFollowers.setOnClickListener(v -> openConnections(UserConnectionsActivity.MODE_FOLLOWERS));
         binding.cardFollowing.setOnClickListener(v -> openConnections(UserConnectionsActivity.MODE_FOLLOWING));
         binding.ivProfilePhoto.setOnClickListener(v -> profileImagePickerLauncher.launch("image/*"));
@@ -109,7 +129,7 @@ public class ProfileActivity extends AppCompatActivity {
             isGrid = !isGrid;
             setLayoutManager();
             postAdapter.setGridMode(isGrid);
-            binding.btnToggleView.setText(isGrid ? "List View" : "Grid View");
+            binding.btnToggleView.setText(isGrid ? "List" : "Grid");
         });
 
         setupBottomNavigation();
@@ -169,27 +189,50 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void showDeleteDialog(Post post) {
-        new AlertDialog.Builder(this)
-                .setTitle("Delete Post")
-                .setMessage("Are you sure you want to delete this post?")
-                .setPositiveButton("Delete", (dialog, which) -> deletePost(post))
-                .setNegativeButton("Cancel", null)
-                .show();
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_destructive_confirm, null, false);
+        AlertDialog dialog = new AlertDialog.Builder(this).setView(dialogView).create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        ((TextView) dialogView.findViewById(R.id.tvDialogEyebrow)).setText("Post");
+        ((TextView) dialogView.findViewById(R.id.tvDialogTitle)).setText("Delete post?");
+        ((TextView) dialogView.findViewById(R.id.tvDialogMessage)).setText("This removes the recipe and its related activity from your profile.");
+
+        dialogView.findViewById(R.id.btnDialogConfirm).setOnClickListener(v -> {
+            dialog.dismiss();
+            deletePost(post);
+        });
+        dialogView.findViewById(R.id.btnDialogCancel).setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
     }
 
     private void showPostActionsDialog(Post post) {
-        String[] options = {"Edit Post", "Delete Post"};
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_post_actions, null, false);
+        AlertDialog dialog = new AlertDialog.Builder(this).setView(dialogView).create();
 
-        new AlertDialog.Builder(this)
-                .setTitle(post.getTitle())
-                .setItems(options, (dialog, which) -> {
-                    if (which == 0) {
-                        openEditPost(post);
-                    } else if (which == 1) {
-                        showDeleteDialog(post);
-                    }
-                })
-                .show();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        TextView titleView = dialogView.findViewById(R.id.tvPostActionsTitle);
+        titleView.setText(post.getTitle());
+
+        dialogView.findViewById(R.id.btnActionEditPost).setOnClickListener(v -> {
+            dialog.dismiss();
+            openEditPost(post);
+        });
+
+        dialogView.findViewById(R.id.btnActionDeletePost).setOnClickListener(v -> {
+            dialog.dismiss();
+            showDeleteDialog(post);
+        });
+
+        dialogView.findViewById(R.id.btnActionCancel).setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
     }
 
     private void openEditPost(Post post) {
@@ -379,8 +422,8 @@ public class ProfileActivity extends AppCompatActivity {
 
             Glide.with(this)
                     .load(profileImageUrl)
-                    .placeholder(R.drawable.logo_cropped)
-                    .error(R.drawable.logo_cropped)
+                    .placeholder(R.drawable.logo)
+                    .error(R.drawable.logo)
                     .centerCrop()
                     .into(binding.ivProfilePhoto);
         } else {
@@ -407,12 +450,28 @@ public class ProfileActivity extends AppCompatActivity {
                                         .document(user.getUid())
                                         .update("profileImageUrl", downloadUri.toString())
                                         .addOnSuccessListener(unused -> {
-                                            setProfilePhotoUploadEnabled(true);
-                                            loadProfilePhoto(downloadUri.toString());
+                                            updateProfileImageOnPosts(user.getUid(), downloadUri.toString(), new CompletionListener() {
+                                                @Override
+                                                public void onSuccess() {
+                                                    setProfilePhotoUploadEnabled(true);
+                                                    loadProfilePhoto(downloadUri.toString());
+                                                    getSharedPreferences("cookio_prefs", MODE_PRIVATE)
+                                                            .edit()
+                                                            .putString("photoUrl", downloadUri.toString())
+                                                            .apply();
 
-                                            Toast.makeText(this,
-                                                    R.string.profile_photo_updated,
-                                                    Toast.LENGTH_SHORT).show();
+                                                    Toast.makeText(ProfileActivity.this,
+                                                            R.string.profile_photo_updated,
+                                                            Toast.LENGTH_SHORT).show();
+                                                }
+
+                                                @Override
+                                                public void onFailure(Exception e) {
+                                                    setProfilePhotoUploadEnabled(true);
+                                                    Log.e(TAG, "Failed to update post profile images", e);
+                                                    showProfilePhotoUploadError(e);
+                                                }
+                                            });
                                         })
                                         .addOnFailureListener(e -> {
                                             setProfilePhotoUploadEnabled(true);
@@ -442,6 +501,29 @@ public class ProfileActivity extends AppCompatActivity {
                 ? getString(R.string.profile_photo_upload_failed)
                 : getString(R.string.profile_photo_upload_failed_with_reason, e.getMessage());
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+    }
+
+    private void showProfileMenu() {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_profile_actions, null);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        dialogView.findViewById(R.id.btnProfileLogout).setOnClickListener(v -> {
+            dialog.dismiss();
+            showLogoutConfirmation();
+        });
+        dialogView.findViewById(R.id.btnProfileDeleteAccount).setOnClickListener(v -> {
+            dialog.dismiss();
+            showDeleteAccountConfirmation();
+        });
+        dialogView.findViewById(R.id.btnProfileActionsClose).setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
     }
 
     private void openPostDetail(Post post) {
@@ -704,107 +786,53 @@ public class ProfileActivity extends AppCompatActivity {
         });
     }
     private void deleteSavedFromAllUsers(String postId) {
-
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        db.collection("users")
-                .get()
-                .addOnSuccessListener(usersSnapshot -> {
-
-                    WriteBatch batch = db.batch();
-
-                    for (DocumentSnapshot userDoc : usersSnapshot) {
-
-                        DocumentReference savedRef = db.collection("users")
-                                .document(userDoc.getId())
-                                .collection("savedPosts")
-                                .document(postId);
-
-                        batch.delete(savedRef);
+        collectSavedRefsForPost(postId, new RefsListener() {
+            @Override
+            public void onSuccess(List<DocumentReference> refs) {
+                deleteRefsInBatches(refs, new CompletionListener() {
+                    @Override
+                    public void onSuccess() {
                     }
 
-                    batch.commit();
+                    @Override
+                    public void onFailure(Exception e) {
+                        Log.e(TAG, "Failed to clean saved references for post " + postId, e);
+                    }
                 });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Log.e(TAG, "Failed to collect saved references for post " + postId, e);
+            }
+        });
     }
 
     private void deletePost(Post post) {
-        String postId = post.getPostId();
-        String uid = auth.getCurrentUser().getUid();
+        setAccountActionsEnabled(false);
+        binding.progressBar.setVisibility(View.VISIBLE);
 
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        DocumentReference postRef = db.collection("posts").document(postId);
-
-        // 1. Delete likes first
-        db.collection("posts")
-                .document(postId)
-                .collection("likes")
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-
-                    WriteBatch batch = db.batch();
-
-                    for (DocumentSnapshot doc : querySnapshot) {
-                        batch.delete(doc.getReference());
-                    }
-
-                    batch.commit()
-                            .addOnSuccessListener(unused -> {
-
-                                // 2. Delete saved post for CURRENT user
-                                db.collection("users")
-                                        .document(uid)
-                                        .collection("savedPosts")
-                                        .document(postId)
-                                        .delete()
-                                        .addOnSuccessListener(unused2 -> {
-
-                                            // 3. DELETE SAVED POST FROM ALL USERS (OPTION 1 FIX)
-                                            deleteSavedFromAllUsers(postId);
-
-                                            // 4. Delete post itself
-                                            postRef.delete()
-                                                    .addOnSuccessListener(unused3 -> {
-
-                                                        // 5. Update UI
-                                                        postAdapter.removePostFromUI(postId);
-                                                        myPosts.remove(post);
-
-                                                        binding.tvPostsCount.setText(
-                                                                String.valueOf(myPosts.size())
-                                                        );
-
-                                                        Toast.makeText(
-                                                                this,
-                                                                "Post deleted successfully",
-                                                                Toast.LENGTH_SHORT
-                                                        ).show();
-
-                                                    })
-                                                    .addOnFailureListener(e ->
-                                                            Toast.makeText(this,
-                                                                    "Failed to delete post",
-                                                                    Toast.LENGTH_SHORT).show()
-                                                    );
-
-                                        })
-                                        .addOnFailureListener(e ->
-                                                Toast.makeText(this,
-                                                        "Failed to remove saved post",
-                                                        Toast.LENGTH_SHORT).show()
-                                        );
-
-                            })
-                            .addOnFailureListener(e ->
-                                    Toast.makeText(this,
-                                            "Failed to delete likes",
-                                            Toast.LENGTH_SHORT).show()
-                            );
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this,
-                                "Failed to load likes",
-                                Toast.LENGTH_SHORT).show()
+        deletePostData(post, new CompletionListener() {
+            @Override
+            public void onSuccess() {
+                postAdapter.removePostFromUI(post.getPostId());
+                myPosts.remove(post);
+                binding.tvPostsCount.setText(String.valueOf(myPosts.size()));
+                binding.tvPostsSectionMeta.setText(
+                        String.format(Locale.getDefault(), "%d posts", myPosts.size())
                 );
+                finishPostLoading();
+                setAccountActionsEnabled(true);
+                Toast.makeText(ProfileActivity.this, "Post deleted successfully", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                binding.progressBar.setVisibility(View.GONE);
+                setAccountActionsEnabled(true);
+                Toast.makeText(ProfileActivity.this, "Failed to delete post", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void updateUsernameOnPosts(String uid, String newName, String newBio) {
@@ -844,6 +872,24 @@ public class ProfileActivity extends AppCompatActivity {
                     binding.btnEdit.setEnabled(true);
                     Toast.makeText(this, R.string.profile_load_failed, Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    private void updateProfileImageOnPosts(String uid, String profileImageUrl, CompletionListener listener) {
+        db.collection("posts")
+                .whereEqualTo("uid", uid)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    WriteBatch batch = db.batch();
+
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        batch.update(document.getReference(), "profileImageUrl", profileImageUrl);
+                    }
+
+                    batch.commit()
+                            .addOnSuccessListener(unused -> listener.onSuccess())
+                            .addOnFailureListener(listener::onFailure);
+                })
+                .addOnFailureListener(listener::onFailure);
     }
 
     private String resolveDisplayName(@Nullable String username, @Nullable String email) {
@@ -893,5 +939,560 @@ public class ProfileActivity extends AppCompatActivity {
         });
 
         dialog.show();
+    }
+
+    private void showDeleteAccountConfirmation() {
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_destructive_confirm, null, false);
+        AlertDialog dialog = new AlertDialog.Builder(this).setView(dialogView).create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        ((TextView) dialogView.findViewById(R.id.tvDialogEyebrow)).setText(getString(R.string.profile_account_label));
+        ((TextView) dialogView.findViewById(R.id.tvDialogTitle)).setText(R.string.delete_account_confirm_title);
+        ((TextView) dialogView.findViewById(R.id.tvDialogMessage)).setText(R.string.delete_account_confirm_message);
+
+        dialogView.findViewById(R.id.btnDialogConfirm).setOnClickListener(v -> {
+            dialog.dismiss();
+            promptDeleteAccountPassword();
+        });
+        dialogView.findViewById(R.id.btnDialogCancel).setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
+    }
+
+    private void promptDeleteAccountPassword() {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            return;
+        }
+
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_password_confirm, null, false);
+        AlertDialog dialog = new AlertDialog.Builder(this).setView(dialogView).create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        TextInputEditText passwordInput = dialogView.findViewById(R.id.etPasswordConfirm);
+
+        dialogView.findViewById(R.id.btnPasswordConfirm).setOnClickListener(v -> {
+            String password = passwordInput.getText() == null
+                    ? ""
+                    : passwordInput.getText().toString().trim();
+
+            if (TextUtils.isEmpty(password)) {
+                Toast.makeText(this, R.string.delete_account_password_required, Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            dialog.dismiss();
+            reauthenticateAndDeleteAccount(user, password);
+        });
+
+        dialogView.findViewById(R.id.btnPasswordCancel).setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
+    }
+
+    private void reauthenticateAndDeleteAccount(FirebaseUser user, String password) {
+        String email = user.getEmail();
+        if (TextUtils.isEmpty(email)) {
+            Toast.makeText(this, R.string.delete_account_reauth_required, Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        AuthCredential credential = EmailAuthProvider.getCredential(email, password);
+        user.reauthenticate(credential)
+                .addOnSuccessListener(unused -> deleteCurrentAccount())
+                .addOnFailureListener(e -> Toast.makeText(
+                        this,
+                        e.getMessage() == null ? getString(R.string.delete_account_reauth_required) : e.getMessage(),
+                        Toast.LENGTH_LONG
+                ).show());
+    }
+
+    private void deleteCurrentAccount() {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            return;
+        }
+
+        setAccountActionsEnabled(false);
+        binding.progressBar.setVisibility(View.VISIBLE);
+        Toast.makeText(this, R.string.delete_account_progress, Toast.LENGTH_SHORT).show();
+
+        cleanupAccountData(user, new CompletionListener() {
+            @Override
+            public void onSuccess() {
+                user.delete()
+                        .addOnSuccessListener(unused -> {
+                            Toast.makeText(ProfileActivity.this, R.string.delete_account_success, Toast.LENGTH_SHORT).show();
+                            auth.signOut();
+                            Intent intent = new Intent(ProfileActivity.this, LandingActivity.class);
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                            startActivity(intent);
+                            finish();
+                        })
+                        .addOnFailureListener(e -> {
+                            binding.progressBar.setVisibility(View.GONE);
+                            setAccountActionsEnabled(true);
+                            if (e instanceof FirebaseAuthRecentLoginRequiredException) {
+                                Toast.makeText(ProfileActivity.this, R.string.delete_account_reauth_required, Toast.LENGTH_LONG).show();
+                            } else {
+                                Toast.makeText(ProfileActivity.this, R.string.delete_account_failed, Toast.LENGTH_LONG).show();
+                            }
+                        });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                binding.progressBar.setVisibility(View.GONE);
+                setAccountActionsEnabled(true);
+                Log.e(TAG, "Failed to clean up account data", e);
+                Toast.makeText(ProfileActivity.this, R.string.delete_account_failed, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void cleanupAccountData(FirebaseUser user, CompletionListener listener) {
+        String uid = user.getUid();
+        String profileImageUrl = getSharedPreferences("cookio_prefs", MODE_PRIVATE)
+                .getString("photoUrl", "");
+
+        loadPostsByUser(uid, new PostsListener() {
+            @Override
+            public void onSuccess(List<Post> posts) {
+                deleteUserAuthoredPosts(0, posts, new CompletionListener() {
+                    @Override
+                    public void onSuccess() {
+                        collectAccountCleanupRefs(uid, new RefsListener() {
+                            @Override
+                            public void onSuccess(List<DocumentReference> refs) {
+                                deleteRefsInBatches(refs, new CompletionListener() {
+                                    @Override
+                                    public void onSuccess() {
+                                        cleanupConnectionsAndUserDoc(uid, new CompletionListener() {
+                                            @Override
+                                            public void onSuccess() {
+                                                deleteImageByUrl(profileImageUrl, listener);
+                                            }
+
+                                            @Override
+                                            public void onFailure(Exception e) {
+                                                listener.onFailure(e);
+                                            }
+                                        });
+                                    }
+
+                                    @Override
+                                    public void onFailure(Exception e) {
+                                        listener.onFailure(e);
+                                    }
+                                });
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                listener.onFailure(e);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        listener.onFailure(e);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                listener.onFailure(e);
+            }
+        });
+    }
+
+    private void loadPostsByUser(String userId, PostsListener listener) {
+        db.collection("posts")
+                .whereEqualTo("uid", userId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Post> posts = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        Post post = doc.toObject(Post.class);
+                        post.setPostId(doc.getId());
+                        posts.add(post);
+                    }
+                    listener.onSuccess(posts);
+                })
+                .addOnFailureListener(listener::onFailure);
+    }
+
+    private void deleteUserAuthoredPosts(int index, List<Post> posts, CompletionListener listener) {
+        if (index >= posts.size()) {
+            listener.onSuccess();
+            return;
+        }
+
+        deletePostData(posts.get(index), new CompletionListener() {
+            @Override
+            public void onSuccess() {
+                deleteUserAuthoredPosts(index + 1, posts, listener);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                listener.onFailure(e);
+            }
+        });
+    }
+
+    private void deletePostData(Post post, CompletionListener listener) {
+        String postId = post.getPostId();
+        if (TextUtils.isEmpty(postId)) {
+            listener.onSuccess();
+            return;
+        }
+
+        collectCommentRefsForPost(postId, new RefsListener() {
+            @Override
+            public void onSuccess(List<DocumentReference> commentRefs) {
+                collectPostLikeRefs(postId, new RefsListener() {
+                    @Override
+                    public void onSuccess(List<DocumentReference> likeRefs) {
+                        collectSavedRefsForPost(postId, new RefsListener() {
+                            @Override
+                            public void onSuccess(List<DocumentReference> savedRefs) {
+                                collectNotificationRefsForPost(postId, new RefsListener() {
+                                    @Override
+                                    public void onSuccess(List<DocumentReference> notificationRefs) {
+                                        List<DocumentReference> refs = new ArrayList<>();
+                                        refs.addAll(commentRefs);
+                                        refs.addAll(likeRefs);
+                                        refs.addAll(savedRefs);
+                                        refs.addAll(notificationRefs);
+                                        refs.add(db.collection("posts").document(postId));
+
+                                        deleteRefsInBatches(refs, new CompletionListener() {
+                                            @Override
+                                            public void onSuccess() {
+                                                deleteImageByUrl(post.getImageUrl(), listener);
+                                            }
+
+                                            @Override
+                                            public void onFailure(Exception e) {
+                                                listener.onFailure(e);
+                                            }
+                                        });
+                                    }
+
+                                    @Override
+                                    public void onFailure(Exception e) {
+                                        listener.onFailure(e);
+                                    }
+                                });
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                listener.onFailure(e);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        listener.onFailure(e);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                listener.onFailure(e);
+            }
+        });
+    }
+
+    private void collectCommentRefsForPost(String postId, RefsListener listener) {
+        db.collection("posts")
+                .document(postId)
+                .collection("comments")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<DocumentReference> refs = new ArrayList<>();
+                    List<DocumentSnapshot> comments = queryDocumentSnapshots.getDocuments();
+
+                    if (comments.isEmpty()) {
+                        listener.onSuccess(refs);
+                        return;
+                    }
+
+                    final int[] remaining = {comments.size()};
+                    for (DocumentSnapshot commentDoc : comments) {
+                        refs.add(commentDoc.getReference());
+                        commentDoc.getReference()
+                                .collection("likes")
+                                .get()
+                                .addOnSuccessListener(likesSnapshot -> {
+                                    for (DocumentSnapshot likeDoc : likesSnapshot.getDocuments()) {
+                                        refs.add(likeDoc.getReference());
+                                    }
+
+                                    remaining[0]--;
+                                    if (remaining[0] == 0) {
+                                        listener.onSuccess(refs);
+                                    }
+                                })
+                                .addOnFailureListener(listener::onFailure);
+                    }
+                })
+                .addOnFailureListener(listener::onFailure);
+    }
+
+    private void collectPostLikeRefs(String postId, RefsListener listener) {
+        db.collection("posts")
+                .document(postId)
+                .collection("likes")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<DocumentReference> refs = new ArrayList<>();
+                    for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                        refs.add(doc.getReference());
+                    }
+                    listener.onSuccess(refs);
+                })
+                .addOnFailureListener(listener::onFailure);
+    }
+
+    private void collectSavedRefsForPost(String postId, RefsListener listener) {
+        db.collection("users")
+                .get()
+                .addOnSuccessListener(usersSnapshot -> {
+                    List<DocumentReference> refs = new ArrayList<>();
+                    for (DocumentSnapshot userDoc : usersSnapshot.getDocuments()) {
+                        refs.add(db.collection("users")
+                                .document(userDoc.getId())
+                                .collection("savedPosts")
+                                .document(postId));
+                    }
+                    listener.onSuccess(refs);
+                })
+                .addOnFailureListener(listener::onFailure);
+    }
+
+    private void collectNotificationRefsForPost(String postId, RefsListener listener) {
+        db.collectionGroup("items")
+                .whereEqualTo("postId", postId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<DocumentReference> refs = new ArrayList<>();
+                    for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                        refs.add(doc.getReference());
+                    }
+                    listener.onSuccess(refs);
+                })
+                .addOnFailureListener(listener::onFailure);
+    }
+
+    private void collectAccountCleanupRefs(String uid, RefsListener listener) {
+        db.collection("users")
+                .document(uid)
+                .collection("savedPosts")
+                .get()
+                .addOnSuccessListener(savedSnapshot -> {
+                    List<DocumentReference> refs = new ArrayList<>();
+                    for (DocumentSnapshot doc : savedSnapshot.getDocuments()) {
+                        refs.add(doc.getReference());
+                    }
+
+                    db.collection("notifications")
+                            .document(uid)
+                            .collection("items")
+                            .get()
+                            .addOnSuccessListener(ownNotifications -> {
+                                for (DocumentSnapshot doc : ownNotifications.getDocuments()) {
+                                    refs.add(doc.getReference());
+                                }
+
+                                db.collectionGroup("items")
+                                        .whereEqualTo("fromUid", uid)
+                                        .get()
+                                        .addOnSuccessListener(sentNotifications -> {
+                                            for (DocumentSnapshot doc : sentNotifications.getDocuments()) {
+                                                refs.add(doc.getReference());
+                                            }
+
+                                            collectInteractionRefsForUser(uid, refs, listener);
+                                        })
+                                        .addOnFailureListener(listener::onFailure);
+                            })
+                            .addOnFailureListener(listener::onFailure);
+                })
+                .addOnFailureListener(listener::onFailure);
+    }
+
+    private void collectInteractionRefsForUser(String uid, List<DocumentReference> baseRefs, RefsListener listener) {
+        db.collection("posts")
+                .get()
+                .addOnSuccessListener(postsSnapshot -> {
+                    List<DocumentSnapshot> posts = postsSnapshot.getDocuments();
+                    if (posts.isEmpty()) {
+                        listener.onSuccess(baseRefs);
+                        return;
+                    }
+
+                    final int[] remaining = {posts.size()};
+                    for (DocumentSnapshot postDoc : posts) {
+                        baseRefs.add(postDoc.getReference().collection("likes").document(uid));
+
+                        postDoc.getReference()
+                                .collection("comments")
+                                .get()
+                                .addOnSuccessListener(commentsSnapshot -> {
+                                    List<DocumentSnapshot> comments = commentsSnapshot.getDocuments();
+                                    if (comments.isEmpty()) {
+                                        remaining[0]--;
+                                        if (remaining[0] == 0) {
+                                            listener.onSuccess(baseRefs);
+                                        }
+                                        return;
+                                    }
+
+                                    final int[] commentRemaining = {comments.size()};
+                                    for (DocumentSnapshot commentDoc : comments) {
+                                        baseRefs.add(commentDoc.getReference().collection("likes").document(uid));
+
+                                        if (uid.equals(commentDoc.getString("userId"))) {
+                                            commentDoc.getReference()
+                                                    .collection("likes")
+                                                    .get()
+                                                    .addOnSuccessListener(commentLikes -> {
+                                                        for (DocumentSnapshot likeDoc : commentLikes.getDocuments()) {
+                                                            baseRefs.add(likeDoc.getReference());
+                                                        }
+                                                        baseRefs.add(commentDoc.getReference());
+
+                                                        commentRemaining[0]--;
+                                                        if (commentRemaining[0] == 0) {
+                                                            remaining[0]--;
+                                                            if (remaining[0] == 0) {
+                                                                listener.onSuccess(baseRefs);
+                                                            }
+                                                        }
+                                                    })
+                                                    .addOnFailureListener(listener::onFailure);
+                                        } else {
+                                            commentRemaining[0]--;
+                                            if (commentRemaining[0] == 0) {
+                                                remaining[0]--;
+                                                if (remaining[0] == 0) {
+                                                    listener.onSuccess(baseRefs);
+                                                }
+                                            }
+                                        }
+                                    }
+                                })
+                                .addOnFailureListener(listener::onFailure);
+                    }
+                })
+                .addOnFailureListener(listener::onFailure);
+    }
+
+    private void cleanupConnectionsAndUserDoc(String uid, CompletionListener listener) {
+        db.collection("users")
+                .document(uid)
+                .collection("followers")
+                .get()
+                .addOnSuccessListener(followersSnapshot ->
+                        db.collection("users")
+                                .document(uid)
+                                .collection("following")
+                                .get()
+                                .addOnSuccessListener(followingSnapshot -> {
+                                    WriteBatch batch = db.batch();
+
+                                    for (DocumentSnapshot followerDoc : followersSnapshot.getDocuments()) {
+                                        String followerId = followerDoc.getId();
+                                        batch.delete(followerDoc.getReference());
+                                        batch.delete(db.collection("users")
+                                                .document(followerId)
+                                                .collection("following")
+                                                .document(uid));
+                                        batch.update(db.collection("users").document(followerId),
+                                                "followingCount", FieldValue.increment(-1));
+                                    }
+
+                                    for (DocumentSnapshot followingDoc : followingSnapshot.getDocuments()) {
+                                        String followingId = followingDoc.getId();
+                                        batch.delete(followingDoc.getReference());
+                                        batch.delete(db.collection("users")
+                                                .document(followingId)
+                                                .collection("followers")
+                                                .document(uid));
+                                        batch.update(db.collection("users").document(followingId),
+                                                "followerCount", FieldValue.increment(-1));
+                                    }
+
+                                    batch.delete(db.collection("users").document(uid));
+                                    batch.commit()
+                                            .addOnSuccessListener(unused -> listener.onSuccess())
+                                            .addOnFailureListener(listener::onFailure);
+                                })
+                                .addOnFailureListener(listener::onFailure))
+                .addOnFailureListener(listener::onFailure);
+    }
+
+    private void deleteRefsInBatches(List<DocumentReference> refs, CompletionListener listener) {
+        deleteRefsInBatches(refs, 0, listener);
+    }
+
+    private void deleteRefsInBatches(List<DocumentReference> refs, int startIndex, CompletionListener listener) {
+        if (startIndex >= refs.size()) {
+            listener.onSuccess();
+            return;
+        }
+
+        int endIndex = Math.min(startIndex + 450, refs.size());
+        WriteBatch batch = db.batch();
+        for (int i = startIndex; i < endIndex; i++) {
+            batch.delete(refs.get(i));
+        }
+
+        batch.commit()
+                .addOnSuccessListener(unused -> deleteRefsInBatches(refs, endIndex, listener))
+                .addOnFailureListener(listener::onFailure);
+    }
+
+    private void deleteImageByUrl(@Nullable String imageUrl, CompletionListener listener) {
+        if (TextUtils.isEmpty(imageUrl)) {
+            listener.onSuccess();
+            return;
+        }
+
+        try {
+            storage.getReferenceFromUrl(imageUrl)
+                    .delete()
+                    .addOnSuccessListener(unused -> listener.onSuccess())
+                    .addOnFailureListener(e -> {
+                        Log.w(TAG, "Failed to delete image from storage: " + imageUrl, e);
+                        listener.onSuccess();
+                    });
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, "Invalid storage URL: " + imageUrl, e);
+            listener.onSuccess();
+        }
+    }
+
+    private void setAccountActionsEnabled(boolean enabled) {
+        binding.btnEdit.setEnabled(enabled);
+        binding.btnCreatePost.setEnabled(enabled);
+        binding.btnSavedPosts.setEnabled(enabled);
+        binding.btnProfileMenu.setEnabled(enabled);
+        binding.btnToggleView.setEnabled(enabled);
+        binding.ivProfilePhoto.setEnabled(enabled);
+        binding.tvAvatarInitial.setEnabled(enabled);
     }
 }

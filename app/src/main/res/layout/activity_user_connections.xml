@@ -32,7 +32,7 @@
                 android:background="@drawable/search_background"
                 android:contentDescription="@string/public_profile_back"
                 android:padding="12dp"
-                android:src="@android:drawable/ic_media_previous"
+                android:src="@drawable/arrow_back"
                 app:tint="@color/textDark" />
 
             <TextView

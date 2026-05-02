@@ -79,7 +79,6 @@ public class SavedPostsActivity extends AppCompatActivity {
         });
         binding.recyclerSavedPosts.setAdapter(postAdapter);
 
-        binding.btnBack.setOnClickListener(v -> navigateBack());
         setupBottomNavigation();
 
         loadSavedPosts();

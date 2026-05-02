@@ -39,16 +39,21 @@ public class AiRecipeHelper {
         String prompt =
                 "Generate a simple cooking social media recipe post using these ingredients: "
                         + ingredients + "\n\n"
-                        + "The recipe should be beginner-friendly, affordable, and realistic.\n"
+                        + "The recipe should be realistic, appetizing, and useful for everyday home cooks.\n"
+                        + "It does not need to be especially cheap, student-focused, or ultra-simple unless the ingredients naturally suggest that.\n"
                         + "Return the result in this exact format:\n"
                         + "TITLE: ...\n"
                         + "DESCRIPTION: ...\n"
-                        + "INGREDIENTS: item1, item2, item3\n"
+                        + "INGREDIENTS: item1 || item2 || item3\n"
                         + "STEPS: step1 instruction|minutes || step2 instruction|minutes || step3 instruction|minutes\n"
                         + "TIME: ...\n"
                         + "BUDGET: Low/Medium/High\n"
-                        + "EQUIPMENT: ...\n"
-                        + "Use 0 minutes when a step does not need a timer.";
+                        + "EQUIPMENT: tool1 || tool2 || tool3\n"
+                        + "Use 0 minutes when a step does not need a timer.\n"
+                        + "Only assign minutes to steps that involve actual cooking, baking, simmering, resting, chilling, freezing, marinating, or heating time.\n"
+                        + "Do not assign time to quick prep actions like chopping, mixing, slicing, cracking, or seasoning, because that varies by person.\n"
+                        + "Important: use || only between separate ingredients or equipment items.\n"
+                        + "Do not split a single ingredient with commas. For example write \"1 medium onion, chopped\" as one ingredient item.";
 
         Content content = new Content.Builder()
                 .addText(prompt)

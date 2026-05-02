@@ -92,6 +92,17 @@
                     android:text="@string/log_in" />
 
                 <TextView
+                    android:id="@+id/forgot_password_link"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="14dp"
+                    android:text="@string/forgot_password"
+                    android:textColor="@color/textMuted"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
                     android:id="@+id/signup_link"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

@@ -15,15 +15,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingStart="20dp"
-            android:paddingTop="48dp"
-            android:paddingEnd="20dp"
-            android:paddingBottom="28dp">
+            android:paddingStart="16dp"
+            android:paddingTop="26dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="22dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="18dp"
+                android:layout_marginBottom="14dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
@@ -34,7 +34,7 @@
                     android:background="@drawable/bg_back_button"
                     android:contentDescription="@string/back_to_landing"
                     android:padding="10dp"
-                    android:src="@android:drawable/ic_menu_revert"
+                    android:src="@drawable/arrow_back"
                     app:tint="@color/textDark" />
 
                 <TextView
@@ -50,7 +50,7 @@
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="10dp"
+                android:layout_marginBottom="8dp"
                 app:cardBackgroundColor="@color/white"
                 app:cardCornerRadius="28dp"
                 app:cardElevation="0dp"
@@ -61,7 +61,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="20dp">
+                    android:padding="18dp">
 
                     <TextView
                         android:id="@+id/tvRecipeTitle"
@@ -75,13 +75,55 @@
                         android:id="@+id/tvStepIndicator"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
+                        android:layout_marginTop="10dp"
                         android:background="@drawable/pill_bg_coral"
                         android:paddingHorizontal="14dp"
                         android:paddingVertical="5dp"
                         android:textColor="@color/textDark"
                         android:textSize="13sp"
                         android:textStyle="bold" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/borderSoft"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <TextView
+                        style="@style/FilterSectionTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/cooking_current_step_title" />
+
+                    <TextView
+                        style="@style/FilterSectionHint"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="12dp"
+                        android:text="@string/cooking_current_step_hint" />
+
+                    <TextView
+                        android:id="@+id/tvStepDescription"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_equip_item"
+                        android:lineSpacingExtra="4dp"
+                        android:padding="16dp"
+                        android:textColor="@color/textDark"
+                        android:textSize="16sp" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -98,51 +140,9 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
-
-                    <TextView
-                        style="@style/FilterSectionTitle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/cooking_current_step_title" />
-
-                    <TextView
-                        style="@style/FilterSectionHint"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:layout_marginBottom="14dp"
-                        android:text="@string/cooking_current_step_hint" />
-
-                    <TextView
-                        android:id="@+id/tvStepDescription"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/bg_equip_item"
-                        android:lineSpacingExtra="4dp"
-                        android:padding="18dp"
-                        android:textColor="@color/textDark"
-                        android:textSize="16sp" />
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="24dp"
-                app:cardElevation="0dp"
-                app:strokeColor="@color/borderSoft"
-                app:strokeWidth="1dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
                     android:gravity="center_horizontal"
                     android:orientation="vertical"
-                    android:padding="20dp">
+                    android:padding="18dp">
 
                     <TextView
                         style="@style/FilterSectionTitle"
@@ -161,18 +161,18 @@
                         android:id="@+id/tvTimer"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="18dp"
+                        android:layout_marginTop="14dp"
                         android:fontFamily="@font/genty_sans_regular"
                         android:gravity="center"
                         android:textColor="@color/textDark"
-                        android:textSize="48sp"
+                        android:textSize="44sp"
                         android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/tvTimerStatus"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="14dp"
+                        android:layout_marginTop="10dp"
                         android:text="@string/cooking_no_timer"
                         android:textColor="@color/textMuted"
                         android:textSize="13sp" />
@@ -180,7 +180,7 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="20dp"
+                        android:layout_marginTop="16dp"
                         android:orientation="horizontal">
 
                         <com.google.android.material.button.MaterialButton
@@ -190,7 +190,9 @@
                             android:layout_height="48dp"
                             android:layout_weight="1"
                             android:layout_marginEnd="6dp"
+                            android:maxLines="1"
                             android:text="Start"
+                            android:textSize="13sp"
                             />
 
                         <com.google.android.material.button.MaterialButton
@@ -201,7 +203,9 @@
                             android:layout_weight="1"
                             android:layout_marginStart="3dp"
                             android:layout_marginEnd="3dp"
+                            android:maxLines="1"
                             android:text="Pause"
+                            android:textSize="13sp"
                             />
 
                         <com.google.android.material.button.MaterialButton
@@ -211,7 +215,9 @@
                             android:layout_height="48dp"
                             android:layout_weight="1"
                             android:layout_marginStart="6dp"
+                            android:maxLines="1"
                             android:text="Reset"
+                            android:textSize="13sp"
                             />
                     </LinearLayout>
                 </LinearLayout>
@@ -221,7 +227,10 @@
                 android:id="@+id/btnNextStep"
                 style="@style/ModernPrimaryButton"
                 android:layout_width="match_parent"
-                android:text="Next Step" />
+                android:layout_height="50dp"
+                android:maxLines="1"
+                android:text="Next Step"
+                android:textSize="13sp" />
         </LinearLayout>
     </ScrollView>
 

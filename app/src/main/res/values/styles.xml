@@ -14,8 +14,13 @@
         <item name="cornerSize">18dp</item>
     </style>
 
+    <style name="AvatarImageView" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">999dp</item>
+    </style>
+
     <style name="BottomNavText" parent="TextAppearance.MaterialComponents.Caption">
-        <item name="android:textSize">11sp</item>
+        <item name="android:textSize">10sp</item>
         <item name="android:textStyle">bold</item>
     </style>
 

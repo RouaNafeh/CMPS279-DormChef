@@ -424,8 +424,8 @@ public class PublicProfileActivity extends AppCompatActivity {
 
             Glide.with(this)
                     .load(profileImageUrl)
-                    .placeholder(R.drawable.logo_cropped)
-                    .error(R.drawable.logo_cropped)
+                    .placeholder(R.drawable.logo)
+                    .error(R.drawable.logo)
                     .centerCrop()
                     .into(binding.ivProfilePhoto);
         } else {

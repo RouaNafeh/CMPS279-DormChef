@@ -18,6 +18,7 @@ import com.cookio.app.R;
 import com.cookio.app.activities.NotificationsActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
@@ -71,7 +72,7 @@ public class CookioMessagingService extends FirebaseMessagingService {
         );
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.logo_cropped) // replace with a proper notification icon
+                .setSmallIcon(R.drawable.ic_bell)
                 .setContentTitle(title)
                 .setContentText(body)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
@@ -118,5 +119,13 @@ public class CookioMessagingService extends FirebaseMessagingService {
                 .update(data)
                 .addOnFailureListener(e ->
                         android.util.Log.e("FCM", "Failed to save token: " + e.getMessage()));
+    }
+
+    public static void syncCurrentToken() {
+        FirebaseMessaging.getInstance()
+                .getToken()
+                .addOnSuccessListener(CookioMessagingService::saveTokenToFirestore)
+                .addOnFailureListener(e ->
+                        android.util.Log.e("FCM", "Failed to fetch token: " + e.getMessage()));
     }
 }

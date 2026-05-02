@@ -17,6 +17,7 @@ public class Post {
     private List<String> equipment;
     private List<String> steps;
     private String imageUrl;
+    private String profileImageUrl;
     @ServerTimestamp
     private Date createdAt;
     private int likesCount;
@@ -53,6 +54,7 @@ public class Post {
     public List<String> getEquipment()  { return equipment; }
     public List<String> getSteps()      { return steps; }
     public String getImageUrl()         { return imageUrl; }
+    public String getProfileImageUrl()  { return profileImageUrl; }
     public Date getCreatedAt()          { return createdAt; }
     public int getLikesCount()          { return likesCount; }
     public float getAvgRating() { return avgRating; }
@@ -62,4 +64,5 @@ public class Post {
 
     public void setPostId(String postId)        { this.postId = postId; }
     public void setLikesCount(int likesCount)   { this.likesCount = likesCount; }
+    public void setProfileImageUrl(String profileImageUrl) { this.profileImageUrl = profileImageUrl; }
 }

@@ -74,11 +74,11 @@ public class NotificationAdapter extends
         if (n.getFromPhotoUrl() != null && !n.getFromPhotoUrl().isEmpty()) {
             Glide.with(context)
                     .load(n.getFromPhotoUrl())
-                    .placeholder(R.drawable.logo_cropped)
+                    .placeholder(R.drawable.logo)
                     .centerCrop()
                     .into(holder.ivAvatar);
         } else {
-            holder.ivAvatar.setImageResource(R.drawable.logo_cropped);
+            holder.ivAvatar.setImageResource(R.drawable.logo);
         }
 
         // Type icon
@@ -91,7 +91,7 @@ public class NotificationAdapter extends
                 break;
             case Notification.TYPE_COMMENT:
             case Notification.TYPE_REVIEW:
-                holder.ivTypeIcon.setImageResource(R.drawable.logo_cropped);
+                holder.ivTypeIcon.setImageResource(R.drawable.logo);
                 break;
             default:
                 holder.ivTypeIcon.setImageResource(R.drawable.heart);

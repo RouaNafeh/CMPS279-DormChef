@@ -49,7 +49,7 @@
                     android:layout_weight="1"
                     android:layout_marginStart="14dp"
                     android:fontFamily="@font/genty_sans_regular"
-                    android:text="New Recipe Post"
+                    android:text="Share Recipe"
                     android:textColor="@color/textDark"
                     android:textSize="26sp" />
             </LinearLayout>
@@ -83,7 +83,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:layout_marginBottom="14dp"
-                        android:text="Required. Tap to add or change photo." />
+                        android:text="Required. Add a clear photo." />
 
                     <FrameLayout
                         android:id="@+id/imagePickerContainer"
@@ -243,7 +243,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Turn a short idea like &quot;cheap spicy pasta for two&quot; into a cleaner first draft." />
+                        android:text="Turn a rough idea into a usable first draft." />
 
                     <com.google.android.material.textfield.TextInputLayout
                         style="@style/ModernInputLayout"

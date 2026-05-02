@@ -35,7 +35,7 @@
             android:layout_height="46dp"
             android:layout_marginEnd="12dp"
             android:scaleType="centerCrop"
-            android:src="@drawable/logo_cropped"
+            android:src="@drawable/logo"
             app:shapeAppearanceOverlay="@style/RoundedImageView" />
 
         <!-- Message + time -->

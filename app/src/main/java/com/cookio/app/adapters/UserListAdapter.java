@@ -51,8 +51,8 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.UserVi
             holder.ivAvatar.setVisibility(View.VISIBLE);
             Glide.with(holder.itemView)
                     .load(user.getProfileImageUrl())
-                    .placeholder(R.drawable.logo_cropped)
-                    .error(R.drawable.logo_cropped)
+                    .placeholder(R.drawable.logo)
+                    .error(R.drawable.logo)
                     .centerCrop()
                     .into(holder.ivAvatar);
         } else {

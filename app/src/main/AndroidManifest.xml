@@ -32,22 +32,10 @@
             android:name=".activities.TimerActivity"
             android:exported="false" />
         <activity
-            android:name=".activities.RecipeDetailActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.RecipeListActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.FavoritesActivity"
-            android:exported="false" />
-        <activity
             android:name=".activities.HomeActivity"
             android:exported="false" />
         <activity
             android:name=".activities.UserConnectionsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.PublicProfileActivity"
             android:exported="false" />
         <activity
             android:name=".activities.ProfileActivity"
