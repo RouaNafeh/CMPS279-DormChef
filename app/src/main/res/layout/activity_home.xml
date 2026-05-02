@@ -29,7 +29,6 @@
                 android:paddingEnd="18dp"
                 android:paddingBottom="110dp">
 
-                <!-- HEADER -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -86,6 +85,7 @@
                                 android:src="@drawable/logo_cropped" />
                         </com.google.android.material.card.MaterialCardView>
                     </FrameLayout>
+
                 </LinearLayout>
 
                 <TextView
@@ -96,7 +96,6 @@
                     android:textColor="@color/textMuted"
                     android:textSize="14sp" />
 
-                <!-- SEARCH + FILTER + NOTIFICATIONS -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -148,6 +147,7 @@
                             android:background="@drawable/bg_notification_dot"
                             android:visibility="gone" />
                     </FrameLayout>
+
                 </LinearLayout>
 
                 <com.google.android.material.card.MaterialCardView
@@ -166,7 +166,6 @@
                         android:orientation="horizontal"
                         android:weightSum="2">
 
-                        <!-- ALL -->
                         <TextView
                             android:id="@+id/btnAll"
                             android:layout_width="0dp"
@@ -178,7 +177,6 @@
                             android:textColor="@color/textDark"
                             android:background="@drawable/toggle_selected_bg"/>
 
-                        <!-- FOLLOWING -->
                         <TextView
                             android:id="@+id/btnFollowing"
                             android:layout_width="0dp"
@@ -192,7 +190,6 @@
 
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- FRESH PICKS CARD -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -200,25 +197,18 @@
                     android:layout_marginBottom="12dp"
                     app:cardBackgroundColor="@color/card_white"
                     app:cardCornerRadius="24dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="@color/borderSoft"
-                    app:strokeWidth="1dp">
+                    app:cardElevation="0dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/bg_profile_header"
-                        android:orientation="vertical"
-                        android:padding="16dp">
+                        android:padding="16dp"
+                        android:orientation="vertical">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:background="@drawable/tag_background"
-                            android:paddingHorizontal="10dp"
-                            android:paddingVertical="4dp"
                             android:text="Fresh picks"
-                            android:textColor="@color/white"
                             android:textSize="10sp"
                             android:textStyle="bold" />
 
@@ -226,9 +216,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="10dp"
-                            android:fontFamily="@font/genty_sans_regular"
                             android:text="Recipes that feel doable tonight"
-                            android:textColor="@color/textDark"
                             android:textSize="21sp" />
 
                         <TextView
@@ -236,21 +224,39 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:text="Simple cards, fast filters, and a cleaner feed focused on what you can cook now."
-                            android:textColor="@color/textPrimaryOnLight"
                             android:textSize="13sp" />
                     </LinearLayout>
+
                 </com.google.android.material.card.MaterialCardView>
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/recyclerCards"
+                <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:clipToPadding="false"
-                    android:nestedScrollingEnabled="false"
-                    tools:listitem="@layout/item_post" />
+                    android:layout_height="wrap_content">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerCards"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:clipToPadding="false"
+                        android:nestedScrollingEnabled="false"
+                        tools:listitem="@layout/item_post" />
+
+                    <TextView
+                        android:id="@+id/tvEmptyState"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="No recipes found"
+                        android:textColor="@color/textMuted"
+                        android:gravity="center"
+                        android:visibility="gone"
+                        android:padding="24dp"
+                        android:textSize="14sp"/>
+                </FrameLayout>
 
             </LinearLayout>
+
         </androidx.core.widget.NestedScrollView>
+
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -259,24 +265,17 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="22dp"
         android:layout_marginBottom="12dp"
-        android:contentDescription="Add recipe"
         android:src="@drawable/add_plus"
         app:backgroundTint="@color/accent_pink"
-        app:borderWidth="0dp"
-        app:elevation="6dp"
         app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:maxImageSize="24dp"
-        app:rippleColor="@color/white"
-        app:tint="@color/white" />
-
+        app:layout_constraintEnd_toEndOf="parent" />
     <include
         android:id="@+id/bottomNavigation"
         layout="@layout/bottom_nav"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
