@@ -76,6 +76,7 @@ public class HomeActivity extends AppCompatActivity {
         setupRecyclerView();
         setupSearch();
         setupActions();
+        updateTabUI(false);
         setupBottomNavigation();
         binding.swipeRefreshLayout.setOnRefreshListener(this::refreshFeed);
     }
@@ -160,12 +161,14 @@ public class HomeActivity extends AppCompatActivity {
     });
     binding.btnAll.setOnClickListener(v -> {
         showFollowingOnly = false;
+        updateTabUI(false);
         filterAllContent(currentQuery);
     });
 
     binding.btnFollowing.setOnClickListener(v -> {
         loadFollowingIds(() -> {
             showFollowingOnly = true;
+            updateTabUI(true);
             filterAllContent(currentQuery);
         });
     });
@@ -445,15 +448,32 @@ public class HomeActivity extends AppCompatActivity {
     private void filterAllContent(String text) {
     filteredPosts.clear();
 
+    if (showFollowingOnly && followingUserIds.isEmpty()) {
+
+        binding.tvEmptyState.setVisibility(View.VISIBLE);
+        binding.tvEmptyState.setText("Follow creators to see their recipes here");
+
+        postAdapter.updateData(filteredPosts);
+        binding.swipeRefreshLayout.setRefreshing(false);
+
+        return;
+    }
+
     if (text == null || text.trim().isEmpty()) {
 
         for (Post post : allPosts) {
 
             if (showFollowingOnly) {
+
+                if (followingUserIds.isEmpty()) {
+                    filteredPosts.add(post);
+                    continue;
+                }
+
                 if (post.getUid() == null || !followingUserIds.contains(post.getUid())) {
                     continue;
                 }
-            }
+            } 
 
             filteredPosts.add(post);
         }
@@ -568,4 +588,24 @@ public class HomeActivity extends AppCompatActivity {
             });
         });
     }
+
+    private void updateTabUI(boolean followingSelected) {
+
+    if (followingSelected) {
+
+        binding.btnFollowing.setBackgroundResource(R.drawable.toggle_selected_bg);
+        binding.btnFollowing.setTextColor(getResources().getColor(R.color.textDark));
+
+        binding.btnAll.setBackgroundResource(android.R.color.transparent);
+        binding.btnAll.setTextColor(getResources().getColor(R.color.textMuted));
+
+    } else {
+
+        binding.btnAll.setBackgroundResource(R.drawable.toggle_selected_bg);
+        binding.btnAll.setTextColor(getResources().getColor(R.color.textDark));
+
+        binding.btnFollowing.setBackgroundResource(android.R.color.transparent);
+        binding.btnFollowing.setTextColor(getResources().getColor(R.color.textMuted));
+    }
+}
 }
