@@ -114,6 +114,11 @@ public class CreatePostActivity extends AppCompatActivity {
         binding.btnGenerateAi.setOnClickListener(v -> generateWithAi());
 
         if (isEditMode) {
+            binding.tvPageLabel.setText("Edit recipe");
+            binding.tvPageTitle.setText("Polish your post");
+            binding.tvIntroCopy.setText("Update the details, swap the photo if needed, and keep your recipe looking sharp.");
+            binding.tvSubmitTitle.setText("Ready to update?");
+            binding.tvSubmitHint.setText("Your changes will refresh this recipe in the community feed and on your profile.");
             binding.btnPost.setText("Save Changes");
             populateEditData();
         }

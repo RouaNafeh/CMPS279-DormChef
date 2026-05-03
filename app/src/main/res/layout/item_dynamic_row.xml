@@ -4,23 +4,25 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
+    android:layout_marginBottom="10dp"
     android:gravity="center_vertical"
-    android:layout_marginBottom="8dp">
+    android:orientation="horizontal">
 
-    <!-- Bullet dot -->
-    <View
-        android:layout_width="6dp"
-        android:layout_height="6dp"
-        android:layout_marginEnd="10dp"
-        android:background="@color/primary"
-        android:backgroundTint="@color/primary" />
+    <TextView
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:background="@drawable/bg_create_row_badge"
+        android:gravity="center"
+        android:text="•"
+        android:textColor="@color/chip_text"
+        android:textSize="14sp"
+        android:textStyle="bold" />
 
-    <!-- Text input -->
     <com.google.android.material.textfield.TextInputLayout
         style="@style/ModernInputLayout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
         android:layout_weight="1">
 
         <EditText
@@ -36,14 +38,14 @@
             android:textSize="14sp" />
     </com.google.android.material.textfield.TextInputLayout>
 
-    <!-- Delete button -->
     <ImageButton
         android:id="@+id/btnDeleteRow"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:layout_marginStart="6dp"
-        android:background="@android:color/transparent"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/bg_create_icon_button"
         android:contentDescription="Remove"
+        android:padding="8dp"
         android:src="@android:drawable/ic_menu_close_clear_cancel"
         app:tint="@color/textGrey" />
 

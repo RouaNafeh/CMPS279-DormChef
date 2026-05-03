@@ -3,7 +3,10 @@
     <string name="app_name">Cookio</string>
     <string name="recipes_title">Recipes</string>
     <string name="filter_all">All</string>
-    <string name="search_hint">Search recipes...</string>
+    <string name="search_hint">Search recipes and cooks</string>
+    <string name="search_cooks_title">Cooks</string>
+    <string name="search_cooks_subtitle">Profiles matching your search</string>
+    <string name="search_cooks_empty">No cooks found</string>
     <string name="search_icon_desc">Search recipes</string>
     <string name="start_cooking">Start Cooking</string>
     <string name="recipe_name">Recipe name</string>

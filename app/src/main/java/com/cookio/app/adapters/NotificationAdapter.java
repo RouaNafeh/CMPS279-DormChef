@@ -5,6 +5,7 @@ import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -85,22 +86,32 @@ public class NotificationAdapter extends
         switch (n.getType() != null ? n.getType() : "") {
             case Notification.TYPE_LIKE:
                 holder.ivTypeIcon.setImageResource(R.drawable.heart_filled);
+                holder.ivTypeIcon.setColorFilter(context.getColor(R.color.red));
+                holder.typeBadge.setBackgroundResource(R.drawable.bg_notification_type_badge_like);
                 break;
             case Notification.TYPE_FOLLOW:
-                holder.ivTypeIcon.setImageResource(R.drawable.ic_save_filled);
+                holder.ivTypeIcon.setImageResource(R.drawable.account_circle);
+                holder.ivTypeIcon.setColorFilter(context.getColor(R.color.primary));
+                holder.typeBadge.setBackgroundResource(R.drawable.bg_notification_type_badge_follow);
                 break;
             case Notification.TYPE_COMMENT:
             case Notification.TYPE_REVIEW:
-                holder.ivTypeIcon.setImageResource(R.drawable.logo);
+                holder.ivTypeIcon.setImageResource(R.drawable.menu_book);
+                holder.ivTypeIcon.setColorFilter(context.getColor(R.color.accent_pink));
+                holder.typeBadge.setBackgroundResource(R.drawable.bg_notification_type_badge_comment);
                 break;
             default:
                 holder.ivTypeIcon.setImageResource(R.drawable.heart);
+                holder.ivTypeIcon.setColorFilter(context.getColor(R.color.textGrey));
+                holder.typeBadge.setBackgroundResource(R.drawable.bg_notification_type_badge);
         }
 
-        // Unread background tint
-        holder.cardNotification.setCardBackgroundColor(
-                context.getColor(n.isRead() ? R.color.card_white : R.color.secondary)
+        holder.cardNotification.setCardBackgroundColor(context.getColor(R.color.card_white));
+        holder.cardNotification.setStrokeColor(
+                context.getColor(n.isRead() ? R.color.borderSoft : R.color.primary)
         );
+        holder.cardNotification.setStrokeWidth(n.isRead() ? 1 : 2);
+        holder.cardNotification.setAlpha(n.isRead() ? 0.92f : 1f);
 
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onNotificationClick(n);
@@ -114,6 +125,7 @@ public class NotificationAdapter extends
 
     static class NotificationViewHolder extends RecyclerView.ViewHolder {
         MaterialCardView cardNotification;
+        FrameLayout typeBadge;
         View unreadDot;
         ImageView ivAvatar, ivTypeIcon;
         TextView tvMessage, tvTime;
@@ -121,6 +133,7 @@ public class NotificationAdapter extends
         NotificationViewHolder(@NonNull View itemView) {
             super(itemView);
             cardNotification = itemView.findViewById(R.id.cardNotification);
+            typeBadge        = itemView.findViewById(R.id.typeBadge);
             unreadDot        = itemView.findViewById(R.id.unreadDot);
             ivAvatar         = itemView.findViewById(R.id.ivAvatar);
             ivTypeIcon       = itemView.findViewById(R.id.ivTypeIcon);

@@ -25,8 +25,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.cookio.app.R;
 import com.cookio.app.adapters.PostAdapter;
+import com.cookio.app.adapters.UserListAdapter;
 import com.cookio.app.databinding.ActivityHomeBinding;
 import com.cookio.app.models.Post;
+import com.cookio.app.models.User;
 import com.cookio.app.utils.CookTimeFormatter;
 import com.cookio.app.utils.AuthVerificationHelper;
 import com.cookio.app.services.CookioMessagingService;
@@ -35,11 +37,13 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 public class HomeActivity extends AppCompatActivity {
@@ -50,11 +54,14 @@ public class HomeActivity extends AppCompatActivity {
 
     private final List<Post> allPosts = new ArrayList<>();
     private final List<Post> filteredPosts = new ArrayList<>();
+    private final List<User> matchedUsers = new ArrayList<>();
     private final Set<String> savedPostIds = new HashSet<>();
     private final Set<String> likedPostIds = new HashSet<>();
 
     private PostAdapter postAdapter;
+    private UserListAdapter userListAdapter;
     private String currentQuery = "";
+    private String activeCookSearchQuery = "";
 
     private static final int PAGE_SIZE = 10;
     private DocumentSnapshot lastVisible = null;
@@ -64,6 +71,7 @@ public class HomeActivity extends AppCompatActivity {
     private List<Post> lastFilteredPosts = new ArrayList<>();
     private boolean showFollowingOnly = false;
     private final Set<String> followingUserIds = new HashSet<>();
+    private ListenerRegistration unreadNotificationListener;
     private final ActivityResultLauncher<String> notificationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
                 if (granted) {
@@ -102,6 +110,7 @@ public class HomeActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         setupRecyclerView();
+        setupUserResultsRecyclerView();
         setupSearch();
         setupActions();
         updateTabUI(false);
@@ -114,12 +123,22 @@ public class HomeActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-        updateNotificationDot();
-
         if (!filterActive) {
             loadFeedData();
         }
 
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        startUnreadNotificationListener();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        stopUnreadNotificationListener();
     }
 
     private void setupRecyclerView() {
@@ -160,6 +179,13 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
+    private void setupUserResultsRecyclerView() {
+        userListAdapter = new UserListAdapter(this, matchedUsers);
+        binding.recyclerCooks.setLayoutManager(new LinearLayoutManager(this));
+        binding.recyclerCooks.setNestedScrollingEnabled(false);
+        binding.recyclerCooks.setAdapter(userListAdapter);
+    }
+
     private void setupSearch() {
         EditText searchInput = binding.searchBar.findViewById(androidx.appcompat.R.id.search_src_text);
         if (searchInput != null) {
@@ -174,6 +200,7 @@ public class HomeActivity extends AppCompatActivity {
             public boolean onQueryTextSubmit(String query) {
                 currentQuery = query == null ? "" : query;
                 filterAllContent(currentQuery);
+                searchCooks(currentQuery);
                 return true;
             }
 
@@ -181,6 +208,7 @@ public class HomeActivity extends AppCompatActivity {
             public boolean onQueryTextChange(String newText) {
                 currentQuery = newText == null ? "" : newText;
                 filterAllContent(currentQuery);
+                searchCooks(currentQuery);
                 return true;
             }
         });
@@ -193,7 +221,6 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(new Intent(this, CreatePostActivity.class)));
 
     binding.btnNotifications.setOnClickListener(v -> {
-        binding.viewNotificationDot.setVisibility(View.GONE);
         startActivity(new Intent(this, NotificationsActivity.class));
     });
     binding.btnAll.setOnClickListener(v -> {
@@ -372,6 +399,7 @@ public class HomeActivity extends AppCompatActivity {
         filterActive = false;
         lastFilteredPosts.clear();
         loadFeedData();
+        searchCooks(currentQuery);
     }
 
     private void loadFeedData() {
@@ -574,6 +602,119 @@ public class HomeActivity extends AppCompatActivity {
     binding.swipeRefreshLayout.setRefreshing(false);
 }
 
+    private void searchCooks(String rawQuery) {
+        String query = rawQuery == null ? "" : rawQuery.trim();
+        activeCookSearchQuery = query;
+
+        if (query.isEmpty()) {
+            matchedUsers.clear();
+            if (userListAdapter != null) {
+                userListAdapter.notifyDataSetChanged();
+            }
+            binding.cooksSection.setVisibility(View.GONE);
+            binding.tvCooksEmpty.setVisibility(View.GONE);
+            binding.recyclerCooks.setVisibility(View.GONE);
+            return;
+        }
+
+        binding.cooksSection.setVisibility(View.VISIBLE);
+        binding.tvCooksTitle.setText(R.string.search_cooks_title);
+        binding.tvCooksSubtitle.setText(R.string.search_cooks_subtitle);
+        binding.tvCooksEmpty.setVisibility(View.GONE);
+        binding.recyclerCooks.setVisibility(View.GONE);
+
+        db.collection("users")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!query.equals(activeCookSearchQuery)) {
+                        return;
+                    }
+
+                    matchedUsers.clear();
+                    String currentUid = auth.getCurrentUser() == null ? "" : auth.getCurrentUser().getUid();
+                    String normalizedQuery = query.toLowerCase(Locale.getDefault());
+
+                    for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                        User user = doc.toObject(User.class);
+                        if (user == null) {
+                            continue;
+                        }
+
+                        if (user.getUid() == null || user.getUid().trim().isEmpty()) {
+                            user.setUid(doc.getId());
+                        }
+
+                        if (user.getUid() != null && user.getUid().equals(currentUid)) {
+                            continue;
+                        }
+
+                        String username = safeLower(user.getUsername());
+                        String email = safeLower(user.getEmail());
+                        String bio = safeLower(user.getBio());
+
+                        if (username.contains(normalizedQuery)
+                                || email.contains(normalizedQuery)
+                                || bio.contains(normalizedQuery)) {
+                            matchedUsers.add(user);
+                        }
+                    }
+
+                    matchedUsers.sort((first, second) -> {
+                        int firstRank = userMatchRank(first, normalizedQuery);
+                        int secondRank = userMatchRank(second, normalizedQuery);
+                        if (firstRank != secondRank) {
+                            return Integer.compare(firstRank, secondRank);
+                        }
+                        return resolveUserSortValue(first).compareTo(resolveUserSortValue(second));
+                    });
+
+                    if (matchedUsers.size() > 6) {
+                        matchedUsers.subList(6, matchedUsers.size()).clear();
+                    }
+
+                    userListAdapter.notifyDataSetChanged();
+                    boolean hasMatches = !matchedUsers.isEmpty();
+                    binding.recyclerCooks.setVisibility(hasMatches ? View.VISIBLE : View.GONE);
+                    binding.tvCooksEmpty.setVisibility(hasMatches ? View.GONE : View.VISIBLE);
+                })
+                .addOnFailureListener(e -> {
+                    if (!query.equals(activeCookSearchQuery)) {
+                        return;
+                    }
+                    matchedUsers.clear();
+                    userListAdapter.notifyDataSetChanged();
+                    binding.recyclerCooks.setVisibility(View.GONE);
+                    binding.tvCooksEmpty.setVisibility(View.VISIBLE);
+                    binding.tvCooksEmpty.setText(R.string.search_cooks_empty);
+                });
+    }
+
+    private int userMatchRank(User user, String query) {
+        String username = safeLower(user.getUsername());
+        String email = safeLower(user.getEmail());
+        if (username.startsWith(query)) {
+            return 0;
+        }
+        if (email.startsWith(query)) {
+            return 1;
+        }
+        return 2;
+    }
+
+    private String resolveUserSortValue(User user) {
+        if (user.getUsername() != null && !user.getUsername().trim().isEmpty()) {
+            return user.getUsername().trim().toLowerCase(Locale.getDefault());
+        }
+        if (user.getEmail() != null && !user.getEmail().trim().isEmpty()) {
+            return user.getEmail().trim().toLowerCase(Locale.getDefault());
+        }
+        return "";
+    }
+
+    private String safeLower(String value) {
+        return value == null ? "" : value.toLowerCase(Locale.getDefault());
+    }
+
     private void openPostDetail(Post post) {
         Intent intent = new Intent(this, PostDetailActivity.class);
         intent.putExtra(PostDetailActivity.EXTRA_POST_ID, post.getPostId());
@@ -617,16 +758,33 @@ public class HomeActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    private void updateNotificationDot() {
-        if (auth.getCurrentUser() == null) return;
+    private void startUnreadNotificationListener() {
+        if (auth.getCurrentUser() == null) {
+            return;
+        }
 
-        String uid = auth.getCurrentUser().getUid();
+        stopUnreadNotificationListener();
 
-        NotificationsActivity.getUnreadCount(uid, count -> {
-            runOnUiThread(() -> {
-                binding.viewNotificationDot.setVisibility(count > 0 ? View.VISIBLE : View.GONE);
-            });
-        });
+        unreadNotificationListener = db.collection("notifications")
+                .document(auth.getCurrentUser().getUid())
+                .collection("items")
+                .whereEqualTo("isRead", false)
+                .limit(1)
+                .addSnapshotListener((snap, error) -> {
+                    if (error != null || binding == null) {
+                        return;
+                    }
+
+                    boolean hasUnread = snap != null && !snap.isEmpty();
+                    binding.viewNotificationDot.setVisibility(hasUnread ? View.VISIBLE : View.GONE);
+                });
+    }
+
+    private void stopUnreadNotificationListener() {
+        if (unreadNotificationListener != null) {
+            unreadNotificationListener.remove();
+            unreadNotificationListener = null;
+        }
     }
 
     private void updateTabUI(boolean followingSelected) {

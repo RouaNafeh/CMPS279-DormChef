@@ -121,7 +121,7 @@
                         app:iconifiedByDefault="false"
                         app:searchIcon="@null"
                         app:queryBackground="@android:color/transparent"
-                        app:queryHint="Search recipes" />
+                        app:queryHint="@string/search_hint" />
 
                     <ImageView
                         android:id="@+id/filterBtn"
@@ -165,6 +165,55 @@
                         android:textColor="@color/textMuted"
                         android:textSize="12sp"
                         android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/cooksSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/tvCooksTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Cooks"
+                        android:textColor="@color/textDark"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvCooksSubtitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:text="Profiles matching your search"
+                        android:textColor="@color/textMuted"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tvCooksEmpty"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/bg_home_search_surface"
+                        android:gravity="center"
+                        android:padding="16dp"
+                        android:text="No cooks found"
+                        android:textColor="@color/textMuted"
+                        android:textSize="13sp"
+                        android:visibility="gone" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerCooks"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:clipToPadding="false"
+                        android:nestedScrollingEnabled="false"
+                        tools:listitem="@layout/item_user_list" />
                 </LinearLayout>
 
                 <FrameLayout
