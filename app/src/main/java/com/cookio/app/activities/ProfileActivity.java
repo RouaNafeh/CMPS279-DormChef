@@ -41,6 +41,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.firestore.WriteBatch;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -50,6 +51,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Set;
 
 public class ProfileActivity extends AppCompatActivity {
@@ -343,6 +346,11 @@ public class ProfileActivity extends AppCompatActivity {
                 .document(user.getUid())
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
+                    if (!documentSnapshot.exists()) {
+                        createMissingUserProfile(user);
+                        return;
+                    }
+
                     String name = documentSnapshot.getString("name");
                     String username = documentSnapshot.getString("username");
                     String bio = documentSnapshot.getString("bio");
@@ -380,6 +388,60 @@ public class ProfileActivity extends AppCompatActivity {
                         R.string.profile_load_failed,
                         Toast.LENGTH_SHORT
                 ).show());
+    }
+
+    private void createMissingUserProfile(FirebaseUser user) {
+        String fallbackUsername = buildFallbackUsername(user);
+        DocumentReference userRef = db.collection("users").document(user.getUid());
+        DocumentReference usernameRef = db.collection("usernames").document(fallbackUsername);
+
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("uid", user.getUid());
+        userData.put("name", resolveFirebaseUserName(user));
+        userData.put("username", fallbackUsername);
+        userData.put("email", user.getEmail());
+        userData.put("bio", "");
+        userData.put("profileImageUrl", user.getPhotoUrl() == null ? "" : user.getPhotoUrl().toString());
+        userData.put("followerCount", 0);
+        userData.put("followingCount", 0);
+        userData.put("createdAt", FieldValue.serverTimestamp());
+
+        Map<String, Object> usernameData = new HashMap<>();
+        usernameData.put("uid", user.getUid());
+        usernameData.put("username", fallbackUsername);
+        usernameData.put("createdAt", FieldValue.serverTimestamp());
+
+        db.runTransaction(transaction -> {
+                    transaction.set(userRef, userData);
+                    if (!transaction.get(usernameRef).exists()) {
+                        transaction.set(usernameRef, usernameData);
+                    }
+                    return null;
+                })
+                .addOnSuccessListener(unused -> loadUserInfo(user))
+                .addOnFailureListener(e -> {
+                    binding.progressBar.setVisibility(View.GONE);
+                    binding.swipeRefreshLayout.setRefreshing(false);
+                    Toast.makeText(this, R.string.profile_load_failed, Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private String buildFallbackUsername(FirebaseUser user) {
+        String suffix = user.getUid() == null ? "" : user.getUid().toLowerCase(Locale.getDefault());
+        if (suffix.length() > 8) {
+            suffix = suffix.substring(0, 8);
+        }
+        return UsernameHelper.normalize("cookio" + suffix);
+    }
+
+    private String resolveFirebaseUserName(FirebaseUser user) {
+        if (!TextUtils.isEmpty(user.getDisplayName())) {
+            return user.getDisplayName().trim();
+        }
+        if (!TextUtils.isEmpty(user.getEmail()) && user.getEmail().contains("@")) {
+            return user.getEmail().substring(0, user.getEmail().indexOf('@'));
+        }
+        return getString(R.string.profile_default_username);
     }
 
     private void loadSavedPostIds() {
@@ -755,11 +817,17 @@ public class ProfileActivity extends AppCompatActivity {
                         }
                     }
 
-                    transaction.update(userRef,
-                            "name", newDisplayName,
-                            "username", newUsername,
-                            "bio", newBio
-                    );
+                    Map<String, Object> profileUpdates = new HashMap<>();
+                    profileUpdates.put("uid", uid);
+                    profileUpdates.put("name", newDisplayName);
+                    profileUpdates.put("username", newUsername);
+                    profileUpdates.put("bio", newBio);
+                    profileUpdates.put("email", auth.getCurrentUser() == null ? "" : auth.getCurrentUser().getEmail());
+                    profileUpdates.put("profileImageUrl", "");
+                    profileUpdates.put("followerCount", 0);
+                    profileUpdates.put("followingCount", 0);
+
+                    transaction.set(userRef, profileUpdates, SetOptions.merge());
 
                     if (usernameChanged) {
                         if (oldUsernameRef != null) {

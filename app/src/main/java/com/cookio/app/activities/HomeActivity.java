@@ -103,7 +103,7 @@ public class HomeActivity extends AppCompatActivity {
             return;
         }
 
-        if (!auth.getCurrentUser().isEmailVerified()) {
+        if (!AuthVerificationHelper.canEnterApp(auth.getCurrentUser())) {
             auth.signOut();
             AuthVerificationHelper.redirectToLogin(
                     this,

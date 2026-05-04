@@ -7,15 +7,19 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AlertDialog;
 
 import com.cookio.app.R;
 import com.cookio.app.utils.AuthVerificationHelper;
+import com.cookio.app.utils.GoogleAuthHelper;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class LoginActivity extends AppCompatActivity {
     private TextInputLayout emailInputLayout;
@@ -23,10 +27,44 @@ public class LoginActivity extends AppCompatActivity {
     private TextInputEditText emailEditText;
     private TextInputEditText passwordEditText;
     private Button loginButton;
+    private Button googleSignInButton;
     private Button backButton;
     private TextView forgotPasswordLink;
     private TextView signupLink;
     private FirebaseAuth auth;
+    private FirebaseFirestore firestore;
+
+    private final ActivityResultLauncher<Intent> googleSignInLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getData() == null) {
+                    setLoading(false);
+                    return;
+                }
+
+                GoogleAuthHelper.completeSignIn(
+                        this,
+                        result.getData(),
+                        auth,
+                        firestore,
+                        new GoogleAuthHelper.Callback() {
+                            @Override
+                            public void onSuccess() {
+                                openHome();
+                            }
+
+                            @Override
+                            public void onFailure(String message) {
+                                setLoading(false);
+                                Toast.makeText(LoginActivity.this, message, Toast.LENGTH_LONG).show();
+                            }
+
+                            @Override
+                            public void onCanceled() {
+                                setLoading(false);
+                            }
+                        }
+                );
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,11 +72,13 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         auth = FirebaseAuth.getInstance();
+        firestore = FirebaseFirestore.getInstance();
         emailInputLayout = findViewById(R.id.email_input_layout);
         passwordInputLayout = findViewById(R.id.password_input_layout);
         emailEditText = findViewById(R.id.email_edit_text);
         passwordEditText = findViewById(R.id.password_edit_text);
         loginButton = findViewById(R.id.login_button);
+        googleSignInButton = findViewById(R.id.google_sign_in_button);
         backButton = findViewById(R.id.back_button);
         forgotPasswordLink = findViewById(R.id.forgot_password_link);
         signupLink = findViewById(R.id.signup_link);
@@ -55,6 +95,7 @@ public class LoginActivity extends AppCompatActivity {
         });
         forgotPasswordLink.setOnClickListener(v -> sendPasswordReset());
         loginButton.setOnClickListener(v -> attemptLogin());
+        googleSignInButton.setOnClickListener(v -> startGoogleSignIn());
     }
 
     private void sendPasswordReset() {
@@ -121,11 +162,7 @@ public class LoginActivity extends AppCompatActivity {
         AuthVerificationHelper.verifyBeforeEntering(this, auth, new AuthVerificationHelper.VerificationCallback() {
             @Override
             public void onVerified(FirebaseUser user) {
-                setLoading(false);
-                Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(intent);
-                finish();
+                openHome();
             }
 
             @Override
@@ -172,10 +209,24 @@ public class LoginActivity extends AppCompatActivity {
 
     private void setLoading(boolean isLoading) {
         loginButton.setEnabled(!isLoading);
+        googleSignInButton.setEnabled(!isLoading);
         backButton.setEnabled(!isLoading);
         forgotPasswordLink.setEnabled(!isLoading);
         signupLink.setEnabled(!isLoading);
         loginButton.setText(isLoading ? R.string.logging_in : R.string.log_in);
+    }
+
+    private void startGoogleSignIn() {
+        setLoading(true);
+        googleSignInLauncher.launch(GoogleAuthHelper.createSignInIntent(this));
+    }
+
+    private void openHome() {
+        setLoading(false);
+        Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 
     private String readField(TextInputEditText editText) {

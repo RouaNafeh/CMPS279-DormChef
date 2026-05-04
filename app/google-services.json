@@ -12,7 +12,20 @@
           "package_name": "com.cookio.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "125361919350-lgcjup3v1g998suplfogvlcu4tscjq15.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.cookio.app",
+            "certificate_hash": "fdfddd6dc208ad99722cc151f962976631b43377"
+          }
+        },
+        {
+          "client_id": "125361919350-sa4a49esgjvgsalo0ig8dlugt6kbot1n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAZHnNEVYKGcW0hc1eyXh-ZlTmASMF_3AE"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "125361919350-sa4a49esgjvgsalo0ig8dlugt6kbot1n.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
