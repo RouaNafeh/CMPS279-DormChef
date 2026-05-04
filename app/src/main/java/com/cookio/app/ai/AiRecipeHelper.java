@@ -5,6 +5,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.cookio.app.utils.RecipeCategoryHelper;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.firebase.ai.FirebaseAI;
@@ -14,6 +15,7 @@ import com.google.firebase.ai.type.Content;
 import com.google.firebase.ai.type.GenerateContentResponse;
 import com.google.firebase.ai.type.GenerativeBackend;
 
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -35,9 +37,12 @@ public class AiRecipeHelper {
         model = GenerativeModelFutures.from(generativeModel);
     }
 
-    public void generateRecipe(String recipeTitle, String ingredients, AiRecipeCallback callback) {
+    public void generateRecipe(String recipeTitle, String ingredients, List<String> preferredCategories,
+                               AiRecipeCallback callback) {
         String normalizedTitle = recipeTitle == null ? "" : recipeTitle.trim();
         String normalizedIngredients = ingredients == null ? "" : ingredients.trim();
+        List<String> approvedPreferredCategories =
+                RecipeCategoryHelper.sanitizeCategories(preferredCategories);
 
         StringBuilder prompt = new StringBuilder();
         prompt.append("Generate a simple cooking social media recipe post.\n\n");
@@ -54,6 +59,16 @@ public class AiRecipeHelper {
                     .append("\n");
         }
 
+        prompt.append("Approved categories: ")
+                .append(RecipeCategoryHelper.describeAllowedCategories())
+                .append("\n");
+
+        if (!approvedPreferredCategories.isEmpty()) {
+            prompt.append("If these already-selected categories still fit the recipe, prefer them: ")
+                    .append(String.join(", ", approvedPreferredCategories))
+                    .append("\n");
+        }
+
         prompt.append("\n")
                 .append("Use the user input as guidance.\n")
                 .append("If a title is provided, keep the recipe aligned with that idea.\n")
@@ -64,6 +79,7 @@ public class AiRecipeHelper {
                 .append("Return the result in this exact format:\n")
                 .append("TITLE: ...\n")
                 .append("DESCRIPTION: ...\n")
+                .append("CATEGORIES: cat1 || cat2\n")
                 .append("INGREDIENTS: item1 || item2 || item3\n")
                 .append("STEPS: step1 instruction|minutes || step2 instruction|minutes || step3 instruction|minutes\n")
                 .append("TIME: ...\n")
@@ -72,8 +88,12 @@ public class AiRecipeHelper {
                 .append("Use 0 minutes when a step does not need a timer.\n")
                 .append("Only assign minutes to steps that involve actual cooking, baking, simmering, resting, chilling, freezing, marinating, or heating time.\n")
                 .append("Do not assign time to quick prep actions like chopping, mixing, slicing, cracking, or seasoning, because that varies by person.\n")
+                .append("Choose 1 to 3 categories only from the approved categories list.\n")
+                .append("Never invent, reword, or pluralize a category outside that list.\n")
+                .append("Pick the fewest categories that fit, usually 1 or 2.\n")
                 .append("Important: use || only between separate ingredients or equipment items.\n")
-                .append("Do not split a single ingredient with commas. For example write \"1 medium onion, chopped\" as one ingredient item.");
+                .append("Do not split a single ingredient with commas. For example write \"1 medium onion, chopped\" as one ingredient item.\n")
+                .append("Use || between categories too.");
 
         Content content = new Content.Builder()
                 .addText(prompt.toString())

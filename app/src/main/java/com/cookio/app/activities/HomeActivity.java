@@ -30,8 +30,10 @@ import com.cookio.app.models.Post;
 import com.cookio.app.models.User;
 import com.cookio.app.utils.CookTimeFormatter;
 import com.cookio.app.utils.AuthVerificationHelper;
+import com.cookio.app.utils.RecipeCategoryHelper;
 import com.cookio.app.utils.UserDisplayHelper;
 import com.cookio.app.services.CookioMessagingService;
+import com.google.android.material.chip.Chip;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -76,6 +78,7 @@ public class HomeActivity extends AppCompatActivity {
     private String selectedIngredientFilter = "";
     private String selectedBudgetFilter = "";
     private String selectedMaxTimeFilter = "";
+    private String selectedCategoryFilter = "";
     private String selectedSort = SORT_NONE;
     private ListenerRegistration unreadNotificationListener;
     private final ActivityResultLauncher<String> notificationPermissionLauncher =
@@ -118,6 +121,7 @@ public class HomeActivity extends AppCompatActivity {
         setupRecyclerView();
         setupUserResultsRecyclerView();
         setupSearch();
+        setupCategoryBrowseChips();
         setupActions();
         updateTabUI(false);
         setupBottomNavigation();
@@ -214,6 +218,73 @@ public class HomeActivity extends AppCompatActivity {
                 return true;
             }
         });
+    }
+
+    private void setupCategoryBrowseChips() {
+        binding.homeCategoryChipGroup.removeAllViews();
+        binding.homeCategoryChipGroup.setSingleSelection(true);
+        binding.homeCategoryChipGroup.setSelectionRequired(true);
+
+        addBrowseCategoryChip("", getString(R.string.category_all_label));
+        for (String category : RecipeCategoryHelper.getAllowedCategories()) {
+            addBrowseCategoryChip(category, category);
+        }
+
+        binding.homeCategoryChipGroup.setOnCheckedStateChangeListener((group, checkedIds) -> {
+            if (checkedIds.isEmpty()) {
+                return;
+            }
+
+            View selectedView = group.findViewById(checkedIds.get(0));
+            if (!(selectedView instanceof Chip)) {
+                return;
+            }
+
+            Object tag = selectedView.getTag();
+            selectedCategoryFilter = tag instanceof String ? (String) tag : "";
+            applyCurrentPostFilters();
+        });
+
+        checkBrowseCategoryChip(selectedCategoryFilter);
+    }
+
+    private void addBrowseCategoryChip(String categoryValue, String label) {
+        Chip chip = (Chip) getLayoutInflater().inflate(
+                R.layout.item_category_chip,
+                binding.homeCategoryChipGroup,
+                false
+        );
+        chip.setId(View.generateViewId());
+        chip.setText(label);
+        chip.setTag(categoryValue);
+        chip.setCheckedIconVisible(false);
+        binding.homeCategoryChipGroup.addView(chip);
+    }
+
+    private void checkBrowseCategoryChip(String category) {
+        int fallbackChipId = View.NO_ID;
+
+        for (int index = 0; index < binding.homeCategoryChipGroup.getChildCount(); index++) {
+            View child = binding.homeCategoryChipGroup.getChildAt(index);
+            if (!(child instanceof Chip)) {
+                continue;
+            }
+
+            Chip chip = (Chip) child;
+            if (index == 0) {
+                fallbackChipId = chip.getId();
+            }
+
+            Object tag = chip.getTag();
+            if (tag instanceof String && ((String) tag).equals(category)) {
+                binding.homeCategoryChipGroup.check(chip.getId());
+                return;
+            }
+        }
+
+        if (fallbackChipId != View.NO_ID) {
+            binding.homeCategoryChipGroup.check(fallbackChipId);
+        }
     }
 
     private void setupActions() {
@@ -520,6 +591,9 @@ public class HomeActivity extends AppCompatActivity {
             if (!matchesFollowingFilter(post)) {
                 continue;
             }
+            if (!matchesCategoryFilter(post)) {
+                continue;
+            }
             if (!matchesSearchQuery(post, searchQuery)) {
                 continue;
             }
@@ -539,6 +613,7 @@ public class HomeActivity extends AppCompatActivity {
         postAdapter.updateData(filteredPosts);
         updateEmptyState();
         binding.swipeRefreshLayout.setRefreshing(false);
+        maybeLoadMoreForDiscovery();
     }
 
     private boolean matchesFollowingFilter(Post post) {
@@ -557,7 +632,16 @@ public class HomeActivity extends AppCompatActivity {
         String name = safeLower(post.getName());
         String username = safeLower(post.getUsername());
         String description = safeLower(post.getDescription());
-        return title.contains(query) || name.contains(query) || username.contains(query) || description.contains(query);
+        String categories = RecipeCategoryHelper.buildSearchableText(post.getCategories());
+        return title.contains(query)
+                || name.contains(query)
+                || username.contains(query)
+                || description.contains(query)
+                || categories.contains(query);
+    }
+
+    private boolean matchesCategoryFilter(Post post) {
+        return RecipeCategoryHelper.matchesCategory(post.getCategories(), selectedCategoryFilter);
     }
 
     private boolean matchesIngredientFilter(Post post, List<String> ingredientQueries) {
@@ -643,10 +727,30 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private boolean hasActiveFilters() {
+        boolean hasBrowseCategory = !selectedCategoryFilter.trim().isEmpty();
         return !selectedIngredientFilter.trim().isEmpty()
                 || !selectedBudgetFilter.trim().isEmpty()
                 || !selectedMaxTimeFilter.trim().isEmpty()
+                || hasBrowseCategory
                 || !SORT_NONE.equals(selectedSort);
+    }
+
+    private boolean hasDiscoveryConstraints() {
+        return showFollowingOnly
+                || !currentQuery.trim().isEmpty()
+                || hasActiveFilters();
+    }
+
+    private void maybeLoadMoreForDiscovery() {
+        if (isLoading || isLastPage || !hasDiscoveryConstraints()) {
+            return;
+        }
+
+        if (filteredPosts.size() >= PAGE_SIZE) {
+            return;
+        }
+
+        loadNextPage(false);
     }
 
     private int resolveMaxTimeFilter(String rawValue) {
@@ -857,6 +961,13 @@ public class HomeActivity extends AppCompatActivity {
             intent.putStringArrayListExtra(
                     PostDetailActivity.EXTRA_POST_STEPS,
                     new ArrayList<>(post.getSteps())
+            );
+        }
+
+        if (post.getCategories() != null) {
+            intent.putStringArrayListExtra(
+                    PostDetailActivity.EXTRA_POST_CATEGORIES,
+                    new ArrayList<>(post.getCategories())
             );
         }
 

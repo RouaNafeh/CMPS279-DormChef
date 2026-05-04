@@ -28,7 +28,9 @@ import com.cookio.app.models.CookingStep;
 import com.cookio.app.models.CookingStepParser;
 import com.cookio.app.models.Post;
 import com.cookio.app.utils.CookTimeFormatter;
+import com.cookio.app.utils.RecipeCategoryHelper;
 import com.cookio.app.utils.UserDisplayHelper;
+import com.google.android.material.chip.Chip;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -51,6 +53,7 @@ public class CreatePostActivity extends AppCompatActivity {
     public static final String EXTRA_POST_DESCRIPTION = "edit_post_description";
     public static final String EXTRA_POST_COOK_TIME = "edit_post_cook_time";
     public static final String EXTRA_POST_BUDGET = "edit_post_budget";
+    public static final String EXTRA_POST_CATEGORIES = "edit_post_categories";
     public static final String EXTRA_POST_IMAGE_URL = "edit_post_image_url";
     public static final String EXTRA_POST_INGREDIENTS = "edit_post_ingredients";
     public static final String EXTRA_POST_EQUIPMENT = "edit_post_equipment";
@@ -66,6 +69,7 @@ public class CreatePostActivity extends AppCompatActivity {
     private boolean isEditMode = false;
     private String editingPostId = null;
     private String existingImageUrl = "";
+    private boolean suppressCategorySelectionChanges = false;
 
     private final ActivityResultLauncher<String> imagePickerLauncher =
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
@@ -114,6 +118,7 @@ public class CreatePostActivity extends AppCompatActivity {
         binding.btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
         binding.imagePickerContainer.setOnClickListener(v -> requestPhotoAccessAndPickImage());
         binding.tvReselect.setOnClickListener(v -> requestPhotoAccessAndPickImage());
+        setupCategorySelectionChips();
 
         addIngredientRow("");
         addEquipmentRow("");
@@ -222,6 +227,77 @@ public class CreatePostActivity extends AppCompatActivity {
         }
     }
 
+    private void setupCategorySelectionChips() {
+        binding.categoryChipGroup.removeAllViews();
+
+        for (String category : RecipeCategoryHelper.getAllowedCategories()) {
+            Chip chip = (Chip) LayoutInflater.from(this)
+                    .inflate(R.layout.item_category_chip, binding.categoryChipGroup, false);
+            chip.setText(category);
+            chip.setTag(category);
+            chip.setCheckedIconVisible(false);
+            chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                if (suppressCategorySelectionChanges || !isChecked) {
+                    return;
+                }
+
+                if (collectSelectedCategories().size() > RecipeCategoryHelper.MAX_CATEGORIES_PER_RECIPE) {
+                    suppressCategorySelectionChanges = true;
+                    buttonView.setChecked(false);
+                    suppressCategorySelectionChanges = false;
+                    Toast.makeText(
+                            this,
+                            getString(
+                                    R.string.category_limit_message,
+                                    RecipeCategoryHelper.MAX_CATEGORIES_PER_RECIPE
+                            ),
+                            Toast.LENGTH_SHORT
+                    ).show();
+                }
+            });
+            binding.categoryChipGroup.addView(chip);
+        }
+    }
+
+    private List<String> collectSelectedCategories() {
+        List<String> selectedCategories = new ArrayList<>();
+        for (int i = 0; i < binding.categoryChipGroup.getChildCount(); i++) {
+            View child = binding.categoryChipGroup.getChildAt(i);
+            if (!(child instanceof Chip)) {
+                continue;
+            }
+
+            Chip chip = (Chip) child;
+            if (chip.isChecked() && chip.getTag() instanceof String) {
+                selectedCategories.add((String) chip.getTag());
+            }
+        }
+        return RecipeCategoryHelper.sanitizeCategories(selectedCategories);
+    }
+
+    private void applySelectedCategories(List<String> categories) {
+        List<String> approvedCategories = RecipeCategoryHelper.sanitizeCategories(categories);
+        suppressCategorySelectionChanges = true;
+        for (int i = 0; i < binding.categoryChipGroup.getChildCount(); i++) {
+            View child = binding.categoryChipGroup.getChildAt(i);
+            if (!(child instanceof Chip)) {
+                continue;
+            }
+
+            Chip chip = (Chip) child;
+            Object tag = chip.getTag();
+            boolean shouldCheck = tag instanceof String && approvedCategories.contains(tag);
+            chip.setChecked(shouldCheck);
+        }
+        suppressCategorySelectionChanges = false;
+    }
+
+    private void setCategorySelectionEnabled(boolean enabled) {
+        for (int i = 0; i < binding.categoryChipGroup.getChildCount(); i++) {
+            binding.categoryChipGroup.getChildAt(i).setEnabled(enabled);
+        }
+    }
+
     private List<String> collectRows(LinearLayout container) {
         List<String> result = new ArrayList<>();
         for (int i = 0; i < container.getChildCount(); i++) {
@@ -274,10 +350,16 @@ public class CreatePostActivity extends AppCompatActivity {
         String description = text(binding.etDescription);
         String cookTime = CookTimeFormatter.normalize(text(binding.etCookTime));
         String budget = text(binding.etBudget);
+        List<String> categories = collectSelectedCategories();
 
         if (TextUtils.isEmpty(title)) {
             binding.etTitle.setError("Title is required");
             binding.etTitle.requestFocus();
+            return;
+        }
+
+        if (categories.isEmpty()) {
+            Toast.makeText(this, R.string.category_required_message, Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -310,9 +392,28 @@ public class CreatePostActivity extends AppCompatActivity {
         setLoading(true);
         String imageUrl = selectedImageUri == null ? existingImageUrl : null;
         if (selectedImageUri != null) {
-            uploadImageThenSave(title, description, cookTime, budget, ingredients, equipment, encodedSteps);
+            uploadImageThenSave(
+                    title,
+                    description,
+                    cookTime,
+                    budget,
+                    categories,
+                    ingredients,
+                    equipment,
+                    encodedSteps
+            );
         } else {
-            savePostToFirestore(title, description, cookTime, budget, ingredients, equipment, encodedSteps, imageUrl);
+            savePostToFirestore(
+                    title,
+                    description,
+                    cookTime,
+                    budget,
+                    categories,
+                    ingredients,
+                    equipment,
+                    encodedSteps,
+                    imageUrl
+            );
         }
     }
 
@@ -339,7 +440,8 @@ public class CreatePostActivity extends AppCompatActivity {
     }
 
     private void uploadImageThenSave(String title, String description, String cookTime,
-                                     String budget, List<String> ingredients, List<String> equipment,
+                                     String budget, List<String> categories,
+                                     List<String> ingredients, List<String> equipment,
                                      List<String> steps) {
         String uid = auth.getCurrentUser().getUid();
         String filename = UUID.randomUUID().toString() + ".jpg";
@@ -365,6 +467,7 @@ public class CreatePostActivity extends AppCompatActivity {
                             binding.uploadProgressBar.setVisibility(View.GONE);
                             binding.tvUploadProgress.setVisibility(View.GONE);
                             savePostToFirestore(title, description, cookTime, budget,
+                                    categories,
                                     ingredients, equipment, steps, downloadUri.toString());
                         }))
                 .addOnFailureListener(e -> {
@@ -377,7 +480,8 @@ public class CreatePostActivity extends AppCompatActivity {
     }
 
     private void savePostToFirestore(String title, String description, String cookTime,
-                                     String budget, List<String> ingredients, List<String> equipment,
+                                     String budget, List<String> categories,
+                                     List<String> ingredients, List<String> equipment,
                                      List<String> steps, String imageUrl) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
@@ -398,7 +502,7 @@ public class CreatePostActivity extends AppCompatActivity {
 
                     Post post = new Post(
                             user.getUid(), displayName, username, title, description,
-                            cookTime, budget, ingredients, equipment, steps, imageUrl
+                            cookTime, budget, categories, ingredients, equipment, steps, imageUrl
                     );
                     post.setProfileImageUrl(profileImageUrl);
 
@@ -410,6 +514,7 @@ public class CreatePostActivity extends AppCompatActivity {
                                         "description", post.getDescription(),
                                         "cookTime", post.getCookTime(),
                                         "budget", post.getBudget(),
+                                        "categories", post.getCategories(),
                                         "ingredients", post.getIngredients(),
                                         "equipment", post.getEquipment(),
                                         "steps", post.getSteps(),
@@ -464,10 +569,12 @@ public class CreatePostActivity extends AppCompatActivity {
         binding.etCookTime.setText(getIntent().getStringExtra(EXTRA_POST_COOK_TIME));
         binding.etBudget.setText(getIntent().getStringExtra(EXTRA_POST_BUDGET));
 
+        ArrayList<String> categories = getIntent().getStringArrayListExtra(EXTRA_POST_CATEGORIES);
         ArrayList<String> ingredients = getIntent().getStringArrayListExtra(EXTRA_POST_INGREDIENTS);
         ArrayList<String> equipment = getIntent().getStringArrayListExtra(EXTRA_POST_EQUIPMENT);
         ArrayList<String> steps = getIntent().getStringArrayListExtra(EXTRA_POST_STEPS);
 
+        applySelectedCategories(categories != null ? categories : new ArrayList<>());
         replaceIngredientRows(ingredients != null ? ingredients : new ArrayList<>());
         replaceEquipmentRows(equipment != null ? equipment : new ArrayList<>());
         replaceStepRows(CookingStepParser.parseList(steps));
@@ -481,6 +588,7 @@ public class CreatePostActivity extends AppCompatActivity {
         binding.btnAddEquipment.setEnabled(!loading);
         binding.btnAddStep.setEnabled(!loading);
         binding.btnGenerateAi.setEnabled(!loading);
+        setCategorySelectionEnabled(!loading);
     }
 
     private void confirmClearForm() {
@@ -501,6 +609,7 @@ public class CreatePostActivity extends AppCompatActivity {
         binding.etCookTime.setText("");
         binding.etBudget.setText("");
         binding.etTitle.setError(null);
+        applySelectedCategories(new ArrayList<>());
 
         binding.ivImagePreview.setImageDrawable(null);
         binding.ivImagePreview.setVisibility(View.GONE);
@@ -530,7 +639,7 @@ public class CreatePostActivity extends AppCompatActivity {
         binding.btnGenerateAi.setEnabled(false);
         binding.btnGenerateAi.setText("Generating...");
 
-        aiRecipeHelper.generateRecipe(title, ingredients, new AiRecipeHelper.AiRecipeCallback() {
+        aiRecipeHelper.generateRecipe(title, ingredients, collectSelectedCategories(), new AiRecipeHelper.AiRecipeCallback() {
             @Override
             public void onSuccess(String result) {
                 runOnUiThread(() -> {
@@ -565,6 +674,12 @@ public class CreatePostActivity extends AppCompatActivity {
         binding.etCookTime.setText(CookTimeFormatter.normalize(extractSection(result, "TIME")));
         binding.etBudget.setText(normalizeBudget(extractSection(result, "BUDGET")));
 
+        List<String> suggestedCategories = RecipeCategoryHelper.sanitizeCategories(
+                splitAiList(extractSection(result, "CATEGORIES"), "\\|\\|")
+        );
+        if (!suggestedCategories.isEmpty()) {
+            applySelectedCategories(suggestedCategories);
+        }
         replaceIngredientRows(splitAiList(extractSection(result, "INGREDIENTS"), "\\|\\|"));
         replaceEquipmentRows(splitAiList(extractSection(result, "EQUIPMENT"), "\\|\\|"));
         replaceStepRows(CookingStepParser.parseDelimited(extractSection(result, "STEPS")));

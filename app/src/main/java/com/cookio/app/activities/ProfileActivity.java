@@ -272,6 +272,13 @@ public class ProfileActivity extends AppCompatActivity {
         intent.putExtra(CreatePostActivity.EXTRA_POST_BUDGET, post.getBudget());
         intent.putExtra(CreatePostActivity.EXTRA_POST_IMAGE_URL, post.getImageUrl());
 
+        if (post.getCategories() != null) {
+            intent.putStringArrayListExtra(
+                    CreatePostActivity.EXTRA_POST_CATEGORIES,
+                    new ArrayList<>(post.getCategories())
+            );
+        }
+
         if (post.getIngredients() != null) {
             intent.putStringArrayListExtra(
                     CreatePostActivity.EXTRA_POST_INGREDIENTS,
@@ -620,6 +627,13 @@ public class ProfileActivity extends AppCompatActivity {
             intent.putStringArrayListExtra(
                     PostDetailActivity.EXTRA_POST_STEPS,
                     new ArrayList<>(post.getSteps())
+            );
+        }
+
+        if (post.getCategories() != null) {
+            intent.putStringArrayListExtra(
+                    PostDetailActivity.EXTRA_POST_CATEGORIES,
+                    new ArrayList<>(post.getCategories())
             );
         }
 

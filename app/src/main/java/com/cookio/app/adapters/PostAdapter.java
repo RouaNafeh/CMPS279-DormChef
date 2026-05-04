@@ -25,6 +25,9 @@ import com.cookio.app.activities.PublicProfileActivity;
 import com.cookio.app.models.Post;
 import com.cookio.app.utils.CookTimeFormatter;
 import com.cookio.app.utils.NotificationHelper;
+import com.cookio.app.utils.RecipeCategoryHelper;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.imageview.ShapeableImageView;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
@@ -158,6 +161,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         holder.postCookTime.setText(resolveCookTime(post.getCookTime()));
         holder.postBudget.setText(resolveBudget(post.getBudget()));
         holder.likesCount.setText(String.valueOf(post.getLikesCount()));
+        bindCategoryChips(holder.postCategoryGroup, post.getCategories());
 
         loadPostRating(post, holder);
         bindAvatar(post, holder);
@@ -239,6 +243,36 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             }
 
             holder.postTitle.setMaxLines(2);
+        }
+    }
+
+    private void bindCategoryChips(@Nullable ChipGroup chipGroup, List<String> categories) {
+        if (chipGroup == null) {
+            return;
+        }
+
+        chipGroup.removeAllViews();
+        List<String> approvedCategories = RecipeCategoryHelper.sanitizeCategories(categories);
+        if (approvedCategories.isEmpty()) {
+            chipGroup.setVisibility(View.GONE);
+            return;
+        }
+
+        chipGroup.setVisibility(View.VISIBLE);
+        int maxVisibleChips = Math.min(approvedCategories.size(), 2);
+        for (int index = 0; index < maxVisibleChips; index++) {
+            Chip chip = (Chip) LayoutInflater.from(context).inflate(
+                    R.layout.item_category_chip,
+                    chipGroup,
+                    false
+            );
+            chip.setText(approvedCategories.get(index));
+            chip.setChecked(false);
+            chip.setCheckable(false);
+            chip.setClickable(false);
+            chip.setFocusable(false);
+            chip.setCheckedIconVisible(false);
+            chipGroup.addView(chip);
         }
     }
 
@@ -720,6 +754,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         TextView postAvatar;
         ShapeableImageView postAvatarImage;
         ImageView postImage;
+        ChipGroup postCategoryGroup;
         ImageButton saveButton, likeButton;
         ImageButton deleteButton;
         String boundPostId;
@@ -735,6 +770,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             postDescription = itemView.findViewById(R.id.post_description);
             postCookTime = itemView.findViewById(R.id.post_time);
             postBudget = itemView.findViewById(R.id.post_budget);
+            postCategoryGroup = itemView.findViewById(R.id.post_category_group);
             likesCount = itemView.findViewById(R.id.likes_count);
             postRating = itemView.findViewById(R.id.post_rating_text);
             postImage = itemView.findViewById(R.id.post_image);

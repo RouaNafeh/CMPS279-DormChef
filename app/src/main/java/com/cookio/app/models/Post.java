@@ -14,6 +14,7 @@ public class Post {
     private String description;
     private String cookTime;
     private String budget;
+    private List<String> categories;
     private List<String> ingredients;
     private List<String> equipment;
     private List<String> steps;
@@ -29,7 +30,8 @@ public class Post {
     public Post() {}
 
     public Post(String uid, String name, String username, String title, String description,
-                String cookTime, String budget, List<String> ingredients, List<String> equipment,
+                String cookTime, String budget, List<String> categories,
+                List<String> ingredients, List<String> equipment,
                 List<String> steps, String imageUrl) {
         this.uid         = uid;
         this.name        = name;
@@ -38,6 +40,7 @@ public class Post {
         this.description = description;
         this.cookTime    = cookTime;
         this.budget      = budget;
+        this.categories  = categories;
         this.ingredients = ingredients;
         this.equipment   = equipment;
         this.steps       = steps;
@@ -53,6 +56,7 @@ public class Post {
     public String getDescription()      { return description; }
     public String getCookTime()         { return cookTime; }
     public String getBudget()           { return budget; }
+    public List<String> getCategories() { return categories; }
     public List<String> getIngredients(){ return ingredients; }
     public List<String> getEquipment()  { return equipment; }
     public List<String> getSteps()      { return steps; }
@@ -79,4 +83,5 @@ public class Post {
     public void setProfileImageUrl(String profileImageUrl) { this.profileImageUrl = profileImageUrl; }
     public void setName(String name) { this.name = name; }
     public void setUsername(String username) { this.username = username; }
+    public void setCategories(List<String> categories) { this.categories = categories; }
 }

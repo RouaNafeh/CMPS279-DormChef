@@ -163,6 +163,12 @@ public class NotificationsActivity extends AppCompatActivity {
                         for (Object o : (List<?>) stp) { if (o instanceof String) stpList.add((String) o); }
                         intent.putStringArrayListExtra(PostDetailActivity.EXTRA_POST_STEPS, stpList);
                     }
+                    Object cat = doc.get("categories");
+                    if (cat instanceof List) {
+                        ArrayList<String> catList = new ArrayList<>();
+                        for (Object o : (List<?>) cat) { if (o instanceof String) catList.add((String) o); }
+                        intent.putStringArrayListExtra(PostDetailActivity.EXTRA_POST_CATEGORIES, catList);
+                    }
                     Object eqp = doc.get("equipment");
 
                     if (eqp instanceof List) {

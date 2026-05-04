@@ -8,6 +8,13 @@
     <string name="search_cooks_title">Cooks</string>
     <string name="search_cooks_subtitle">Profiles matching your search</string>
     <string name="search_cooks_empty">No cooks found</string>
+    <string name="category_all_label">All</string>
+    <string name="category_browse_title">Browse by category</string>
+    <string name="category_browse_hint">Jump into a recipe lane with one tap.</string>
+    <string name="category_section_title">Categories</string>
+    <string name="category_create_hint">Pick 1 to 3 approved categories. AI suggestions are limited to this same list.</string>
+    <string name="category_required_message">Choose at least one category for this recipe.</string>
+    <string name="category_limit_message">You can pick up to %1$d categories.</string>
     <string name="post_time_placeholder">Time not set</string>
     <string name="post_budget_placeholder">Budget not set</string>
     <string name="search_icon_desc">Search recipes</string>

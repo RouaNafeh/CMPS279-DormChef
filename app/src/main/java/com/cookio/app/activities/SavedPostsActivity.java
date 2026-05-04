@@ -254,6 +254,13 @@ public class SavedPostsActivity extends AppCompatActivity {
             );
         }
 
+        if (post.getCategories() != null) {
+            intent.putStringArrayListExtra(
+                    PostDetailActivity.EXTRA_POST_CATEGORIES,
+                    new ArrayList<>(post.getCategories())
+            );
+        }
+
         startActivity(intent);
     }
 

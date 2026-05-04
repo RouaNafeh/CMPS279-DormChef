@@ -26,6 +26,7 @@ import com.cookio.app.R;
 import com.cookio.app.models.CookingStep;
 import com.cookio.app.models.CookingStepParser;
 import com.cookio.app.utils.CookTimeFormatter;
+import com.cookio.app.utils.RecipeCategoryHelper;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
@@ -57,6 +58,7 @@ public class PostDetailActivity extends AppCompatActivity {
     public static final String EXTRA_POST_IMAGE_URL = "post_image_url";
     public static final String EXTRA_POST_COOK_TIME = "post_cook_time";
     public static final String EXTRA_POST_BUDGET = "post_budget";
+    public static final String EXTRA_POST_CATEGORIES = "post_categories";
     public static final String EXTRA_POST_AUTHOR_NAME = "post_author_name";
     public static final String EXTRA_POST_USERNAME = "post_username";
     public static final String EXTRA_POST_UID = "post_uid";
@@ -87,6 +89,8 @@ public class PostDetailActivity extends AppCompatActivity {
     private TextView tvBudget;
     private TextView tvDetailLikesCount;
     private TextView tvReviewsCount;
+    private LinearLayout layoutCategories;
+    private ChipGroup cgCategories;
     private ChipGroup cgIngredients;
     private ChipGroup cgEquipment;
     private LinearLayout llSteps;
@@ -187,6 +191,8 @@ public class PostDetailActivity extends AppCompatActivity {
         tvBudget = findViewById(R.id.tvPostBudget);
         tvDetailLikesCount = findViewById(R.id.tvDetailLikesCount);
         tvReviewsCount = findViewById(R.id.tvReviewsCount);
+        layoutCategories = findViewById(R.id.layoutCategories);
+        cgCategories = findViewById(R.id.chipGroupCategories);
         cgIngredients = findViewById(R.id.chipGroupIngredients);
         cgEquipment = findViewById(R.id.chipGroupEquipment);
         llSteps = findViewById(R.id.stepsContainer);
@@ -420,11 +426,13 @@ public class PostDetailActivity extends AppCompatActivity {
         tvBudget.setText(resolveBudget(getIntent().getStringExtra(EXTRA_POST_BUDGET)));
         bindImage(getIntent().getStringExtra(EXTRA_POST_IMAGE_URL));
 
+        ArrayList<String> categories = getIntent().getStringArrayListExtra(EXTRA_POST_CATEGORIES);
         ArrayList<String> ingredients = getIntent().getStringArrayListExtra(EXTRA_POST_INGREDIENTS);
         ArrayList<String> equipment = getIntent().getStringArrayListExtra(EXTRA_POST_EQUIPMENT);
         ArrayList<String> steps = getIntent().getStringArrayListExtra(EXTRA_POST_STEPS);
         cookingSteps = CookingStepParser.parseList(steps);
 
+        bindCategories(categories);
         bindIngredients(ingredients);
         bindEquipment(equipment);
         bindSteps(cookingSteps);
@@ -462,6 +470,7 @@ public class PostDetailActivity extends AppCompatActivity {
 
                     bindIngredients(asStringList(documentSnapshot.get("ingredients")));
                     bindEquipment(asStringList(documentSnapshot.get("equipment")));
+                    bindCategories(asStringList(documentSnapshot.get("categories")));
                     cookingSteps = CookingStepParser.parseList(asStringList(documentSnapshot.get("steps")));
                     bindSteps(cookingSteps);
                 })
@@ -859,6 +868,21 @@ public class PostDetailActivity extends AppCompatActivity {
         for (String ingredient : ingredients) {
             Chip chip = buildChip(ingredient);
             cgIngredients.addView(chip);
+        }
+    }
+
+    private void bindCategories(List<String> categories) {
+        List<String> approvedCategories = RecipeCategoryHelper.sanitizeCategories(categories);
+        cgCategories.removeAllViews();
+
+        if (approvedCategories.isEmpty()) {
+            layoutCategories.setVisibility(View.GONE);
+            return;
+        }
+
+        layoutCategories.setVisibility(View.VISIBLE);
+        for (String category : approvedCategories) {
+            cgCategories.addView(buildChip(category));
         }
     }
 

@@ -94,6 +94,19 @@
             app:layout_constraintStart_toStartOf="@id/author_row"
             app:layout_constraintTop_toBottomOf="@id/author_row" />
 
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/post_category_group"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="12dp"
+            android:visibility="gone"
+            app:chipSpacingHorizontal="8dp"
+            app:chipSpacingVertical="8dp"
+            app:layout_constraintEnd_toStartOf="@id/action_column"
+            app:layout_constraintStart_toStartOf="@id/post_title"
+            app:layout_constraintTop_toBottomOf="@id/post_title" />
+
         <TextView
             android:id="@+id/post_rating_text"
             android:layout_width="wrap_content"
@@ -176,7 +189,7 @@
             android:orientation="horizontal"
             app:layout_constraintEnd_toStartOf="@id/action_column"
             app:layout_constraintStart_toStartOf="@id/post_title"
-            app:layout_constraintTop_toBottomOf="@id/post_title">
+            app:layout_constraintTop_toBottomOf="@id/post_category_group">
 
             <LinearLayout
                 android:layout_width="wrap_content"
