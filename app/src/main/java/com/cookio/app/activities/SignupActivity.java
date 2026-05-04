@@ -7,11 +7,14 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.cookio.app.R;
-import com.cookio.app.utils.UsernameHelper;
 import com.cookio.app.utils.AuthVerificationHelper;
+import com.cookio.app.utils.GoogleAuthHelper;
+import com.cookio.app.utils.UsernameHelper;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
@@ -35,10 +38,43 @@ public class SignupActivity extends AppCompatActivity {
     private TextInputEditText passwordEditText;
     private TextInputEditText confirmPasswordEditText;
     private Button signupButton;
+    private Button googleSignUpButton;
     private Button backButton;
     private TextView loginLink;
     private FirebaseAuth auth;
     private FirebaseFirestore firestore;
+
+    private final ActivityResultLauncher<Intent> googleSignInLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getData() == null) {
+                    setLoading(false);
+                    return;
+                }
+
+                GoogleAuthHelper.completeSignIn(
+                        this,
+                        result.getData(),
+                        auth,
+                        firestore,
+                        new GoogleAuthHelper.Callback() {
+                            @Override
+                            public void onSuccess() {
+                                openHome();
+                            }
+
+                            @Override
+                            public void onFailure(String message) {
+                                setLoading(false);
+                                Toast.makeText(SignupActivity.this, message, Toast.LENGTH_LONG).show();
+                            }
+
+                            @Override
+                            public void onCanceled() {
+                                setLoading(false);
+                            }
+                        }
+                );
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +94,7 @@ public class SignupActivity extends AppCompatActivity {
         passwordEditText = findViewById(R.id.password_edit_text);
         confirmPasswordEditText = findViewById(R.id.confirm_password_edit_text);
         signupButton = findViewById(R.id.signup_button);
+        googleSignUpButton = findViewById(R.id.google_sign_up_button);
         backButton = findViewById(R.id.back_button);
         loginLink = findViewById(R.id.login_link);
 
@@ -67,6 +104,7 @@ public class SignupActivity extends AppCompatActivity {
             startActivity(intent);
         });
         signupButton.setOnClickListener(v -> attemptSignup());
+        googleSignUpButton.setOnClickListener(v -> startGoogleSignIn());
     }
 
     private void attemptSignup() {
@@ -202,9 +240,23 @@ public class SignupActivity extends AppCompatActivity {
 
     private void setLoading(boolean isLoading) {
         signupButton.setEnabled(!isLoading);
+        googleSignUpButton.setEnabled(!isLoading);
         backButton.setEnabled(!isLoading);
         loginLink.setEnabled(!isLoading);
         signupButton.setText(isLoading ? R.string.creating_account : R.string.create_account);
+    }
+
+    private void startGoogleSignIn() {
+        setLoading(true);
+        googleSignInLauncher.launch(GoogleAuthHelper.createSignInIntent(this));
+    }
+
+    private void openHome() {
+        setLoading(false);
+        Intent intent = new Intent(SignupActivity.this, HomeActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 
     private void cleanupFailedSignup(FirebaseUser firebaseUser, Exception error) {

@@ -11,6 +11,8 @@ import com.cookio.app.activities.LandingActivity;
 import com.cookio.app.activities.LoginActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.auth.UserInfo;
 
 public final class AuthVerificationHelper {
     private AuthVerificationHelper() {
@@ -55,7 +57,7 @@ public final class AuthVerificationHelper {
         user.reload()
                 .addOnSuccessListener(unused -> {
                     FirebaseUser refreshedUser = auth.getCurrentUser();
-                    if (refreshedUser != null && refreshedUser.isEmailVerified()) {
+                    if (refreshedUser != null && canEnterApp(refreshedUser)) {
                         callback.onVerified(refreshedUser);
                     } else {
                         callback.onRejected();
@@ -94,5 +96,18 @@ public final class AuthVerificationHelper {
             Toast.makeText(activity, message, Toast.LENGTH_LONG).show();
         }
         activity.finish();
+    }
+
+    public static boolean canEnterApp(@NonNull FirebaseUser user) {
+        if (user.isEmailVerified()) {
+            return true;
+        }
+
+        for (UserInfo info : user.getProviderData()) {
+            if (GoogleAuthProvider.PROVIDER_ID.equals(info.getProviderId())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

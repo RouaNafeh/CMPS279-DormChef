@@ -89,6 +89,12 @@
     <string name="auth_signup_form_title">Set up your profile</string>
     <string name="go_to_signup">Don\'t have an account? Sign up</string>
     <string name="go_to_login">Already have an account? Log in</string>
+    <string name="continue_with_google">Continue with Google</string>
+    <string name="google_auth_failed">Google sign-in failed. Try again.</string>
+    <string name="google_username_title">Choose your username</string>
+    <string name="google_username_message">Pick a unique Cookio username to finish setting up your profile.</string>
+    <string name="google_username_save">Finish setup</string>
+    <string name="google_username_cancel">Cancel</string>
     <string name="back_to_landing">Back</string>
     <string name="log_out">Log Out</string>
     <string name="email_verification_sent">Verification email sent. Check your inbox before logging in.</string>
