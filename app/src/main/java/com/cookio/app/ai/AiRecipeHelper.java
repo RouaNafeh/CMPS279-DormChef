@@ -35,28 +35,48 @@ public class AiRecipeHelper {
         model = GenerativeModelFutures.from(generativeModel);
     }
 
-    public void generateRecipe(String ingredients, AiRecipeCallback callback) {
-        String prompt =
-                "Generate a simple cooking social media recipe post using these ingredients: "
-                        + ingredients + "\n\n"
-                        + "The recipe should be realistic, appetizing, and useful for everyday home cooks.\n"
-                        + "It does not need to be especially cheap, student-focused, or ultra-simple unless the ingredients naturally suggest that.\n"
-                        + "Return the result in this exact format:\n"
-                        + "TITLE: ...\n"
-                        + "DESCRIPTION: ...\n"
-                        + "INGREDIENTS: item1 || item2 || item3\n"
-                        + "STEPS: step1 instruction|minutes || step2 instruction|minutes || step3 instruction|minutes\n"
-                        + "TIME: ...\n"
-                        + "BUDGET: Low/Medium/High\n"
-                        + "EQUIPMENT: tool1 || tool2 || tool3\n"
-                        + "Use 0 minutes when a step does not need a timer.\n"
-                        + "Only assign minutes to steps that involve actual cooking, baking, simmering, resting, chilling, freezing, marinating, or heating time.\n"
-                        + "Do not assign time to quick prep actions like chopping, mixing, slicing, cracking, or seasoning, because that varies by person.\n"
-                        + "Important: use || only between separate ingredients or equipment items.\n"
-                        + "Do not split a single ingredient with commas. For example write \"1 medium onion, chopped\" as one ingredient item.";
+    public void generateRecipe(String recipeTitle, String ingredients, AiRecipeCallback callback) {
+        String normalizedTitle = recipeTitle == null ? "" : recipeTitle.trim();
+        String normalizedIngredients = ingredients == null ? "" : ingredients.trim();
+
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("Generate a simple cooking social media recipe post.\n\n");
+
+        if (!TextUtils.isEmpty(normalizedTitle)) {
+            prompt.append("Recipe title or concept from the user: ")
+                    .append(normalizedTitle)
+                    .append("\n");
+        }
+
+        if (!TextUtils.isEmpty(normalizedIngredients)) {
+            prompt.append("Ingredients provided by the user: ")
+                    .append(normalizedIngredients)
+                    .append("\n");
+        }
+
+        prompt.append("\n")
+                .append("Use the user input as guidance.\n")
+                .append("If a title is provided, keep the recipe aligned with that idea.\n")
+                .append("If ingredients are provided, make sure the recipe meaningfully uses them.\n")
+                .append("If only one of title or ingredients is provided, infer the missing parts sensibly.\n")
+                .append("The recipe should be realistic, appetizing, and useful for everyday home cooks.\n")
+                .append("It does not need to be especially cheap, student-focused, or ultra-simple unless the input naturally suggests that.\n")
+                .append("Return the result in this exact format:\n")
+                .append("TITLE: ...\n")
+                .append("DESCRIPTION: ...\n")
+                .append("INGREDIENTS: item1 || item2 || item3\n")
+                .append("STEPS: step1 instruction|minutes || step2 instruction|minutes || step3 instruction|minutes\n")
+                .append("TIME: ...\n")
+                .append("BUDGET: Low/Medium/High\n")
+                .append("EQUIPMENT: tool1 || tool2 || tool3\n")
+                .append("Use 0 minutes when a step does not need a timer.\n")
+                .append("Only assign minutes to steps that involve actual cooking, baking, simmering, resting, chilling, freezing, marinating, or heating time.\n")
+                .append("Do not assign time to quick prep actions like chopping, mixing, slicing, cracking, or seasoning, because that varies by person.\n")
+                .append("Important: use || only between separate ingredients or equipment items.\n")
+                .append("Do not split a single ingredient with commas. For example write \"1 medium onion, chopped\" as one ingredient item.");
 
         Content content = new Content.Builder()
-                .addText(prompt)
+                .addText(prompt.toString())
                 .build();
 
         Futures.addCallback(

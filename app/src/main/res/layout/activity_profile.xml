@@ -6,26 +6,31 @@
     android:layout_height="match_parent"
     android:background="@color/secondary">
 
-    <androidx.core.widget.NestedScrollView
-        android:id="@+id/scrollProfile"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:clipToPadding="false"
-        android:fillViewport="true"
-        android:paddingBottom="20dp"
         app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <LinearLayout
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/scrollProfile"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingStart="16dp"
-            android:paddingTop="22dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="24dp">
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:fillViewport="true"
+            android:paddingBottom="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingTop="22dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="24dp">
 
             <TextView
                 android:id="@+id/tvProfileLabel"
@@ -147,6 +152,34 @@
                                 android:textSize="13sp"
                                 tools:text="chef@cookio.app" />
                         </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:id="@+id/btnEdit"
+                                android:layout_width="38dp"
+                                android:layout_height="38dp"
+                                android:background="@drawable/bg_home_icon_button"
+                                android:contentDescription="@string/profile_edit_profile"
+                                android:padding="9dp"
+                                android:src="@android:drawable/ic_menu_edit"
+                                app:tint="@color/textDark" />
+
+                            <ImageView
+                                android:id="@+id/btnProfileMenu"
+                                android:layout_width="38dp"
+                                android:layout_height="38dp"
+                                android:layout_marginStart="8dp"
+                                android:background="@drawable/bg_home_icon_button"
+                                android:contentDescription="@string/profile_more_actions"
+                                android:padding="9dp"
+                                android:src="@drawable/ic_more_vert"
+                                app:tint="@color/textDark" />
+                        </LinearLayout>
                     </LinearLayout>
 
                     <TextView
@@ -177,10 +210,12 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="14dp"
                         android:gravity="center_vertical"
-                        android:orientation="horizontal">
+                        android:orientation="horizontal"
+                        android:weightSum="2">
 
                         <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnCreatePost"
+                            android:id="@+id/btnSavedPosts"
+                            style="@style/ModernSecondaryButton"
                             android:layout_width="0dp"
                             android:layout_height="44dp"
                             android:layout_weight="1"
@@ -191,19 +226,11 @@
                             android:maxLines="1"
                             android:paddingStart="10dp"
                             android:paddingEnd="10dp"
-                            android:text="@string/profile_create_post_button"
-                            android:textAllCaps="false"
-                            android:textColor="@color/white"
-                            android:textSize="12sp"
-                            app:backgroundTint="@color/primary"
-                            app:cornerRadius="18dp"
-                            app:icon="@drawable/add_plus"
-                            app:iconGravity="textStart"
-                            app:iconPadding="4dp"
-                            app:iconTint="@color/white" />
+                            android:text="@string/profile_saved_posts_button"
+                            android:textSize="12sp" />
 
                         <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnSavedPosts"
+                            android:id="@+id/btnToggleView"
                             style="@style/ModernSecondaryButton"
                             android:layout_width="0dp"
                             android:layout_height="44dp"
@@ -216,117 +243,31 @@
                             android:maxLines="1"
                             android:paddingStart="10dp"
                             android:paddingEnd="10dp"
-                            android:text="@string/profile_saved_posts_button"
+                            android:text="@string/profile_view_grid"
+                            android:textAllCaps="false"
+                            android:textColor="@color/textDark"
                             android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <com.google.android.material.card.MaterialCardView
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCreatePost"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                app:cardBackgroundColor="@color/card_white"
-                app:cardCornerRadius="22dp"
-                app:cardElevation="0dp"
-                app:strokeColor="@color/borderSoft"
-                app:strokeWidth="1dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:fontFamily="@font/genty_sans_regular"
-                            android:text="Profile tools"
-                            android:textColor="@color/textDark"
-                            android:textSize="20sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Edit, view, account"
-                            android:textColor="@color/textMuted"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:weightSum="2">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnEdit"
-                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                            android:layout_width="0dp"
-                            android:layout_height="44dp"
-                            android:layout_marginEnd="5dp"
-                            android:layout_weight="1"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:minWidth="0dp"
-                            android:text="@string/profile_edit_button"
-                            android:textAllCaps="false"
-                            android:textColor="@color/textDark"
-                            android:textSize="12sp"
-                            app:backgroundTint="@color/white"
-                            app:cornerRadius="18dp"
-                            app:strokeColor="@color/borderSoft" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btn_toggle_view"
-                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                            android:layout_width="0dp"
-                            android:layout_height="44dp"
-                            android:layout_marginStart="5dp"
-                            android:layout_weight="1"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:minWidth="0dp"
-                            android:text="View"
-                            android:textAllCaps="false"
-                            android:textColor="@color/textDark"
-                            android:textSize="12sp"
-                            app:backgroundTint="@color/white"
-                            app:cornerRadius="18dp"
-                            app:strokeColor="@color/borderSoft" />
-                    </LinearLayout>
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnProfileMenu"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="44dp"
-                        android:layout_marginTop="10dp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:text="@string/profile_account_button"
-                        android:textAllCaps="false"
-                        android:textColor="@color/textDark"
-                        android:textSize="12sp"
-                        app:backgroundTint="@color/surfaceWarm"
-                        app:cornerRadius="18dp"
-                        app:icon="@drawable/account_circle"
-                        app:iconGravity="textStart"
-                        app:iconPadding="8dp"
-                        app:iconTint="@color/chip_text"
-                        app:strokeColor="@color/chip_text" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                android:layout_height="48dp"
+                android:layout_marginTop="12dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="@string/profile_create_post_button"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                app:backgroundTint="@color/primary"
+                app:cornerRadius="20dp"
+                app:icon="@drawable/add_plus"
+                app:iconGravity="textStart"
+                app:iconPadding="6dp"
+                app:iconTint="@color/white" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -548,18 +489,19 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvMyPosts"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:clipToPadding="false"
-                android:nestedScrollingEnabled="false"
-                android:overScrollMode="never"
-                android:paddingBottom="26dp"
-                tools:listitem="@layout/item_post" />
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvMyPosts"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:clipToPadding="false"
+                    android:nestedScrollingEnabled="false"
+                    android:overScrollMode="never"
+                    android:paddingBottom="26dp"
+                    tools:listitem="@layout/item_post" />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <include
         android:id="@+id/bottomNavigation"

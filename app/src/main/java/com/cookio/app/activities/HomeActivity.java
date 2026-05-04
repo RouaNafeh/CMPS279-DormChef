@@ -10,7 +10,6 @@ import android.widget.Toast;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.RadioButton;
 import android.widget.RadioGroup;
 
 
@@ -31,6 +30,7 @@ import com.cookio.app.models.Post;
 import com.cookio.app.models.User;
 import com.cookio.app.utils.CookTimeFormatter;
 import com.cookio.app.utils.AuthVerificationHelper;
+import com.cookio.app.utils.UserDisplayHelper;
 import com.cookio.app.services.CookioMessagingService;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
@@ -41,6 +41,7 @@ import com.google.firebase.firestore.ListenerRegistration;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -64,13 +65,18 @@ public class HomeActivity extends AppCompatActivity {
     private String activeCookSearchQuery = "";
 
     private static final int PAGE_SIZE = 10;
+    private static final String SORT_NONE = "";
+    private static final String SORT_RATING = "rating";
+    private static final String SORT_TIME = "time";
     private DocumentSnapshot lastVisible = null;
     private boolean isLoading = false;
     private boolean isLastPage = false;
-    private boolean filterActive = false;
-    private List<Post> lastFilteredPosts = new ArrayList<>();
     private boolean showFollowingOnly = false;
     private final Set<String> followingUserIds = new HashSet<>();
+    private String selectedIngredientFilter = "";
+    private String selectedBudgetFilter = "";
+    private String selectedMaxTimeFilter = "";
+    private String selectedSort = SORT_NONE;
     private ListenerRegistration unreadNotificationListener;
     private final ActivityResultLauncher<String> notificationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
@@ -122,11 +128,7 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
-        if (!filterActive) {
-            loadFeedData();
-        }
-
+        loadFeedData();
     }
 
     @Override
@@ -189,7 +191,7 @@ public class HomeActivity extends AppCompatActivity {
     private void setupSearch() {
         EditText searchInput = binding.searchBar.findViewById(androidx.appcompat.R.id.search_src_text);
         if (searchInput != null) {
-            searchInput.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            searchInput.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
             searchInput.setHintTextColor(getColor(R.color.textGrey));
             searchInput.setTextColor(getColor(R.color.textDark));
             searchInput.setPadding(0, 0, 0, 0);
@@ -259,7 +261,7 @@ public class HomeActivity extends AppCompatActivity {
 
     private void setupBottomNavigation() {
         BottomNavigationView bottomNavigation = binding.bottomNavigation.bottomNavigation;
-        bottomNavigation.setSelectedItemId(R.id.nav_home);
+        bottomNavigation.getMenu().findItem(R.id.nav_home).setChecked(true);
 
         bottomNavigation.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
@@ -280,87 +282,50 @@ public class HomeActivity extends AppCompatActivity {
     }
     private void showFilterSheet() {
         BottomSheetDialog dialog = new BottomSheetDialog(this);
-        View view = getLayoutInflater().inflate(R.layout.bottom_sheet_filter, null, false);        dialog.setContentView(view);
+        View view = getLayoutInflater().inflate(R.layout.bottom_sheet_filter, null, false);
+        dialog.setContentView(view);
 
         Button btnSortRating = view.findViewById(R.id.btnSortRating);
         Button btnSortTime = view.findViewById(R.id.btnSortTime);
         Button btnApply = view.findViewById(R.id.btnApply);
         Button btnClear = view.findViewById(R.id.btnClear);
         EditText etIngredient = view.findViewById(R.id.etIngredient);
+        EditText etMaxTime = view.findViewById(R.id.etMaxTime);
         RadioGroup radioBudget = view.findViewById(R.id.radioBudget);
 
-        final String[] sort = {""};
-
-        btnSortRating.setAlpha(0.7f);
-        btnSortTime.setAlpha(0.7f);
+        etIngredient.setText(selectedIngredientFilter);
+        etMaxTime.setText(selectedMaxTimeFilter);
+        syncSortButtons(btnSortRating, btnSortTime, selectedSort);
+        syncBudgetSelection(radioBudget, selectedBudgetFilter);
 
         btnSortRating.setOnClickListener(v -> {
-            sort[0] = "rating";
-            btnSortRating.setAlpha(1f);
-            btnSortTime.setAlpha(0.45f);
+            selectedSort = SORT_RATING.equals(selectedSort) ? SORT_NONE : SORT_RATING;
+            syncSortButtons(btnSortRating, btnSortTime, selectedSort);
         });
 
         btnSortTime.setOnClickListener(v -> {
-            sort[0] = "time";
-            btnSortTime.setAlpha(1f);
-            btnSortRating.setAlpha(0.45f);
+            selectedSort = SORT_TIME.equals(selectedSort) ? SORT_NONE : SORT_TIME;
+            syncSortButtons(btnSortRating, btnSortTime, selectedSort);
         });
 
         btnApply.setOnClickListener(v -> {
-            String ingredient = etIngredient.getText().toString().toLowerCase();
-
-            List<Post> filtered = new ArrayList<>();
-
-            for (Post p : allPosts) {
-
-                boolean matches = true;
-
-                // INGREDIENT FILTER
-                if (!ingredient.isEmpty()) {
-                    matches = p.getIngredients().toString().toLowerCase().contains(ingredient);
-                }
-
-                // BUDGET FILTER
-                int selectedId = radioBudget.getCheckedRadioButtonId();
-                if (selectedId != -1) {
-                    RadioButton selected = view.findViewById(selectedId);
-                    String budget = selected.getText().toString();
-
-                    if (!p.getBudget().equalsIgnoreCase(budget)) {
-                        matches = false;
-                    }
-                }
-
-                if (matches) filtered.add(p);
-            }
-
-            // SORT
-            if (sort[0].equals("rating")) {
-                filtered.sort((p1, p2) -> Float.compare(p2.getAvgRating(), p1.getAvgRating()));
-            }
-
-            if (sort[0].equals("time")) {
-                filtered.sort((p1, p2) ->
-                        Integer.compare(
-                                CookTimeFormatter.toSortMinutes(p1.getCookTime()),
-                                CookTimeFormatter.toSortMinutes(p2.getCookTime())
-                        )
-                );
-            }
-
-            filterActive = true;
-            lastFilteredPosts.clear();
-            lastFilteredPosts.addAll(filtered);
-
-            postAdapter.updateData(lastFilteredPosts);
+            selectedIngredientFilter = etIngredient.getText().toString().trim();
+            selectedMaxTimeFilter = etMaxTime.getText().toString().trim();
+            selectedBudgetFilter = resolveSelectedBudget(view, radioBudget);
+            applyCurrentPostFilters();
             dialog.dismiss();
         });
 
         btnClear.setOnClickListener(v -> {
-            filterActive = false;
-            lastFilteredPosts.clear();
-
-            postAdapter.updateData(allPosts);
+            selectedIngredientFilter = "";
+            selectedBudgetFilter = "";
+            selectedMaxTimeFilter = "";
+            selectedSort = SORT_NONE;
+            etIngredient.setText("");
+            etMaxTime.setText("");
+            radioBudget.clearCheck();
+            syncSortButtons(btnSortRating, btnSortTime, selectedSort);
+            applyCurrentPostFilters();
             dialog.dismiss();
         });
 
@@ -396,8 +361,6 @@ public class HomeActivity extends AppCompatActivity {
 
 
     private void refreshFeed() {
-        filterActive = false;
-        lastFilteredPosts.clear();
         loadFeedData();
         searchCooks(currentQuery);
     }
@@ -533,74 +496,224 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void filterAllContent(String text) {
-    filteredPosts.clear();
-
-    if (showFollowingOnly && followingUserIds.isEmpty()) {
-
-        binding.tvEmptyState.setVisibility(View.VISIBLE);
-        binding.tvEmptyState.setText("Follow creators to see their recipes here");
-
-        postAdapter.updateData(filteredPosts);
-        binding.swipeRefreshLayout.setRefreshing(false);
-
-        return;
+        currentQuery = text == null ? "" : text;
+        applyCurrentPostFilters();
     }
 
-    if (text == null || text.trim().isEmpty()) {
+    private void applyCurrentPostFilters() {
+        filteredPosts.clear();
+
+        if (showFollowingOnly && followingUserIds.isEmpty()) {
+            postAdapter.updateData(filteredPosts);
+            binding.tvEmptyState.setVisibility(View.VISIBLE);
+            binding.tvEmptyState.setText("Follow creators to see their recipes here");
+            binding.swipeRefreshLayout.setRefreshing(false);
+            return;
+        }
+
+        String searchQuery = safeLower(currentQuery).trim();
+        List<String> ingredientQueries = parseIngredientFilters(selectedIngredientFilter);
+        String budgetQuery = safeLower(selectedBudgetFilter).trim();
+        int maxTimeMinutes = resolveMaxTimeFilter(selectedMaxTimeFilter);
 
         for (Post post : allPosts) {
-
-            if (showFollowingOnly) {
-
-                if (followingUserIds.isEmpty()) {
-                    filteredPosts.add(post);
-                    continue;
-                }
-
-                if (post.getUid() == null || !followingUserIds.contains(post.getUid())) {
-                    continue;
-                }
-            } 
-
+            if (!matchesFollowingFilter(post)) {
+                continue;
+            }
+            if (!matchesSearchQuery(post, searchQuery)) {
+                continue;
+            }
+            if (!matchesIngredientFilter(post, ingredientQueries)) {
+                continue;
+            }
+            if (!matchesBudgetFilter(post, budgetQuery)) {
+                continue;
+            }
+            if (!matchesMaxTimeFilter(post, maxTimeMinutes)) {
+                continue;
+            }
             filteredPosts.add(post);
         }
 
-    } else {
-        String query = text.toLowerCase().trim();
+        sortPosts(filteredPosts);
+        postAdapter.updateData(filteredPosts);
+        updateEmptyState();
+        binding.swipeRefreshLayout.setRefreshing(false);
+    }
 
-        for (Post post : allPosts) {
-            if (showFollowingOnly) {
-                if (post.getUid() == null || !followingUserIds.contains(post.getUid())) {
-                    continue;
+    private boolean matchesFollowingFilter(Post post) {
+        if (!showFollowingOnly) {
+            return true;
+        }
+        return post.getUid() != null && followingUserIds.contains(post.getUid());
+    }
+
+    private boolean matchesSearchQuery(Post post, String query) {
+        if (query.isEmpty()) {
+            return true;
+        }
+
+        String title = safeLower(post.getTitle());
+        String name = safeLower(post.getName());
+        String username = safeLower(post.getUsername());
+        String description = safeLower(post.getDescription());
+        return title.contains(query) || name.contains(query) || username.contains(query) || description.contains(query);
+    }
+
+    private boolean matchesIngredientFilter(Post post, List<String> ingredientQueries) {
+        if (ingredientQueries.isEmpty()) {
+            return true;
+        }
+
+        if (post.getIngredients() == null || post.getIngredients().isEmpty()) {
+            return false;
+        }
+
+        for (String query : ingredientQueries) {
+            boolean matchedCurrentIngredient = false;
+            for (String ingredient : post.getIngredients()) {
+                if (safeLower(ingredient).contains(query)) {
+                    matchedCurrentIngredient = true;
+                    break;
                 }
             }
+            if (!matchedCurrentIngredient) {
+                return false;
+            }
+        }
+        return true;
+    }
 
-            String title = post.getTitle() == null ? "" : post.getTitle().toLowerCase();
-            String username = post.getUsername() == null ? "" : post.getUsername().toLowerCase();
-            String description = post.getDescription() == null ? "" : post.getDescription().toLowerCase();
+    private boolean matchesBudgetFilter(Post post, String budgetQuery) {
+        if (budgetQuery.isEmpty()) {
+            return true;
+        }
+        return safeLower(post.getBudget()).equals(budgetQuery);
+    }
 
-            if (title.contains(query) || username.contains(query) || description.contains(query)) {
-                filteredPosts.add(post);
+    private boolean matchesMaxTimeFilter(Post post, int maxTimeMinutes) {
+        if (maxTimeMinutes <= 0) {
+            return true;
+        }
+
+        int postMinutes = CookTimeFormatter.toSortMinutes(post.getCookTime());
+        if (postMinutes == Integer.MAX_VALUE) {
+            return false;
+        }
+        return postMinutes <= maxTimeMinutes;
+    }
+
+    private void sortPosts(List<Post> posts) {
+        if (SORT_RATING.equals(selectedSort)) {
+            posts.sort((first, second) -> Float.compare(second.getAvgRating(), first.getAvgRating()));
+            return;
+        }
+
+        if (SORT_TIME.equals(selectedSort)) {
+            posts.sort((first, second) -> Integer.compare(
+                    CookTimeFormatter.toSortMinutes(first.getCookTime()),
+                    CookTimeFormatter.toSortMinutes(second.getCookTime())
+            ));
+        }
+    }
+
+    private void updateEmptyState() {
+        if (!filteredPosts.isEmpty()) {
+            binding.tvEmptyState.setVisibility(View.GONE);
+            return;
+        }
+
+        binding.tvEmptyState.setVisibility(View.VISIBLE);
+        if (showFollowingOnly && followingUserIds.isEmpty()) {
+            binding.tvEmptyState.setText("Follow creators to see their recipes here");
+            return;
+        }
+
+        if (showFollowingOnly) {
+            binding.tvEmptyState.setText("No recipes from creators you follow");
+            return;
+        }
+
+        if (hasActiveFilters() || !currentQuery.trim().isEmpty()) {
+            binding.tvEmptyState.setText("No recipes match your filters");
+            return;
+        }
+
+        binding.tvEmptyState.setText("No recipes found");
+    }
+
+    private boolean hasActiveFilters() {
+        return !selectedIngredientFilter.trim().isEmpty()
+                || !selectedBudgetFilter.trim().isEmpty()
+                || !selectedMaxTimeFilter.trim().isEmpty()
+                || !SORT_NONE.equals(selectedSort);
+    }
+
+    private int resolveMaxTimeFilter(String rawValue) {
+        if (rawValue == null || rawValue.trim().isEmpty()) {
+            return 0;
+        }
+
+        try {
+            return Math.max(Integer.parseInt(rawValue.trim()), 0);
+        } catch (NumberFormatException ignored) {
+            return 0;
+        }
+    }
+
+    private List<String> parseIngredientFilters(String rawValue) {
+        if (rawValue == null || rawValue.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<String> parsed = new ArrayList<>();
+        for (String token : Arrays.asList(rawValue.split(","))) {
+            String normalized = safeLower(token).trim();
+            if (!normalized.isEmpty()) {
+                parsed.add(normalized);
+            }
+        }
+        return parsed;
+    }
+
+    private void syncSortButtons(Button btnSortRating, Button btnSortTime, String sort) {
+        btnSortRating.setAlpha(SORT_RATING.equals(sort) ? 1f : 0.55f);
+        btnSortTime.setAlpha(SORT_TIME.equals(sort) ? 1f : 0.55f);
+    }
+
+    private void syncBudgetSelection(RadioGroup radioBudget, String budget) {
+        radioBudget.clearCheck();
+        if (budget.isEmpty()) {
+            return;
+        }
+
+        for (int index = 0; index < radioBudget.getChildCount(); index++) {
+            View child = radioBudget.getChildAt(index);
+            if (!(child instanceof android.widget.RadioButton)) {
+                continue;
+            }
+
+            android.widget.RadioButton button = (android.widget.RadioButton) child;
+            if (safeLower(button.getText().toString()).equals(safeLower(budget))) {
+                button.setChecked(true);
+                return;
             }
         }
     }
 
-    postAdapter.updateData(filteredPosts);
-
-    if (filteredPosts.isEmpty()) {
-        if (showFollowingOnly) {
-            binding.tvEmptyState.setVisibility(View.VISIBLE);
-            binding.tvEmptyState.setText("Follow creators to see their recipes here");
-        } else {
-            binding.tvEmptyState.setVisibility(View.VISIBLE);
-            binding.tvEmptyState.setText("No recipes found");
+    private String resolveSelectedBudget(View root, RadioGroup radioBudget) {
+        int selectedId = radioBudget.getCheckedRadioButtonId();
+        if (selectedId == -1) {
+            return "";
         }
-    } else {
-        binding.tvEmptyState.setVisibility(View.GONE);
-    }
 
-    binding.swipeRefreshLayout.setRefreshing(false);
-}
+        View selectedView = root.findViewById(selectedId);
+        if (!(selectedView instanceof android.widget.RadioButton)) {
+            return "";
+        }
+
+        return ((android.widget.RadioButton) selectedView).getText().toString().trim();
+    }
 
     private void searchCooks(String rawQuery) {
         String query = rawQuery == null ? "" : rawQuery.trim();
@@ -649,11 +762,11 @@ public class HomeActivity extends AppCompatActivity {
                         }
 
                         String username = safeLower(user.getUsername());
-                        String email = safeLower(user.getEmail());
+                        String name = safeLower(user.getName());
                         String bio = safeLower(user.getBio());
 
                         if (username.contains(normalizedQuery)
-                                || email.contains(normalizedQuery)
+                                || name.contains(normalizedQuery)
                                 || bio.contains(normalizedQuery)) {
                             matchedUsers.add(user);
                         }
@@ -691,24 +804,22 @@ public class HomeActivity extends AppCompatActivity {
 
     private int userMatchRank(User user, String query) {
         String username = safeLower(user.getUsername());
-        String email = safeLower(user.getEmail());
+        String name = safeLower(user.getName());
         if (username.startsWith(query)) {
             return 0;
         }
-        if (email.startsWith(query)) {
+        if (name.startsWith(query)) {
             return 1;
         }
         return 2;
     }
 
     private String resolveUserSortValue(User user) {
-        if (user.getUsername() != null && !user.getUsername().trim().isEmpty()) {
-            return user.getUsername().trim().toLowerCase(Locale.getDefault());
-        }
-        if (user.getEmail() != null && !user.getEmail().trim().isEmpty()) {
-            return user.getEmail().trim().toLowerCase(Locale.getDefault());
-        }
-        return "";
+        return UserDisplayHelper.resolveDisplayName(
+                user.getName(),
+                user.getUsername(),
+                ""
+        ).trim().toLowerCase(Locale.getDefault());
     }
 
     private String safeLower(String value) {
@@ -723,6 +834,7 @@ public class HomeActivity extends AppCompatActivity {
         intent.putExtra(PostDetailActivity.EXTRA_POST_IMAGE_URL, post.getImageUrl());
         intent.putExtra(PostDetailActivity.EXTRA_POST_COOK_TIME, post.getCookTime());
         intent.putExtra(PostDetailActivity.EXTRA_POST_BUDGET, post.getBudget());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_AUTHOR_NAME, post.getDisplayName());
         intent.putExtra(PostDetailActivity.EXTRA_POST_USERNAME, post.getUsername());
         intent.putExtra(PostDetailActivity.EXTRA_POST_UID, post.getUid());
         intent.putExtra(PostDetailActivity.EXTRA_POST_LIKES_COUNT, post.getLikesCount());

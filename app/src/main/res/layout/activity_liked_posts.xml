@@ -5,109 +5,121 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_home_screen">
 
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/headerWrap"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="18dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:cardBackgroundColor="@android:color/transparent"
-        app:cardCornerRadius="26dp"
-        app:cardElevation="0dp"
-        app:strokeWidth="0dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_collection_header_liked"
-            android:orientation="vertical"
-            android:padding="18dp">
-
-
-
-            <TextView
-                android:id="@+id/likedTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:fontFamily="@font/genty_sans_regular"
-                android:text="@string/liked_posts_title"
-                android:textColor="@color/textDark"
-                android:textSize="30sp" />
-
-            <TextView
-                android:id="@+id/likedSubtitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="@string/liked_posts_subtitle"
-                android:textColor="@color/textGrey"
-                android:textSize="13sp" />
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:layout_marginTop="6dp"
-                android:orientation="horizontal">
-
-                <androidx.appcompat.widget.AppCompatImageButton
-                    android:id="@+id/btnBack"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="@drawable/bg_home_icon_button"
-                    android:contentDescription="@string/back_to_landing"
-                    android:padding="8dp"
-                    android:src="@drawable/arrow_back"
-                    app:tint="@color/textDark" />
-
-                <TextView
-                    android:id="@+id/likedCount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
-                    android:background="@drawable/bg_collection_count_pill"
-                    android:paddingStart="11dp"
-                    android:paddingTop="6dp"
-                    android:paddingEnd="11dp"
-                    android:paddingBottom="6dp"
-                    android:text="0 posts"
-                    android:textColor="@color/white"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
-
-    <ProgressBar
-        android:id="@+id/progressBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
+        android:layout_height="0dp"
         app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/headerWrap" />
+        app:layout_constraintTop_toTopOf="parent">
 
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/emptyState"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        android:visibility="gone"
-        app:cardBackgroundColor="@color/card_white"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="0dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/headerWrap"
-        app:strokeColor="@color/borderSoft"
-        app:strokeWidth="1dp">
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="18dp">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/headerWrap"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="18dp"
+                    android:layout_marginEnd="16dp"
+                    app:cardBackgroundColor="@android:color/transparent"
+                    app:cardCornerRadius="26dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_collection_header_liked"
+                        android:orientation="vertical"
+                        android:padding="18dp">
+
+
+
+                        <TextView
+                            android:id="@+id/likedTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="14dp"
+                            android:fontFamily="@font/genty_sans_regular"
+                            android:text="@string/liked_posts_title"
+                            android:textColor="@color/textDark"
+                            android:textSize="30sp" />
+
+                        <TextView
+                            android:id="@+id/likedSubtitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="@string/liked_posts_subtitle"
+                            android:textColor="@color/textGrey"
+                            android:textSize="13sp" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <androidx.appcompat.widget.AppCompatImageButton
+                                android:id="@+id/btnBack"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:background="@drawable/bg_home_icon_button"
+                                android:contentDescription="@string/back_to_landing"
+                                android:padding="8dp"
+                                android:src="@drawable/arrow_back"
+                                app:tint="@color/textDark" />
+
+                            <TextView
+                                android:id="@+id/likedCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="10dp"
+                                android:background="@drawable/bg_collection_count_pill"
+                                android:paddingStart="11dp"
+                                android:paddingTop="6dp"
+                                android:paddingEnd="11dp"
+                                android:paddingBottom="6dp"
+                                android:text="0 posts"
+                                android:textColor="@color/white"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="16dp"
+                    android:visibility="gone" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/emptyState"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginEnd="16dp"
+                    android:visibility="gone"
+                    app:cardBackgroundColor="@color/card_white"
+                    app:cardCornerRadius="24dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="@color/borderSoft"
+                    app:strokeWidth="1dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -155,22 +167,22 @@
                 android:textColor="@color/accent_pink"
                 android:textSize="12sp"
                 android:textStyle="bold" />
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerLikedPosts"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="12dp"
-        android:clipToPadding="false"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="18dp"
-        app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/headerWrap" />
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerLikedPosts"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:clipToPadding="false"
+                    android:nestedScrollingEnabled="false"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="18dp" />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <include
         android:id="@+id/bottomNavigation"

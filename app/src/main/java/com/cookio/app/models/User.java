@@ -4,6 +4,7 @@ import java.util.Date;
 
 public class User {
     private String uid;
+    private String name;
     private String username;
     private String email;
     private String bio;
@@ -17,8 +18,9 @@ public class User {
 
     }
 
-    public User(String uid, String username, String email, String bio, String profileImageUrl, Date createdAt, int followerCount, int followingCount) {
+    public User(String uid, String name, String username, String email, String bio, String profileImageUrl, Date createdAt, int followerCount, int followingCount) {
         this.uid = uid;
+        this.name = name;
         this.username = username;
         this.bio = bio;
         this.email = email;
@@ -30,6 +32,10 @@ public class User {
 
     public String getUid() {
         return uid;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public String getUsername() {
@@ -58,6 +64,10 @@ public class User {
 
     public void setUid(String uid) {
         this.uid = uid;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void setUsername(String username) {

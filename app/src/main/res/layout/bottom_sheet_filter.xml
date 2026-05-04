@@ -2,54 +2,53 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="@drawable/bg_rounded_top"
     android:orientation="vertical"
-    android:padding="20dp"
-    android:background="@drawable/bg_rounded_top">
+    android:padding="18dp">
 
-    <!-- TITLE -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Filter &amp; Sort"
-        android:textSize="20sp"
-        android:textStyle="bold"
+        android:layout_marginBottom="16dp"
+        android:text="Filter and sort"
         android:textColor="@color/textDark"
-        android:layout_marginBottom="16dp" />
+        android:textSize="18sp"
+        android:textStyle="bold" />
 
-    <!-- SORT -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Sort by"
+        android:textColor="@color/textDark"
         android:textStyle="bold" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="8dp">
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
 
         <Button
             android:id="@+id/btnSortRating"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="⭐ Rating" />
+            android:text="Top rated" />
 
         <Button
             android:id="@+id/btnSortTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="⏱ Time"
-            android:layout_marginStart="8dp" />
+            android:layout_marginStart="8dp"
+            android:text="Quickest first" />
     </LinearLayout>
 
-    <!-- BUDGET -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
         android:text="Budget"
-        android:textStyle="bold"
-        android:layout_marginTop="16dp" />
+        android:textColor="@color/textDark"
+        android:textStyle="bold" />
 
     <RadioGroup
         android:id="@+id/radioBudget"
@@ -73,35 +72,59 @@
             android:text="High" />
     </RadioGroup>
 
-    <!-- INGREDIENT -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
         android:text="Ingredients"
-        android:textStyle="bold"
-        android:layout_marginTop="16dp" />
+        android:textColor="@color/textDark"
+        android:textStyle="bold" />
 
     <EditText
         android:id="@+id/etIngredient"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Type ingredient..."
+        android:layout_height="44dp"
+        android:layout_marginTop="8dp"
         android:background="@drawable/search_background"
-        android:padding="12dp" />
+        android:hint="Ingredients, separated by commas"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:singleLine="true"
+        android:textSize="13sp" />
 
-    <!-- ACTIONS -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Max time (minutes)"
+        android:textColor="@color/textDark"
+        android:textStyle="bold" />
+
+    <EditText
+        android:id="@+id/etMaxTime"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/search_background"
+        android:hint="Example: 30"
+        android:inputType="number"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:singleLine="true"
+        android:textSize="13sp" />
+
     <Button
         android:id="@+id/btnApply"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Apply"
-        android:layout_marginTop="20dp" />
+        android:layout_marginTop="20dp"
+        android:text="Apply" />
 
     <Button
         android:id="@+id/btnClear"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Clear"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="8dp"
+        android:text="Clear" />
 
 </LinearLayout>

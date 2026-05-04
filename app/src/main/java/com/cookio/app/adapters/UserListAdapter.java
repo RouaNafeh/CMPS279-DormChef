@@ -15,11 +15,10 @@ import com.bumptech.glide.Glide;
 import com.cookio.app.R;
 import com.cookio.app.activities.PublicProfileActivity;
 import com.cookio.app.models.User;
+import com.cookio.app.utils.UserDisplayHelper;
 import com.google.android.material.imageview.ShapeableImageView;
 
 import java.util.List;
-import java.util.Locale;
-
 public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.UserViewHolder> {
     private final Context context;
     private final List<User> users;
@@ -43,7 +42,7 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.UserVi
         String displayName = resolveDisplayName(user);
 
         holder.tvName.setText(displayName);
-        holder.tvEmail.setText(valueOrEmpty(user.getEmail()));
+        holder.tvEmail.setText(UserDisplayHelper.resolveHandle(user.getUsername()));
         holder.tvAvatarInitial.setText(resolveInitial(displayName));
 
         if (!TextUtils.isEmpty(user.getProfileImageUrl())) {
@@ -76,26 +75,18 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.UserVi
     }
 
     private String resolveDisplayName(User user) {
-        if (!TextUtils.isEmpty(user.getUsername())) {
-            return user.getUsername();
-        }
-        if (!TextUtils.isEmpty(user.getEmail()) && user.getEmail().contains("@")) {
-            return user.getEmail().substring(0, user.getEmail().indexOf('@'));
-        }
-        return context.getString(R.string.profile_default_username);
+        return UserDisplayHelper.resolveDisplayName(
+                user.getName(),
+                user.getUsername(),
+                context.getString(R.string.profile_default_username)
+        );
     }
 
     private String resolveInitial(String value) {
-        if (TextUtils.isEmpty(value)) {
-            return context.getString(R.string.profile_default_username)
-                    .substring(0, 1)
-                    .toUpperCase(Locale.getDefault());
-        }
-        return value.substring(0, 1).toUpperCase(Locale.getDefault());
-    }
-
-    private String valueOrEmpty(String value) {
-        return value == null ? "" : value;
+        return UserDisplayHelper.resolveInitial(
+                value,
+                context.getString(R.string.profile_default_username)
+        );
     }
 
     static class UserViewHolder extends RecyclerView.ViewHolder {

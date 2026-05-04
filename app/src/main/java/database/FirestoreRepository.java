@@ -55,6 +55,9 @@ public class FirestoreRepository {
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
                         User user = documentSnapshot.toObject(User.class);
+                        if (user != null && (user.getUid() == null || user.getUid().trim().isEmpty())) {
+                            user.setUid(documentSnapshot.getId());
+                        }
                         listener.onSuccess(user);
                     } else {
                         listener.onFailure(new Exception("User not found"));

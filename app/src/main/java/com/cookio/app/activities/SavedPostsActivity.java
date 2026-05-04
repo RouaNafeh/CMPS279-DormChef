@@ -80,6 +80,7 @@ public class SavedPostsActivity extends AppCompatActivity {
         binding.recyclerSavedPosts.setAdapter(postAdapter);
 
         setupBottomNavigation();
+        binding.swipeRefreshLayout.setOnRefreshListener(this::loadSavedPosts);
 
         loadSavedPosts();
     }
@@ -92,6 +93,7 @@ public class SavedPostsActivity extends AppCompatActivity {
 
     private void loadSavedPosts() {
         if (auth.getCurrentUser() == null) {
+            binding.swipeRefreshLayout.setRefreshing(false);
             Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -126,6 +128,7 @@ public class SavedPostsActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     binding.progressBar.setVisibility(View.GONE);
+                    binding.swipeRefreshLayout.setRefreshing(false);
                     Toast.makeText(this, "Failed to load saved posts", Toast.LENGTH_SHORT).show();
                 });
     }
@@ -150,6 +153,7 @@ public class SavedPostsActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     binding.progressBar.setVisibility(View.GONE);
+                    binding.swipeRefreshLayout.setRefreshing(false);
                     Toast.makeText(this, "Failed to fetch saved posts", Toast.LENGTH_SHORT).show();
                 });
     }
@@ -200,6 +204,7 @@ public class SavedPostsActivity extends AppCompatActivity {
         int count = savedPostsList.size();
         binding.savedCount.setText(count + (count == 1 ? " post" : " posts"));
         binding.progressBar.setVisibility(View.GONE);
+        binding.swipeRefreshLayout.setRefreshing(false);
         binding.emptyState.setVisibility(savedPostsList.isEmpty() ? View.VISIBLE : View.GONE);
         binding.recyclerSavedPosts.setVisibility(savedPostsList.isEmpty() ? View.GONE : View.VISIBLE);
     }
@@ -223,6 +228,7 @@ public class SavedPostsActivity extends AppCompatActivity {
         intent.putExtra(PostDetailActivity.EXTRA_POST_IMAGE_URL, post.getImageUrl());
         intent.putExtra(PostDetailActivity.EXTRA_POST_COOK_TIME, post.getCookTime());
         intent.putExtra(PostDetailActivity.EXTRA_POST_BUDGET, post.getBudget());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_AUTHOR_NAME, post.getDisplayName());
         intent.putExtra(PostDetailActivity.EXTRA_POST_USERNAME, post.getUsername());
         intent.putExtra(PostDetailActivity.EXTRA_POST_UID, post.getUid());
         intent.putExtra(PostDetailActivity.EXTRA_POST_LIKES_COUNT, post.getLikesCount());
@@ -264,7 +270,7 @@ public class SavedPostsActivity extends AppCompatActivity {
 
     private void setupBottomNavigation() {
         BottomNavigationView bottomNavigation = binding.bottomNavigation.bottomNavigation;
-        bottomNavigation.setSelectedItemId(R.id.nav_saved);
+        bottomNavigation.getMenu().findItem(R.id.nav_saved).setChecked(true);
         bottomNavigation.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_saved) {

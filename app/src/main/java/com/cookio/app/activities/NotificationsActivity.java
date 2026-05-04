@@ -55,6 +55,7 @@ public class NotificationsActivity extends AppCompatActivity {
         binding.rvNotifications.setAdapter(adapter);
 
         binding.tvMarkAllRead.setOnClickListener(v -> markAllRead());
+        binding.swipeRefreshLayout.setOnRefreshListener(this::loadNotifications);
 
         loadNotifications();
     }
@@ -78,6 +79,7 @@ public class NotificationsActivity extends AppCompatActivity {
                     }
                     adapter.updateData(notifications);
                     binding.progressBar.setVisibility(View.GONE);
+                    binding.swipeRefreshLayout.setRefreshing(false);
 
                     boolean isEmpty = notifications.isEmpty();
                     binding.emptyState.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
@@ -85,6 +87,7 @@ public class NotificationsActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     binding.progressBar.setVisibility(View.GONE);
+                    binding.swipeRefreshLayout.setRefreshing(false);
                     Toast.makeText(this, "Failed to load notifications", Toast.LENGTH_SHORT).show();
                 });
     }
@@ -140,6 +143,7 @@ public class NotificationsActivity extends AppCompatActivity {
                     intent.putExtra(PostDetailActivity.EXTRA_POST_IMAGE_URL,   doc.getString("imageUrl"));
                     intent.putExtra(PostDetailActivity.EXTRA_POST_COOK_TIME,   doc.getString("cookTime"));
                     intent.putExtra(PostDetailActivity.EXTRA_POST_BUDGET,      doc.getString("budget"));
+                    intent.putExtra(PostDetailActivity.EXTRA_POST_AUTHOR_NAME, doc.getString("name"));
                     intent.putExtra(PostDetailActivity.EXTRA_POST_USERNAME,    doc.getString("username"));
                     intent.putExtra(PostDetailActivity.EXTRA_POST_UID, doc.getString("uid"));
                     Long likes = doc.getLong("likesCount");
@@ -187,6 +191,7 @@ public class NotificationsActivity extends AppCompatActivity {
             }
         }
         adapter.notifyDataSetChanged();
+        loadNotifications();
     }
 
     // ── Static helper: get unread count for badge ─────────────

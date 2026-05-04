@@ -95,7 +95,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="10dp"
                     android:layout_weight="1"
-                    android:text="Start with your own recipe or let AI build a first draft from your ingredients."
+                    android:text="Start with your own recipe or let AI build a first draft from a title, ingredients, or both."
                     android:textColor="@color/textDark"
                     android:textSize="13sp" />
             </LinearLayout>
@@ -310,7 +310,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Best when you already entered a few ingredients first." />
+                        android:text="Best when you enter a title, ingredients, or both first." />
 
                     <com.google.android.material.textfield.TextInputLayout
                         style="@style/ModernInputLayout"
@@ -604,11 +604,20 @@
                     android:text="Your recipe will appear in the community feed and on your profile." />
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnClearForm"
+                    style="@style/ModernSecondaryButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Clear"
+                    android:textAllCaps="false" />
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnPost"
                     style="@style/ModernPrimaryButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
+                    android:layout_marginTop="10dp"
                     android:text="Post Recipe" />
             </LinearLayout>
         </LinearLayout>

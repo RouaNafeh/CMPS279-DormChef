@@ -3,6 +3,7 @@ package com.cookio.app.adapters;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +17,8 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.cookio.app.R;
 import com.cookio.app.activities.PublicProfileActivity;
@@ -143,15 +146,17 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
     @Override
     public void onBindViewHolder(@NonNull PostViewHolder holder, int position) {
         Post post = postList.get(position);
+        holder.itemView.setTag(post.getPostId());
+        String displayName = post.getDisplayName();
 
         holder.postTitle.setText(post.getTitle());
-        holder.postUsername.setText(post.getUsername() == null || post.getUsername().trim().isEmpty()
+        holder.postUsername.setText(displayName == null || displayName.trim().isEmpty()
                 ? "by Chef"
-                : "by " + post.getUsername());
-        holder.postAvatar.setText(resolveAvatarInitial(post.getUsername()));
+                : "by " + displayName);
+        holder.postAvatar.setText(resolveAvatarInitial(displayName));
         holder.postDescription.setText(post.getDescription());
-        holder.postCookTime.setText(CookTimeFormatter.normalize(post.getCookTime()));
-        holder.postBudget.setText(post.getBudget());
+        holder.postCookTime.setText(resolveCookTime(post.getCookTime()));
+        holder.postBudget.setText(resolveBudget(post.getBudget()));
         holder.likesCount.setText(String.valueOf(post.getLikesCount()));
 
         loadPostRating(post, holder);
@@ -283,12 +288,8 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
     }
 
     private void bindAvatar(Post post, PostViewHolder holder) {
-        String profileImageUrl = post.getProfileImageUrl();
-        if (profileImageUrl != null && !profileImageUrl.trim().isEmpty()) {
-            showAvatarImage(holder, profileImageUrl);
-            cacheProfileImage(post.getUid(), profileImageUrl);
-            return;
-        }
+        holder.boundPostId = post.getPostId();
+        holder.boundAuthorUid = post.getUid();
 
         String cachedUrl = post.getUid() == null ? null : profileImageUrlCache.get(post.getUid());
         if (cachedUrl != null && !cachedUrl.trim().isEmpty()) {
@@ -298,6 +299,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
 
         showAvatarInitial(holder);
         if (post.getUid() == null || post.getUid().trim().isEmpty()) {
+            fetchAvatarByUsername(post, holder);
             return;
         }
 
@@ -306,32 +308,62 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
                 .document(post.getUid())
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
-                    String fetchedUrl = documentSnapshot.getString("profileImageUrl");
-                    post.setProfileImageUrl(fetchedUrl);
-                    cacheProfileImage(post.getUid(), fetchedUrl);
-
-                    if (holder.getBindingAdapterPosition() == RecyclerView.NO_POSITION) {
+                    if (!isHolderStillBound(holder, post)) {
                         return;
                     }
 
+                    String fetchedUrl = documentSnapshot.getString("profileImageUrl");
+                    if (!documentSnapshot.exists()) {
+                        fetchAvatarByUsername(post, holder);
+                        return;
+                    }
+                    post.setProfileImageUrl(fetchedUrl);
+                    cacheProfileImage(post.getUid(), fetchedUrl);
+
                     if (fetchedUrl == null || fetchedUrl.trim().isEmpty()) {
-                        showAvatarInitial(holder);
+                        fetchAvatarByUsername(post, holder);
                     } else {
                         showAvatarImage(holder, fetchedUrl);
                     }
                 })
-                .addOnFailureListener(e -> showAvatarInitial(holder));
+                .addOnFailureListener(e -> {
+                    if (isHolderStillBound(holder, post)) {
+                        fetchAvatarByUsername(post, holder);
+                    }
+                });
     }
 
     private void showAvatarImage(PostViewHolder holder, String imageUrl) {
-        holder.postAvatar.setVisibility(View.GONE);
+        holder.postAvatar.setVisibility(View.VISIBLE);
         holder.postAvatarImage.setVisibility(View.VISIBLE);
 
         Glide.with(holder.itemView)
                 .load(imageUrl)
-                .placeholder(R.drawable.logo)
-                .error(R.drawable.logo)
-                .circleCrop()
+                .centerCrop()
+                .listener(new RequestListener<android.graphics.drawable.Drawable>() {
+                    @Override
+                    public boolean onLoadFailed(@Nullable com.bumptech.glide.load.engine.GlideException e,
+                                                Object model,
+                                                Target<android.graphics.drawable.Drawable> target,
+                                                boolean isFirstResource) {
+                        showAvatarInitial(holder);
+                        return true;
+                    }
+
+                    @Override
+                    public boolean onResourceReady(android.graphics.drawable.Drawable resource,
+                                                   Object model,
+                                                   Target<android.graphics.drawable.Drawable> target,
+                                                   com.bumptech.glide.load.DataSource dataSource,
+                                                   boolean isFirstResource) {
+                        if (!isHolderStillBound(holder, holder.boundPostId)) {
+                            return true;
+                        }
+                        holder.postAvatar.setVisibility(View.GONE);
+                        holder.postAvatarImage.setVisibility(View.VISIBLE);
+                        return false;
+                    }
+                })
                 .into(holder.postAvatarImage);
     }
 
@@ -339,6 +371,67 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         holder.postAvatarImage.setImageDrawable(null);
         holder.postAvatarImage.setVisibility(View.GONE);
         holder.postAvatar.setVisibility(View.VISIBLE);
+    }
+
+    private void fetchAvatarByUsername(Post post, PostViewHolder holder) {
+        String username = post.getUsername();
+        if (username == null || username.trim().isEmpty()) {
+            showAvatarInitial(holder);
+            return;
+        }
+
+        FirebaseFirestore.getInstance()
+                .collection("users")
+                .whereEqualTo("username", username)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (!isHolderStillBound(holder, post)) {
+                        return;
+                    }
+
+                    if (querySnapshot.isEmpty()) {
+                        showAvatarInitial(holder);
+                        return;
+                    }
+
+                    DocumentSnapshot userDoc = querySnapshot.getDocuments().get(0);
+                    String fetchedUrl = userDoc.getString("profileImageUrl");
+                    if (fetchedUrl == null || fetchedUrl.trim().isEmpty()) {
+                        showAvatarInitial(holder);
+                        return;
+                    }
+
+                    post.setProfileImageUrl(fetchedUrl);
+                    String resolvedUid = post.getUid();
+                    if ((resolvedUid == null || resolvedUid.trim().isEmpty()) && userDoc.getId() != null) {
+                        cacheProfileImage(userDoc.getId(), fetchedUrl);
+                    } else {
+                        cacheProfileImage(resolvedUid, fetchedUrl);
+                    }
+                    showAvatarImage(holder, fetchedUrl);
+                })
+                .addOnFailureListener(e -> {
+                    if (isHolderStillBound(holder, post)) {
+                        showAvatarInitial(holder);
+                    }
+                });
+    }
+
+    private boolean isHolderStillBound(PostViewHolder holder, Post post) {
+        return isHolderStillBound(holder, post == null ? null : post.getPostId());
+    }
+
+    private boolean isHolderStillBound(PostViewHolder holder, @Nullable String postId) {
+        if (holder.getBindingAdapterPosition() == RecyclerView.NO_POSITION) {
+            return false;
+        }
+
+        if (postId == null) {
+            return false;
+        }
+
+        return postId.equals(holder.boundPostId);
     }
 
     private void cacheProfileImage(@Nullable String uid, @Nullable String imageUrl) {
@@ -468,7 +561,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
                 );
             } else {
                 String myUsername = context.getSharedPreferences("cookio_prefs", Context.MODE_PRIVATE)
-                        .getString("username", "Chef");
+                        .getString("display_name", "Chef");
 
                 String myPhotoUrl = context.getSharedPreferences("cookio_prefs", Context.MODE_PRIVATE)
                         .getString("photoUrl", "");
@@ -607,6 +700,21 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         return trimmed.substring(0, 1).toUpperCase();
     }
 
+    private String resolveCookTime(String cookTime) {
+        String normalized = CookTimeFormatter.normalize(cookTime);
+        if (TextUtils.isEmpty(normalized)) {
+            return context.getString(R.string.post_time_placeholder);
+        }
+        return normalized;
+    }
+
+    private String resolveBudget(String budget) {
+        if (budget == null || budget.trim().isEmpty()) {
+            return context.getString(R.string.post_budget_placeholder);
+        }
+        return budget.trim();
+    }
+
     static class PostViewHolder extends RecyclerView.ViewHolder {
         TextView postTitle, postUsername, postDescription, postCookTime, postBudget, likesCount, postRating;
         TextView postAvatar;
@@ -614,6 +722,8 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         ImageView postImage;
         ImageButton saveButton, likeButton;
         ImageButton deleteButton;
+        String boundPostId;
+        String boundAuthorUid;
 
         public PostViewHolder(@NonNull View itemView) {
             super(itemView);

@@ -1,0 +1,42 @@
+ <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cookio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <div class="card">
+        <div class="logo">
+          <span class="logo-icon">&#127859;</span>
+          <span class="logo-text">Cookio</span>
+        </div>
+        <h1 id="title">Loading...</h1>
+        <p id="message">Please wait.</p>
+
+        <form id="resetForm" class="hidden">
+          <div class="input-wrapper">
+            <label for="newPassword">New password</label>
+            <input
+              id="newPassword"
+              type="password"
+              placeholder="Minimum 6 characters"
+              minlength="6"
+              required
+            />
+          </div>
+          <button type="submit">Update password</button>
+        </form>
+
+        <button id="backButton" class="hidden back-btn" type="button">Back to Cookio</button>
+      </div>
+    </main>
+
+    <script type="module" src="app.js"></script>
+  </body>
+  </html>

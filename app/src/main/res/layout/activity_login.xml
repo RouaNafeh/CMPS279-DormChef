@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/secondary"
+    android:background="@drawable/bg_auth_screen"
     android:clipToPadding="false"
     android:fillViewport="true"
     tools:context=".activities.LoginActivity">
@@ -22,14 +22,54 @@
             android:id="@+id/back_button"
             style="@style/ModernSecondaryButton"
             android:layout_width="wrap_content"
-            android:text="@string/back_to_landing" />
+            android:layout_height="44dp"
+            android:text="@string/back_to_landing"
+            android:textSize="13sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:gravity="top"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/genty_sans_regular"
+                    android:text="@string/login_title"
+                    android:textColor="@color/textDark"
+                    android:textSize="32sp" />
+
+                <TextView
+                    style="@style/ScreenSubtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/login_subtitle" />
+            </LinearLayout>
+
+            <ImageView
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="14dp"
+                android:background="@drawable/bg_auth_logo_badge"
+                android:padding="9dp"
+                android:src="@drawable/logo" />
+        </LinearLayout>
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="22dp"
             app:cardBackgroundColor="@color/card_white"
-            app:cardCornerRadius="30dp"
+            app:cardCornerRadius="28dp"
             app:cardElevation="0dp"
             app:strokeColor="@color/borderSoft"
             app:strokeWidth="1dp">
@@ -38,27 +78,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="24dp">
-
-                <TextView
-                    style="@style/ScreenTitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/login_title" />
-
-                <TextView
-                    style="@style/ScreenSubtitle"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/login_subtitle" />
+                android:padding="22dp">
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/email_input_layout"
                     style="@style/ModernInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
                     android:hint="@string/email_label">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -84,35 +110,35 @@
                         android:inputType="textPassword" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/login_button"
-                    style="@style/ModernPrimaryButton"
-                    android:layout_width="match_parent"
-                    android:layout_marginTop="22dp"
-                    android:text="@string/log_in" />
-
                 <TextView
                     android:id="@+id/forgot_password_link"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="14dp"
+                    android:layout_gravity="end"
+                    android:layout_marginTop="12dp"
                     android:text="@string/forgot_password"
                     android:textColor="@color/textMuted"
-                    android:textSize="14sp"
+                    android:textSize="13sp"
                     android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/signup_link"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="18dp"
-                    android:text="@string/go_to_signup"
-                    android:textColor="@color/primary"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/login_button"
+                    style="@style/ModernPrimaryButton"
+                    android:layout_width="match_parent"
+                    android:layout_marginTop="20dp"
+                    android:text="@string/log_in" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:id="@+id/signup_link"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="22dp"
+            android:text="@string/go_to_signup"
+            android:textColor="@color/primary"
+            android:textSize="15sp"
+            android:textStyle="bold" />
     </LinearLayout>
 </ScrollView>

@@ -54,7 +54,7 @@
                             android:layout_height="wrap_content"
                             android:layout_centerVertical="true"
                             android:fontFamily="@font/poppins_medium"
-                            android:text="Fresh recipes"
+                            android:text="@string/home_subtitle"
                             android:textColor="@color/textGrey"
                             android:textSize="13sp" />
                     </LinearLayout>
@@ -95,18 +95,18 @@
                     android:background="@drawable/bg_home_search_surface"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:padding="6dp">
+                    android:padding="5dp">
 
                     <FrameLayout
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
                         android:layout_marginStart="2dp"
-                        android:layout_marginEnd="6dp"
+                        android:layout_marginEnd="4dp"
                         android:background="@drawable/bg_home_icon_button">
 
                         <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
                             android:layout_gravity="center"
                             android:src="@drawable/ic_search"
                             app:tint="@color/textGrey" />
@@ -115,7 +115,7 @@
                     <androidx.appcompat.widget.SearchView
                         android:id="@+id/searchBar"
                         android:layout_width="0dp"
-                        android:layout_height="40dp"
+                        android:layout_height="36dp"
                         android:layout_weight="1"
                         android:background="@android:color/transparent"
                         app:iconifiedByDefault="false"
@@ -125,11 +125,11 @@
 
                     <ImageView
                         android:id="@+id/filterBtn"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:layout_marginStart="6dp"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_marginStart="4dp"
                         android:background="@drawable/bg_home_icon_button"
-                        android:padding="10dp"
+                        android:padding="9dp"
                         android:src="@drawable/filter"
                         app:tint="@color/textDark" />
                 </LinearLayout>

@@ -8,6 +8,7 @@ import java.util.List;
 public class Post {
     private String postId;
     private String uid;
+    private String name;
     private String username;
     private String title;
     private String description;
@@ -27,10 +28,11 @@ public class Post {
     // Required empty constructor for Firestore deserialization
     public Post() {}
 
-    public Post(String uid, String username, String title, String description,
+    public Post(String uid, String name, String username, String title, String description,
                 String cookTime, String budget, List<String> ingredients, List<String> equipment,
                 List<String> steps, String imageUrl) {
         this.uid         = uid;
+        this.name        = name;
         this.username    = username;
         this.title       = title;
         this.description = description;
@@ -45,6 +47,7 @@ public class Post {
 
     public String getPostId()           { return postId; }
     public String getUid()              { return uid; }
+    public String getName()             { return name; }
     public String getUsername()         { return username; }
     public String getTitle()            { return title; }
     public String getDescription()      { return description; }
@@ -59,10 +62,21 @@ public class Post {
     public int getLikesCount()          { return likesCount; }
     public float getAvgRating() { return avgRating; }
     public int getReviewsCount() { return reviewsCount; }
+    public String getDisplayName() {
+        if (name != null && !name.trim().isEmpty()) {
+            return name;
+        }
+        if (username != null && !username.trim().isEmpty()) {
+            return username;
+        }
+        return "";
+    }
     public void setAvgRating(float avgRating) { this.avgRating = avgRating; }
     public void setReviewsCount(int reviewsCount) { this.reviewsCount = reviewsCount; }
 
     public void setPostId(String postId)        { this.postId = postId; }
     public void setLikesCount(int likesCount)   { this.likesCount = likesCount; }
     public void setProfileImageUrl(String profileImageUrl) { this.profileImageUrl = profileImageUrl; }
+    public void setName(String name) { this.name = name; }
+    public void setUsername(String username) { this.username = username; }
 }

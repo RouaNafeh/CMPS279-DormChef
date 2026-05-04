@@ -1,7 +1,10 @@
 package com.cookio.app.activities;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -14,7 +17,9 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.cookio.app.R;
 import com.cookio.app.ai.AiRecipeHelper;
@@ -23,6 +28,7 @@ import com.cookio.app.models.CookingStep;
 import com.cookio.app.models.CookingStepParser;
 import com.cookio.app.models.Post;
 import com.cookio.app.utils.CookTimeFormatter;
+import com.cookio.app.utils.UserDisplayHelper;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -71,6 +77,14 @@ public class CreatePostActivity extends AppCompatActivity {
                     binding.tvReselect.setVisibility(View.VISIBLE);
                 }
             });
+    private final ActivityResultLauncher<String> photoPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+                if (granted) {
+                    imagePickerLauncher.launch("image/*");
+                } else {
+                    Toast.makeText(this, R.string.photo_permission_denied, Toast.LENGTH_SHORT).show();
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,8 +112,8 @@ public class CreatePostActivity extends AppCompatActivity {
         }
 
         binding.btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
-        binding.imagePickerContainer.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
-        binding.tvReselect.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
+        binding.imagePickerContainer.setOnClickListener(v -> requestPhotoAccessAndPickImage());
+        binding.tvReselect.setOnClickListener(v -> requestPhotoAccessAndPickImage());
 
         addIngredientRow("");
         addEquipmentRow("");
@@ -109,6 +123,7 @@ public class CreatePostActivity extends AppCompatActivity {
         binding.btnAddEquipment.setOnClickListener(v -> addEquipmentRow(""));
         binding.btnAddStep.setOnClickListener(v -> addStepRow(new CookingStep("", 0)));
         binding.btnPost.setOnClickListener(v -> validateAndPost());
+        binding.btnClearForm.setOnClickListener(v -> confirmClearForm());
 
         aiRecipeHelper = new AiRecipeHelper();
         binding.btnGenerateAi.setOnClickListener(v -> generateWithAi());
@@ -301,6 +316,28 @@ public class CreatePostActivity extends AppCompatActivity {
         }
     }
 
+    private void requestPhotoAccessAndPickImage() {
+        String permission = getPhotoPermission();
+        if (permission == null
+                || ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED) {
+            imagePickerLauncher.launch("image/*");
+            return;
+        }
+
+        if (shouldShowRequestPermissionRationale(permission)) {
+            Toast.makeText(this, R.string.photo_permission_rationale, Toast.LENGTH_SHORT).show();
+        }
+
+        photoPermissionLauncher.launch(permission);
+    }
+
+    private String getPhotoPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return Manifest.permission.READ_MEDIA_IMAGES;
+        }
+        return Manifest.permission.READ_EXTERNAL_STORAGE;
+    }
+
     private void uploadImageThenSave(String title, String description, String cookTime,
                                      String budget, List<String> ingredients, List<String> equipment,
                                      List<String> steps) {
@@ -351,14 +388,16 @@ public class CreatePostActivity extends AppCompatActivity {
         firestore.collection("users").document(user.getUid())
                 .get()
                 .addOnSuccessListener(userDoc -> {
+                    String displayName = UserDisplayHelper.resolveDisplayName(
+                            userDoc.getString("name"),
+                            userDoc.getString("username"),
+                            getString(R.string.profile_default_username)
+                    );
                     String username = userDoc.getString("username");
-                    if (username == null) {
-                        username = "Unknown";
-                    }
                     String profileImageUrl = userDoc.getString("profileImageUrl");
 
                     Post post = new Post(
-                            user.getUid(), username, title, description,
+                            user.getUid(), displayName, username, title, description,
                             cookTime, budget, ingredients, equipment, steps, imageUrl
                     );
                     post.setProfileImageUrl(profileImageUrl);
@@ -437,25 +476,61 @@ public class CreatePostActivity extends AppCompatActivity {
     private void setLoading(boolean loading) {
         binding.btnPost.setEnabled(!loading);
         binding.btnPost.setText(loading ? "Posting..." : (isEditMode ? "Save Changes" : "Post Recipe"));
+        binding.btnClearForm.setEnabled(!loading);
         binding.btnAddIngredient.setEnabled(!loading);
         binding.btnAddEquipment.setEnabled(!loading);
         binding.btnAddStep.setEnabled(!loading);
         binding.btnGenerateAi.setEnabled(!loading);
     }
 
+    private void confirmClearForm() {
+        new AlertDialog.Builder(this)
+                .setTitle("Clear draft?")
+                .setMessage("This will remove the current photo, text, ingredients, equipment, and steps.")
+                .setNegativeButton(R.string.profile_edit_dialog_cancel, null)
+                .setPositiveButton("Clear", (dialog, which) -> clearForm())
+                .show();
+    }
+
+    private void clearForm() {
+        selectedImageUri = null;
+        existingImageUrl = "";
+
+        binding.etTitle.setText("");
+        binding.etDescription.setText("");
+        binding.etCookTime.setText("");
+        binding.etBudget.setText("");
+        binding.etTitle.setError(null);
+
+        binding.ivImagePreview.setImageDrawable(null);
+        binding.ivImagePreview.setVisibility(View.GONE);
+        binding.imagePlaceholder.setVisibility(View.VISIBLE);
+        binding.tvReselect.setVisibility(View.GONE);
+        binding.uploadProgressBar.setProgress(0);
+        binding.uploadProgressBar.setVisibility(View.GONE);
+        binding.tvUploadProgress.setVisibility(View.GONE);
+
+        replaceIngredientRows(new ArrayList<>());
+        replaceEquipmentRows(new ArrayList<>());
+        replaceStepRows(new ArrayList<>());
+
+        Toast.makeText(this, "Draft cleared", Toast.LENGTH_SHORT).show();
+    }
+
     private void generateWithAi() {
+        String title = text(binding.etTitle);
         List<String> ingredientRows = collectIngredientRows(binding.ingredientsContainer);
         String ingredients = TextUtils.join(", ", ingredientRows);
 
-        if (ingredients.isEmpty()) {
-            Toast.makeText(this, "Enter ingredients first", Toast.LENGTH_SHORT).show();
+        if (title.isEmpty() && ingredients.isEmpty()) {
+            Toast.makeText(this, "Enter a recipe title, ingredients, or both", Toast.LENGTH_SHORT).show();
             return;
         }
 
         binding.btnGenerateAi.setEnabled(false);
         binding.btnGenerateAi.setText("Generating...");
 
-        aiRecipeHelper.generateRecipe(ingredients, new AiRecipeHelper.AiRecipeCallback() {
+        aiRecipeHelper.generateRecipe(title, ingredients, new AiRecipeHelper.AiRecipeCallback() {
             @Override
             public void onSuccess(String result) {
                 runOnUiThread(() -> {

@@ -3,10 +3,12 @@ package com.cookio.app.adapters;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.RatingBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.cookio.app.R;
@@ -55,28 +57,35 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        Comment c = list.get(position);
+        Comment comment = list.get(position);
 
-        holder.tvUsername.setText(c.getUsername());
-        holder.tvComment.setText(c.getText());
-        holder.ratingBar.setRating(c.getRating());
-        holder.tvLikeCount.setText(String.valueOf(c.getLikesCount()));
+        holder.tvUsername.setText(comment.getDisplayName());
+        holder.tvComment.setText(comment.getText());
+        holder.ratingBar.setRating(comment.getRating());
+        holder.tvLikeCount.setText(String.valueOf(comment.getLikesCount()));
 
-        boolean likedByMe = likedCommentIds.contains(c.getId());
-        holder.btnLikeComment.setText(likedByMe ? "❤️ Liked" : "♡ Like");
+        boolean likedByMe = likedCommentIds.contains(comment.getId());
+        int accentColor = ContextCompat.getColor(holder.itemView.getContext(), R.color.accent_pink);
+        int mutedColor = ContextCompat.getColor(holder.itemView.getContext(), R.color.textGrey);
 
-        holder.btnLikeComment.setOnClickListener(v -> {
+        holder.btnLikeComment.setImageResource(likedByMe ? R.drawable.heart_filled : R.drawable.heart);
+        holder.btnLikeComment.setColorFilter(likedByMe ? accentColor : mutedColor);
+        holder.tvLikeLabel.setText(likedByMe ? "Liked" : "Like");
+        holder.tvLikeLabel.setTextColor(likedByMe ? accentColor : mutedColor);
+
+        View.OnClickListener onLikeClick = v -> {
             if (likeClickListener != null) {
-                likeClickListener.onCommentLike(c);
+                likeClickListener.onCommentLike(comment);
             }
-        });
+        };
+        holder.btnLikeComment.setOnClickListener(onLikeClick);
+        holder.likeChip.setOnClickListener(onLikeClick);
 
-        boolean isMyComment = currentUid != null && currentUid.equals(c.getUserId());
-
+        boolean isMyComment = currentUid != null && currentUid.equals(comment.getUserId());
         holder.btnDeleteComment.setVisibility(isMyComment ? View.VISIBLE : View.GONE);
         holder.btnDeleteComment.setOnClickListener(v -> {
             if (deleteClickListener != null) {
-                deleteClickListener.onCommentDelete(c);
+                deleteClickListener.onCommentDelete(comment);
             }
         });
     }
@@ -87,7 +96,13 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvUsername, tvComment, tvLikeCount, btnLikeComment, btnDeleteComment;
+        TextView tvUsername;
+        TextView tvComment;
+        TextView tvLikeCount;
+        TextView tvLikeLabel;
+        TextView btnDeleteComment;
+        ImageButton btnLikeComment;
+        View likeChip;
         RatingBar ratingBar;
 
         ViewHolder(@NonNull View itemView) {
@@ -95,8 +110,10 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
             tvUsername = itemView.findViewById(R.id.tvCommentUsername);
             tvComment = itemView.findViewById(R.id.tvCommentText);
             tvLikeCount = itemView.findViewById(R.id.tvCommentLikeCount);
-            btnLikeComment = itemView.findViewById(R.id.btnLikeComment);
+            tvLikeLabel = itemView.findViewById(R.id.tvLikeLabel);
             btnDeleteComment = itemView.findViewById(R.id.btnDeleteComment);
+            btnLikeComment = itemView.findViewById(R.id.btnLikeComment);
+            likeChip = itemView.findViewById(R.id.likeChip);
             ratingBar = itemView.findViewById(R.id.ratingBarItem);
         }
     }

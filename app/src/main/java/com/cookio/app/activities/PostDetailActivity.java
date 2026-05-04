@@ -5,6 +5,7 @@ import com.cookio.app.utils.NotificationHelper;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -14,10 +15,13 @@ import android.widget.RatingBar;
 import android.widget.EditText;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 import com.cookio.app.R;
 import com.cookio.app.models.CookingStep;
 import com.cookio.app.models.CookingStepParser;
@@ -37,10 +41,12 @@ import com.google.firebase.firestore.Query;
 
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.HashSet;
+import java.text.DateFormat;
 import java.util.Set;
 
 public class PostDetailActivity extends AppCompatActivity {
@@ -51,6 +57,7 @@ public class PostDetailActivity extends AppCompatActivity {
     public static final String EXTRA_POST_IMAGE_URL = "post_image_url";
     public static final String EXTRA_POST_COOK_TIME = "post_cook_time";
     public static final String EXTRA_POST_BUDGET = "post_budget";
+    public static final String EXTRA_POST_AUTHOR_NAME = "post_author_name";
     public static final String EXTRA_POST_USERNAME = "post_username";
     public static final String EXTRA_POST_UID = "post_uid";
     public static final String EXTRA_POST_INGREDIENTS = "post_ingredients";
@@ -64,17 +71,22 @@ public class PostDetailActivity extends AppCompatActivity {
     private String postId;
     private String currentUid;
     private String authorUid;
+    private String authorUsername;
     private int likesCount;
     private boolean isSaved;
     private boolean isLiked;
 
     private ImageView ivImage;
+    private ImageView ivAuthorAvatar;
     private TextView tvTitle;
     private TextView tvUsername;
+    private TextView tvAuthorAvatarInitial;
+    private TextView tvCreatedAt;
     private TextView tvDescription;
     private TextView tvCookTime;
     private TextView tvBudget;
     private TextView tvDetailLikesCount;
+    private TextView tvReviewsCount;
     private ChipGroup cgIngredients;
     private ChipGroup cgEquipment;
     private LinearLayout llSteps;
@@ -142,6 +154,7 @@ public class PostDetailActivity extends AppCompatActivity {
         btnSavePost.setOnClickListener(v -> toggleSave());
         btnLikePost.setOnClickListener(v -> toggleLike());
         btnCookingMode.setOnClickListener(v -> openCookingMode());
+        tvDetailLikesCount.setOnClickListener(v -> openLikesList());
     }
 
     @Override
@@ -164,12 +177,16 @@ public class PostDetailActivity extends AppCompatActivity {
 
     private void bindViews() {
         ivImage = findViewById(R.id.ivPostImage);
+        ivAuthorAvatar = findViewById(R.id.ivAuthorAvatar);
         tvTitle = findViewById(R.id.tvPostTitle);
         tvUsername = findViewById(R.id.tvPostUsername);
+        tvAuthorAvatarInitial = findViewById(R.id.tvAuthorAvatarInitial);
+        tvCreatedAt = findViewById(R.id.tvPostCreatedAt);
         tvDescription = findViewById(R.id.tvPostDescription);
         tvCookTime = findViewById(R.id.tvPostCookTime);
         tvBudget = findViewById(R.id.tvPostBudget);
         tvDetailLikesCount = findViewById(R.id.tvDetailLikesCount);
+        tvReviewsCount = findViewById(R.id.tvReviewsCount);
         cgIngredients = findViewById(R.id.chipGroupIngredients);
         cgEquipment = findViewById(R.id.chipGroupEquipment);
         llSteps = findViewById(R.id.stepsContainer);
@@ -191,8 +208,10 @@ public class PostDetailActivity extends AppCompatActivity {
                 return;
             }
 
+            String displayName = getSharedPreferences("cookio_prefs", MODE_PRIVATE)
+                    .getString("display_name", "Chef");
             String username = getSharedPreferences("cookio_prefs", MODE_PRIVATE)
-                    .getString("username", "Chef");
+                    .getString("username", "");
 
             float rating = ratingBarComment.getRating();
 
@@ -201,7 +220,7 @@ public class PostDetailActivity extends AppCompatActivity {
                 return;
             }
 
-            Comment comment = new Comment(currentUid, username, text, rating);
+            Comment comment = new Comment(currentUid, displayName, username, text, rating);
 
             db.collection("posts")
                     .document(postId)
@@ -218,7 +237,7 @@ public class PostDetailActivity extends AppCompatActivity {
                             NotificationHelper.sendCommentNotification(
                                     authorUid,
                                     currentUid,
-                                    username,
+                                    displayName,
                                     myPhotoUrl,
                                     postId,
                                     tvTitle.getText().toString(),
@@ -228,7 +247,7 @@ public class PostDetailActivity extends AppCompatActivity {
                             NotificationHelper.sendReviewNotification(
                                     authorUid,
                                     currentUid,
-                                    username,
+                                    displayName,
                                     myPhotoUrl,
                                     postId,
                                     tvTitle.getText().toString(),
@@ -250,6 +269,7 @@ public class PostDetailActivity extends AppCompatActivity {
                     if (value == null) return;
 
                     commentList.clear();
+                    updateReviewsCount(value.size());
 
                     for (DocumentSnapshot doc : value) {
                         Comment comment = doc.toObject(Comment.class);
@@ -393,10 +413,11 @@ public class PostDetailActivity extends AppCompatActivity {
     private void bindStaticContentFromIntent() {
         authorUid = getIntent().getStringExtra(EXTRA_POST_UID);
         tvTitle.setText(getIntent().getStringExtra(EXTRA_POST_TITLE));
-        bindUsername(getIntent().getStringExtra(EXTRA_POST_USERNAME));
+        authorUsername = getIntent().getStringExtra(EXTRA_POST_USERNAME);
+        bindUsername(getIntent().getStringExtra(EXTRA_POST_AUTHOR_NAME));
         tvDescription.setText(getIntent().getStringExtra(EXTRA_POST_DESCRIPTION));
-        tvCookTime.setText(CookTimeFormatter.normalize(getIntent().getStringExtra(EXTRA_POST_COOK_TIME)));
-        tvBudget.setText(safeText(getIntent().getStringExtra(EXTRA_POST_BUDGET)));
+        tvCookTime.setText(resolveCookTime(getIntent().getStringExtra(EXTRA_POST_COOK_TIME)));
+        tvBudget.setText(resolveBudget(getIntent().getStringExtra(EXTRA_POST_BUDGET)));
         bindImage(getIntent().getStringExtra(EXTRA_POST_IMAGE_URL));
 
         ArrayList<String> ingredients = getIntent().getStringArrayListExtra(EXTRA_POST_INGREDIENTS);
@@ -424,10 +445,15 @@ public class PostDetailActivity extends AppCompatActivity {
 
                     tvTitle.setText(documentSnapshot.getString("title"));
                     authorUid = documentSnapshot.getString("uid");
-                    bindUsername(documentSnapshot.getString("username"));
+                    authorUsername = documentSnapshot.getString("username");
+                    bindUsername(resolveAuthorDisplayName(
+                            documentSnapshot.getString("name"),
+                            documentSnapshot.getString("username")
+                    ));
                     tvDescription.setText(documentSnapshot.getString("description"));
-                    tvCookTime.setText(CookTimeFormatter.normalize(documentSnapshot.getString("cookTime")));
-                    tvBudget.setText(safeText(documentSnapshot.getString("budget")));
+                    tvCookTime.setText(resolveCookTime(documentSnapshot.getString("cookTime")));
+                    tvBudget.setText(resolveBudget(documentSnapshot.getString("budget")));
+                    bindCreatedAt(documentSnapshot.getDate("createdAt"));
                     bindImage(documentSnapshot.getString("imageUrl"));
 
                     Long likesValue = documentSnapshot.getLong("likesCount");
@@ -577,7 +603,7 @@ public class PostDetailActivity extends AppCompatActivity {
                 String postOwnerUid = getIntent().getStringExtra(EXTRA_POST_UID);
 
                 String myUsername = getSharedPreferences("cookio_prefs", MODE_PRIVATE)
-                        .getString("username", "Chef");
+                        .getString("display_name", "Chef");
 
                 String myPhotoUrl = getSharedPreferences("cookio_prefs", MODE_PRIVATE)
                         .getString("photoUrl", "");
@@ -653,6 +679,13 @@ public class PostDetailActivity extends AppCompatActivity {
         ));
     }
 
+    private void updateReviewsCount(int count) {
+        int textRes = count == 1
+                ? R.string.post_detail_reviews_count_singular
+                : R.string.post_detail_reviews_count_plural;
+        tvReviewsCount.setText(getString(textRes, count));
+    }
+
     private void bindImage(String imageUrl) {
         if (imageUrl != null && !imageUrl.trim().isEmpty()) {
             Glide.with(this)
@@ -666,14 +699,144 @@ public class PostDetailActivity extends AppCompatActivity {
         }
     }
 
+    private void bindCreatedAt(Date createdAt) {
+        if (createdAt == null) {
+            tvCreatedAt.setVisibility(View.GONE);
+            return;
+        }
+
+        String formattedDate = DateFormat.getDateInstance(DateFormat.MEDIUM).format(createdAt);
+        tvCreatedAt.setText(getString(R.string.post_detail_created_at, formattedDate));
+        tvCreatedAt.setVisibility(View.VISIBLE);
+    }
+
     private void bindUsername(String username) {
         if (username == null || username.trim().isEmpty()) {
             tvUsername.setText("");
             tvUsername.setOnClickListener(null);
+            showAuthorInitial(getString(R.string.profile_default_username));
             return;
         }
+        tvAuthorAvatarInitial.setText(resolveAvatarInitial(username));
         tvUsername.setText(getString(R.string.post_detail_author, username));
         tvUsername.setOnClickListener(v -> openAuthorProfile());
+        loadAuthorAvatar();
+    }
+
+    private void loadAuthorAvatar() {
+        if (authorUid == null || authorUid.trim().isEmpty()) {
+            loadAuthorAvatarByUsername();
+            return;
+        }
+
+        db.collection("users")
+                .document(authorUid)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (!documentSnapshot.exists()) {
+                        loadAuthorAvatarByUsername();
+                        return;
+                    }
+
+                    String profileImageUrl = documentSnapshot.getString("profileImageUrl");
+                    if (profileImageUrl == null || profileImageUrl.trim().isEmpty()) {
+                        loadAuthorAvatarByUsername();
+                        return;
+                    }
+
+                    showAuthorImage(profileImageUrl);
+                })
+                .addOnFailureListener(e -> loadAuthorAvatarByUsername());
+    }
+
+    private void loadAuthorAvatarByUsername() {
+        if (authorUsername == null || authorUsername.trim().isEmpty()) {
+            showAuthorInitial(tvUsername.getText().toString());
+            return;
+        }
+
+        db.collection("users")
+                .whereEqualTo("username", authorUsername)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (querySnapshot.isEmpty()) {
+                        showAuthorInitial(tvUsername.getText() == null ? "" : tvUsername.getText().toString());
+                        return;
+                    }
+
+                    DocumentSnapshot userDoc = querySnapshot.getDocuments().get(0);
+                    String profileImageUrl = userDoc.getString("profileImageUrl");
+                    if (profileImageUrl == null || profileImageUrl.trim().isEmpty()) {
+                        showAuthorInitial(tvUsername.getText() == null ? "" : tvUsername.getText().toString());
+                        return;
+                    }
+
+                    if (authorUid == null || authorUid.trim().isEmpty()) {
+                        authorUid = userDoc.getId();
+                    }
+                    showAuthorImage(profileImageUrl);
+                })
+                .addOnFailureListener(e -> showAuthorInitial(tvUsername.getText() == null ? "" : tvUsername.getText().toString()));
+    }
+
+    private void showAuthorImage(String profileImageUrl) {
+        ivAuthorAvatar.setVisibility(View.VISIBLE);
+        Glide.with(this)
+                .load(profileImageUrl)
+                .centerCrop()
+                .listener(new RequestListener<android.graphics.drawable.Drawable>() {
+                    @Override
+                    public boolean onLoadFailed(@Nullable com.bumptech.glide.load.engine.GlideException e,
+                                                Object model,
+                                                Target<android.graphics.drawable.Drawable> target,
+                                                boolean isFirstResource) {
+                        showAuthorInitial(tvUsername.getText() == null ? "" : tvUsername.getText().toString());
+                        return true;
+                    }
+
+                    @Override
+                    public boolean onResourceReady(android.graphics.drawable.Drawable resource,
+                                                   Object model,
+                                                   Target<android.graphics.drawable.Drawable> target,
+                                                   com.bumptech.glide.load.DataSource dataSource,
+                                                   boolean isFirstResource) {
+                        tvAuthorAvatarInitial.setVisibility(View.GONE);
+                        ivAuthorAvatar.setVisibility(View.VISIBLE);
+                        return false;
+                    }
+                })
+                .into(ivAuthorAvatar);
+    }
+
+    private void showAuthorInitial(String username) {
+        ivAuthorAvatar.setImageDrawable(null);
+        ivAuthorAvatar.setVisibility(View.GONE);
+        tvAuthorAvatarInitial.setText(resolveAvatarInitial(username));
+        tvAuthorAvatarInitial.setVisibility(View.VISIBLE);
+    }
+
+    private String resolveAvatarInitial(String username) {
+        if (username == null) {
+            return "C";
+        }
+
+        String normalized = username.replace("by ", "").trim();
+        if (normalized.isEmpty()) {
+            return "C";
+        }
+
+        return normalized.substring(0, 1).toUpperCase();
+    }
+
+    private String resolveAuthorDisplayName(String name, String username) {
+        if (name != null && !name.trim().isEmpty()) {
+            return name;
+        }
+        if (username != null && !username.trim().isEmpty()) {
+            return username;
+        }
+        return getString(R.string.profile_default_username);
     }
     private void openAuthorProfile() {
         if (authorUid == null || authorUid.isEmpty()) return;
@@ -779,6 +942,17 @@ public class PostDetailActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    private void openLikesList() {
+        if (postId == null || postId.trim().isEmpty()) {
+            return;
+        }
+
+        Intent intent = new Intent(this, UserConnectionsActivity.class);
+        intent.putExtra(UserConnectionsActivity.EXTRA_POST_ID, postId);
+        intent.putExtra(UserConnectionsActivity.EXTRA_MODE, UserConnectionsActivity.MODE_LIKES);
+        startActivity(intent);
+    }
+
     private void animateLikeButton() {
         btnLikePost.animate().cancel();
         btnLikePost.setScaleX(0.9f);
@@ -804,6 +978,21 @@ public class PostDetailActivity extends AppCompatActivity {
 
     private String safeText(String value) {
         return value == null ? "" : value;
+    }
+
+    private String resolveCookTime(String value) {
+        String normalized = CookTimeFormatter.normalize(value);
+        if (TextUtils.isEmpty(normalized)) {
+            return getString(R.string.post_time_placeholder);
+        }
+        return normalized;
+    }
+
+    private String resolveBudget(String value) {
+        if (TextUtils.isEmpty(value)) {
+            return getString(R.string.post_budget_placeholder);
+        }
+        return value.trim();
     }
 
     private ArrayList<String> asStringList(Object value) {

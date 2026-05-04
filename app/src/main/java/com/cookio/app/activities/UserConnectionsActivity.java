@@ -12,6 +12,7 @@ import com.cookio.app.R;
 import com.cookio.app.adapters.UserListAdapter;
 import com.cookio.app.databinding.ActivityUserConnectionsBinding;
 import com.cookio.app.models.User;
+import com.cookio.app.utils.UserDisplayHelper;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -22,10 +23,12 @@ import java.util.List;
 
 public class UserConnectionsActivity extends AppCompatActivity {
     public static final String EXTRA_USER_ID = "connections_user_id";
+    public static final String EXTRA_POST_ID = "connections_post_id";
     public static final String EXTRA_MODE = "connections_mode";
 
     public static final String MODE_FOLLOWERS = "followers";
     public static final String MODE_FOLLOWING = "following";
+    public static final String MODE_LIKES = "likes";
 
     private ActivityUserConnectionsBinding binding;
     private final List<User> users = new ArrayList<>();
@@ -47,12 +50,32 @@ public class UserConnectionsActivity extends AppCompatActivity {
         binding.btnBack.setOnClickListener(v -> finish());
 
         String userId = getIntent().getStringExtra(EXTRA_USER_ID);
+        String postId = getIntent().getStringExtra(EXTRA_POST_ID);
         String mode = getIntent().getStringExtra(EXTRA_MODE);
 
-        if (userId == null || mode == null) {
+        if (mode == null) {
             finish();
             return;
         }
+
+        if (MODE_LIKES.equals(mode)) {
+            if (postId == null || postId.trim().isEmpty()) {
+                finish();
+                return;
+            }
+            binding.swipeRefreshLayout.setOnRefreshListener(() -> loadLikes(postId));
+            binding.tvTitle.setText(R.string.connections_likes_title);
+            binding.tvSubtitle.setText(R.string.connections_likes_subtitle);
+            loadLikes(postId);
+            return;
+        }
+
+        if (userId == null || userId.trim().isEmpty()) {
+            finish();
+            return;
+        }
+
+        binding.swipeRefreshLayout.setOnRefreshListener(() -> loadConnections(userId, mode));
 
         binding.tvTitle.setText(
                 MODE_FOLLOWERS.equals(mode)
@@ -81,6 +104,25 @@ public class UserConnectionsActivity extends AppCompatActivity {
                         loadFreshUsers(queryDocumentSnapshots.getDocuments(), mode))
                 .addOnFailureListener(e -> {
                     binding.progressBar.setVisibility(View.GONE);
+                    binding.swipeRefreshLayout.setRefreshing(false);
+                    Toast.makeText(this, R.string.connections_load_failed, Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void loadLikes(String postId) {
+        binding.progressBar.setVisibility(View.VISIBLE);
+        binding.emptyStateCard.setVisibility(View.GONE);
+        binding.rvConnections.setVisibility(View.GONE);
+
+        db.collection("posts")
+                .document(postId)
+                .collection(MODE_LIKES)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots ->
+                        loadUsersByIds(queryDocumentSnapshots.getDocuments(), MODE_LIKES))
+                .addOnFailureListener(e -> {
+                    binding.progressBar.setVisibility(View.GONE);
+                    binding.swipeRefreshLayout.setRefreshing(false);
                     Toast.makeText(this, R.string.connections_load_failed, Toast.LENGTH_SHORT).show();
                 });
     }
@@ -141,19 +183,60 @@ public class UserConnectionsActivity extends AppCompatActivity {
         }
     }
 
+    private void loadUsersByIds(List<DocumentSnapshot> sourceDocs, String mode) {
+        users.clear();
+
+        if (sourceDocs.isEmpty()) {
+            renderConnections(mode);
+            return;
+        }
+
+        final int[] remaining = {sourceDocs.size()};
+
+        for (DocumentSnapshot sourceDoc : sourceDocs) {
+            String userId = sourceDoc.getId();
+
+            db.collection("users")
+                    .document(userId)
+                    .get()
+                    .addOnSuccessListener(userDoc -> {
+                        if (userDoc.exists()) {
+                            User user = userDoc.toObject(User.class);
+                            if (user != null) {
+                                if (user.getUid() == null || user.getUid().trim().isEmpty()) {
+                                    user.setUid(userId);
+                                }
+                                users.add(user);
+                            }
+                        }
+
+                        remaining[0]--;
+                        if (remaining[0] == 0) {
+                            renderConnections(mode);
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        remaining[0]--;
+                        if (remaining[0] == 0) {
+                            renderConnections(mode);
+                        }
+                    });
+        }
+    }
+
     private void renderConnections(String mode) {
         users.sort(Comparator.comparing(
                 user -> {
-                    String username = user.getUsername();
-                    if (username == null || username.trim().isEmpty()) {
-                        String email = user.getEmail();
-                        return email == null ? "" : email.toLowerCase();
-                    }
-                    return username.toLowerCase();
+                    return UserDisplayHelper.resolveDisplayName(
+                            user.getName(),
+                            user.getUsername(),
+                            ""
+                    ).toLowerCase();
                 }
         ));
 
         binding.progressBar.setVisibility(View.GONE);
+        binding.swipeRefreshLayout.setRefreshing(false);
         adapter.notifyDataSetChanged();
 
         boolean empty = users.isEmpty();
@@ -162,7 +245,9 @@ public class UserConnectionsActivity extends AppCompatActivity {
         binding.tvEmptySubtitle.setText(
                 MODE_FOLLOWERS.equals(mode)
                         ? R.string.connections_followers_empty
-                        : R.string.connections_following_empty
+                        : MODE_FOLLOWING.equals(mode)
+                        ? R.string.connections_following_empty
+                        : R.string.connections_likes_empty
         );
     }
 }

@@ -1,6 +1,7 @@
 package com.cookio.app.activities;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Button;
 
@@ -18,6 +19,10 @@ public class LandingActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         auth = FirebaseAuth.getInstance();
+
+        if (handleAuthDeepLink(getIntent())) {
+            return;
+        }
 
         if (auth.getCurrentUser() != null) {
             AuthVerificationHelper.verifyBeforeEntering(this, auth, new AuthVerificationHelper.VerificationCallback() {
@@ -56,5 +61,22 @@ public class LandingActivity extends AppCompatActivity {
             Intent intent = new Intent(LandingActivity.this, SignupActivity.class);
             startActivity(intent);
         });
+    }
+
+    private boolean handleAuthDeepLink(Intent intent) {
+        if (intent == null || intent.getData() == null) {
+            return false;
+        }
+
+        Uri data = intent.getData();
+        if (!"cookio".equals(data.getScheme()) || !"auth-complete".equals(data.getHost())) {
+            return false;
+        }
+
+        Intent loginIntent = new Intent(this, LoginActivity.class);
+        loginIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(loginIntent);
+        finish();
+        return true;
     }
 }

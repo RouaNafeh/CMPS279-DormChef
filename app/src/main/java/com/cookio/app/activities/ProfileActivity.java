@@ -1,7 +1,10 @@
 package com.cookio.app.activities;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -15,6 +18,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.bumptech.glide.Glide;
@@ -23,6 +27,8 @@ import com.cookio.app.adapters.PostAdapter;
 import com.cookio.app.databinding.ActivityProfileBinding;
 import com.google.android.material.textfield.TextInputEditText;
 import com.cookio.app.models.Post;
+import com.cookio.app.utils.UserDisplayHelper;
+import com.cookio.app.utils.UsernameHelper;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.EmailAuthProvider;
@@ -75,11 +81,21 @@ public class ProfileActivity extends AppCompatActivity {
 
     private PostAdapter postAdapter;
     private boolean isGrid = false;
+    private String currentDisplayName = "";
+    private String currentUsername = "";
 
     private final ActivityResultLauncher<String> profileImagePickerLauncher =
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
                 if (uri != null) {
                     uploadProfilePhoto(uri);
+                }
+            });
+    private final ActivityResultLauncher<String> profilePhotoPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+                if (granted) {
+                    profileImagePickerLauncher.launch("image/*");
+                } else {
+                    Toast.makeText(this, R.string.photo_permission_denied, Toast.LENGTH_SHORT).show();
                 }
             });
 
@@ -122,19 +138,21 @@ public class ProfileActivity extends AppCompatActivity {
         binding.btnProfileMenu.setOnClickListener(v -> showProfileMenu());
         binding.cardFollowers.setOnClickListener(v -> openConnections(UserConnectionsActivity.MODE_FOLLOWERS));
         binding.cardFollowing.setOnClickListener(v -> openConnections(UserConnectionsActivity.MODE_FOLLOWING));
-        binding.ivProfilePhoto.setOnClickListener(v -> profileImagePickerLauncher.launch("image/*"));
-        binding.tvAvatarInitial.setOnClickListener(v -> profileImagePickerLauncher.launch("image/*"));
+        binding.ivProfilePhoto.setOnClickListener(v -> requestPhotoAccessForProfile());
+        binding.tvAvatarInitial.setOnClickListener(v -> requestPhotoAccessForProfile());
+        binding.swipeRefreshLayout.setOnRefreshListener(this::loadProfile);
 
         binding.btnToggleView.setOnClickListener(v -> {
             isGrid = !isGrid;
             setLayoutManager();
             postAdapter.setGridMode(isGrid);
-            binding.btnToggleView.setText(isGrid ? "List" : "Grid");
+            updateToggleViewLabel();
         });
 
         setupBottomNavigation();
         populateStaticUserFields();
         setLayoutManager();
+        updateToggleViewLabel();
     }
 
     @Override
@@ -151,9 +169,15 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
+    private void updateToggleViewLabel() {
+        binding.btnToggleView.setText(
+                isGrid ? R.string.profile_view_list : R.string.profile_view_grid
+        );
+    }
+
     private void setupBottomNavigation() {
         BottomNavigationView bottomNavigation = binding.bottomNavigation.bottomNavigation;
-        bottomNavigation.setSelectedItemId(R.id.nav_my_recipes);
+        bottomNavigation.getMenu().findItem(R.id.nav_my_recipes).setChecked(true);
         bottomNavigation.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
 
@@ -181,9 +205,12 @@ public class ProfileActivity extends AppCompatActivity {
         }
 
         String email = user.getEmail();
-        binding.tvEmail.setText(email);
-        binding.tvUsername.setText(resolveDisplayName(null, email));
-        binding.tvAvatarInitial.setText(resolveInitial(binding.tvUsername.getText().toString()));
+        binding.tvEmail.setText("");
+        binding.tvUsername.setText(getString(R.string.profile_default_username));
+        binding.tvAvatarInitial.setText(UserDisplayHelper.resolveInitial(
+                binding.tvUsername.getText().toString(),
+                getString(R.string.profile_default_username)
+        ));
         binding.tvFollowersCount.setText("0");
         binding.tvFollowingCount.setText("0");
     }
@@ -272,6 +299,7 @@ public class ProfileActivity extends AppCompatActivity {
     private void loadProfile() {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
+            binding.swipeRefreshLayout.setRefreshing(false);
             return;
         }
 
@@ -281,29 +309,61 @@ public class ProfileActivity extends AppCompatActivity {
         loadMyPosts(user);
     }
 
+    private void requestPhotoAccessForProfile() {
+        String permission = getPhotoPermission();
+        if (permission == null
+                || ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED) {
+            profileImagePickerLauncher.launch("image/*");
+            return;
+        }
+
+        if (shouldShowRequestPermissionRationale(permission)) {
+            Toast.makeText(this, R.string.photo_permission_rationale, Toast.LENGTH_SHORT).show();
+        }
+
+        profilePhotoPermissionLauncher.launch(permission);
+    }
+
+    private String getPhotoPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return Manifest.permission.READ_MEDIA_IMAGES;
+        }
+        return Manifest.permission.READ_EXTERNAL_STORAGE;
+    }
+
     private void loadUserInfo(FirebaseUser user) {
         db.collection("users")
                 .document(user.getUid())
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
-                    String email = user.getEmail();
+                    String name = documentSnapshot.getString("name");
                     String username = documentSnapshot.getString("username");
                     String bio = documentSnapshot.getString("bio");
                     String profileImageUrl = documentSnapshot.getString("profileImageUrl");
                     Long followerCount = documentSnapshot.getLong("followerCount");
                     Long followingCount = documentSnapshot.getLong("followingCount");
 
+                    currentUsername = UsernameHelper.normalize(username);
+                    currentDisplayName = UserDisplayHelper.resolveDisplayName(
+                            name,
+                            currentUsername,
+                            getString(R.string.profile_default_username)
+                    );
 
                     getSharedPreferences("cookio_prefs", MODE_PRIVATE)
                             .edit()
-                            .putString("username", resolveDisplayName(username, email))
+                            .putString("display_name", currentDisplayName)
+                            .putString("username", currentUsername)
                             .putString("photoUrl", profileImageUrl == null ? "" : profileImageUrl)
                             .apply();
 
-                    binding.tvUsername.setText(resolveDisplayName(username, email));
-                    binding.tvEmail.setText(email);
+                    binding.tvUsername.setText(currentDisplayName);
+                    binding.tvEmail.setText(UserDisplayHelper.resolveHandle(currentUsername));
                     binding.tvBio.setText(resolveBio(bio));
-                    binding.tvAvatarInitial.setText(resolveInitial(binding.tvUsername.getText().toString()));
+                    binding.tvAvatarInitial.setText(UserDisplayHelper.resolveInitial(
+                            currentDisplayName,
+                            getString(R.string.profile_default_username)
+                    ));
                     binding.tvFollowersCount.setText(String.valueOf(followerCount == null ? 0 : followerCount));
                     binding.tvFollowingCount.setText(String.valueOf(followingCount == null ? 0 : followingCount));
                     loadProfilePhoto(profileImageUrl);
@@ -374,6 +434,7 @@ public class ProfileActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     binding.progressBar.setVisibility(View.GONE);
+                    binding.swipeRefreshLayout.setRefreshing(false);
                     Toast.makeText(this, R.string.profile_load_failed, Toast.LENGTH_SHORT).show();
                     finishPostLoading();
                 });
@@ -410,6 +471,7 @@ public class ProfileActivity extends AppCompatActivity {
     private void finishPostLoading() {
         postAdapter.updateData(myPosts);
         binding.progressBar.setVisibility(View.GONE);
+        binding.swipeRefreshLayout.setRefreshing(false);
 
         boolean isEmpty = myPosts.isEmpty();
         binding.emptyStateCard.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
@@ -535,6 +597,7 @@ public class ProfileActivity extends AppCompatActivity {
         intent.putExtra(PostDetailActivity.EXTRA_POST_IMAGE_URL, post.getImageUrl());
         intent.putExtra(PostDetailActivity.EXTRA_POST_COOK_TIME, post.getCookTime());
         intent.putExtra(PostDetailActivity.EXTRA_POST_BUDGET, post.getBudget());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_AUTHOR_NAME, post.getDisplayName());
         intent.putExtra(PostDetailActivity.EXTRA_POST_USERNAME, post.getUsername());
         intent.putExtra(PostDetailActivity.EXTRA_POST_UID, post.getUid());
         intent.putExtra(PostDetailActivity.EXTRA_POST_LIKES_COUNT, post.getLikesCount());
@@ -582,10 +645,12 @@ public class ProfileActivity extends AppCompatActivity {
         }
 
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_profile_edit, null);
+        TextInputEditText nameInput = dialogView.findViewById(R.id.inputName);
         TextInputEditText usernameInput = dialogView.findViewById(R.id.inputUsername);
         TextInputEditText bioInput = dialogView.findViewById(R.id.inputBio);
 
-        usernameInput.setText(binding.tvUsername.getText());
+        nameInput.setText(currentDisplayName);
+        usernameInput.setText(currentUsername);
         CharSequence currentBio = binding.tvBio.getText();
         if (!TextUtils.equals(currentBio, getString(R.string.profile_bio_empty))) {
             bioInput.setText(currentBio);
@@ -602,27 +667,36 @@ public class ProfileActivity extends AppCompatActivity {
         dialogView.findViewById(R.id.btnCancel).setOnClickListener(v -> dialog.dismiss());
         dialogView.findViewById(R.id.btnSave).setOnClickListener(v -> {
 
-            String newName = usernameInput.getText() == null
+            String newDisplayName = nameInput.getText() == null
                     ? ""
-                    : usernameInput.getText().toString().trim();
+                    : nameInput.getText().toString().trim();
+
+            String newUsername = UsernameHelper.normalize(usernameInput.getText() == null
+                    ? ""
+                    : usernameInput.getText().toString());
 
             String newBio = bioInput.getText() == null
                     ? ""
                     : bioInput.getText().toString().trim();
 
-            if (TextUtils.isEmpty(newName)) {
-                usernameInput.setError("Username required");
+            if (TextUtils.isEmpty(newDisplayName)) {
+                nameInput.setError(getString(R.string.error_name_required));
                 return;
             }
 
-            if (newName.length() < 3) {
-                usernameInput.setError("Min 3 characters");
+            if (TextUtils.isEmpty(newUsername)) {
+                usernameInput.setError(getString(R.string.error_username_required));
+                return;
+            }
+
+            if (!UsernameHelper.isValid(newUsername)) {
+                usernameInput.setError(getString(R.string.error_username_invalid));
                 return;
             }
 
             v.setEnabled(false); // disable button
 
-            updateProfile(user.getUid(), newName, newBio);
+            updateProfile(user.getUid(), newDisplayName, newUsername, newBio);
 
             dialog.dismiss();
         });
@@ -630,50 +704,102 @@ public class ProfileActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    private void updateProfile(String uid, String newName, String newBio) {
+    private void updateProfile(String uid, String newDisplayName, String newUsername, String newBio) {
 
-        // 1. VALIDATION
-        if (TextUtils.isEmpty(newName)) {
-            Toast.makeText(this, "Username cannot be empty", Toast.LENGTH_SHORT).show();
+        if (TextUtils.isEmpty(newDisplayName)) {
+            Toast.makeText(this, getString(R.string.error_name_required), Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (newName.length() < 3) {
-            Toast.makeText(this, "Username must be at least 3 characters", Toast.LENGTH_SHORT).show();
+        if (!UsernameHelper.isValid(newUsername)) {
+            Toast.makeText(this, getString(R.string.error_username_invalid), Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // 2. UI LOCK
         binding.btnEdit.setEnabled(false);
         binding.progressBar.setVisibility(View.VISIBLE);
+        verifyLegacyUsernameAvailability(newUsername, uid, () -> commitProfileUpdate(uid, newDisplayName, newUsername, newBio));
+    }
 
-        db.collection("users")
-                .document(uid)
-                .update("username", newName, "bio", newBio)
+    private void commitProfileUpdate(String uid, String newDisplayName, String newUsername, String newBio) {
+        DocumentReference userRef = db.collection("users").document(uid);
+        DocumentReference newUsernameRef = db.collection("usernames").document(newUsername);
+        DocumentReference oldUsernameRef = TextUtils.isEmpty(currentUsername)
+                ? null
+                : db.collection("usernames").document(currentUsername);
+        boolean usernameChanged = !newUsername.equals(currentUsername);
+        boolean displayNameChanged = !newDisplayName.equals(currentDisplayName);
+
+        db.runTransaction(transaction -> {
+                    if (usernameChanged) {
+                        DocumentSnapshot usernameSnapshot = transaction.get(newUsernameRef);
+                        if (usernameSnapshot.exists()) {
+                            String existingUid = usernameSnapshot.getString("uid");
+                            if (!uid.equals(existingUid)) {
+                                throw new IllegalStateException(getString(R.string.error_username_taken));
+                            }
+                        }
+                    }
+
+                    transaction.update(userRef,
+                            "name", newDisplayName,
+                            "username", newUsername,
+                            "bio", newBio
+                    );
+
+                    if (usernameChanged) {
+                        if (oldUsernameRef != null) {
+                            transaction.delete(oldUsernameRef);
+                        }
+
+                        transaction.set(newUsernameRef, new java.util.HashMap<String, Object>() {{
+                            put("uid", uid);
+                            put("username", newUsername);
+                            put("createdAt", FieldValue.serverTimestamp());
+                        }});
+                    }
+
+                    return null;
+                })
                 .addOnSuccessListener(unused -> {
-
-                    updateUsernameOnPosts(uid, newName, newBio);
-
-                    // UI restore
-                    binding.progressBar.setVisibility(View.GONE);
-                    binding.btnEdit.setEnabled(true);
-
-                    binding.tvUsername.setText(newName);
-                    binding.tvBio.setText(resolveBio(newBio));
-                    binding.tvAvatarInitial.setText(resolveInitial(newName));
-
-                    Toast.makeText(this,
-                            "Profile updated successfully",
-                            Toast.LENGTH_SHORT).show();
+                    updateAuthorIdentityOnPosts(uid, newDisplayName, newUsername, newBio);
                 })
                 .addOnFailureListener(e -> {
+                    binding.progressBar.setVisibility(View.GONE);
+                    binding.btnEdit.setEnabled(true);
+                    Toast.makeText(
+                            this,
+                            e.getMessage() == null ? "Failed to update profile" : e.getMessage(),
+                            Toast.LENGTH_SHORT
+                    ).show();
+                });
+    }
+
+    private void verifyLegacyUsernameAvailability(String username, String currentUid, Runnable onAvailable) {
+        db.collection("users")
+                .whereEqualTo("username", username)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (querySnapshot.isEmpty()) {
+                        onAvailable.run();
+                        return;
+                    }
+
+                    String existingUid = querySnapshot.getDocuments().get(0).getId();
+                    if (currentUid.equals(existingUid)) {
+                        onAvailable.run();
+                        return;
+                    }
 
                     binding.progressBar.setVisibility(View.GONE);
                     binding.btnEdit.setEnabled(true);
-
-                    Toast.makeText(this,
-                            "Failed to update profile",
-                            Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, getString(R.string.error_username_taken), Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    binding.progressBar.setVisibility(View.GONE);
+                    binding.btnEdit.setEnabled(true);
+                    Toast.makeText(this, R.string.profile_load_failed, Toast.LENGTH_SHORT).show();
                 });
     }
 
@@ -727,7 +853,7 @@ public class ProfileActivity extends AppCompatActivity {
         });
     }
 
-    private void updateUsernameOnPosts(String uid, String newName, String newBio) {
+    private void updateAuthorIdentityOnPosts(String uid, String newDisplayName, String newUsername, String newBio) {
         db.collection("posts")
                 .whereEqualTo("uid", uid)
                 .get()
@@ -736,15 +862,12 @@ public class ProfileActivity extends AppCompatActivity {
 
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                         DocumentReference ref = db.collection("posts").document(document.getId());
-                        batch.update(ref, "username", newName);
+                        batch.update(ref, "name", newDisplayName, "username", newUsername);
                     }
 
                     batch.commit()
                             .addOnSuccessListener(unused -> {
-                                binding.btnEdit.setEnabled(true);
-                                binding.tvUsername.setText(newName);
-                                binding.tvBio.setText(resolveBio(newBio));
-                                binding.tvAvatarInitial.setText(resolveInitial(newName));
+                                applyProfileUi(newDisplayName, newUsername, newBio);
                                 Toast.makeText(
                                         this,
                                         R.string.profile_username_updated,
@@ -766,6 +889,26 @@ public class ProfileActivity extends AppCompatActivity {
                 });
     }
 
+    private void applyProfileUi(String displayName, String username, String bio) {
+        currentDisplayName = displayName;
+        currentUsername = username;
+        binding.progressBar.setVisibility(View.GONE);
+        binding.btnEdit.setEnabled(true);
+        binding.tvUsername.setText(displayName);
+        binding.tvEmail.setText(UserDisplayHelper.resolveHandle(username));
+        binding.tvBio.setText(resolveBio(bio));
+        binding.tvAvatarInitial.setText(UserDisplayHelper.resolveInitial(
+                displayName,
+                getString(R.string.profile_default_username)
+        ));
+
+        getSharedPreferences("cookio_prefs", MODE_PRIVATE)
+                .edit()
+                .putString("display_name", displayName)
+                .putString("username", username)
+                .apply();
+    }
+
     private void updateProfileImageOnPosts(String uid, String profileImageUrl, CompletionListener listener) {
         db.collection("posts")
                 .whereEqualTo("uid", uid)
@@ -782,25 +925,6 @@ public class ProfileActivity extends AppCompatActivity {
                             .addOnFailureListener(listener::onFailure);
                 })
                 .addOnFailureListener(listener::onFailure);
-    }
-
-    private String resolveDisplayName(@Nullable String username, @Nullable String email) {
-        if (!TextUtils.isEmpty(username)) {
-            return username;
-        }
-
-        if (!TextUtils.isEmpty(email) && email.contains("@")) {
-            return email.substring(0, email.indexOf('@'));
-        }
-
-        return getString(R.string.profile_default_username);
-    }
-
-    private String resolveInitial(String value) {
-        if (TextUtils.isEmpty(value)) {
-            return getString(R.string.profile_default_username).substring(0, 1).toUpperCase(Locale.getDefault());
-        }
-        return value.substring(0, 1).toUpperCase(Locale.getDefault());
     }
 
     private String resolveBio(@Nullable String bio) {
@@ -1296,43 +1420,53 @@ public class ProfileActivity extends AppCompatActivity {
     private void cleanupConnectionsAndUserDoc(String uid, CompletionListener listener) {
         db.collection("users")
                 .document(uid)
-                .collection("followers")
                 .get()
-                .addOnSuccessListener(followersSnapshot ->
+                .addOnSuccessListener(userDoc ->
                         db.collection("users")
                                 .document(uid)
-                                .collection("following")
+                                .collection("followers")
                                 .get()
-                                .addOnSuccessListener(followingSnapshot -> {
-                                    WriteBatch batch = db.batch();
-
-                                    for (DocumentSnapshot followerDoc : followersSnapshot.getDocuments()) {
-                                        String followerId = followerDoc.getId();
-                                        batch.delete(followerDoc.getReference());
-                                        batch.delete(db.collection("users")
-                                                .document(followerId)
+                                .addOnSuccessListener(followersSnapshot ->
+                                        db.collection("users")
+                                                .document(uid)
                                                 .collection("following")
-                                                .document(uid));
-                                        batch.update(db.collection("users").document(followerId),
-                                                "followingCount", FieldValue.increment(-1));
-                                    }
+                                                .get()
+                                                .addOnSuccessListener(followingSnapshot -> {
+                                                    WriteBatch batch = db.batch();
 
-                                    for (DocumentSnapshot followingDoc : followingSnapshot.getDocuments()) {
-                                        String followingId = followingDoc.getId();
-                                        batch.delete(followingDoc.getReference());
-                                        batch.delete(db.collection("users")
-                                                .document(followingId)
-                                                .collection("followers")
-                                                .document(uid));
-                                        batch.update(db.collection("users").document(followingId),
-                                                "followerCount", FieldValue.increment(-1));
-                                    }
+                                                    for (DocumentSnapshot followerDoc : followersSnapshot.getDocuments()) {
+                                                        String followerId = followerDoc.getId();
+                                                        batch.delete(followerDoc.getReference());
+                                                        batch.delete(db.collection("users")
+                                                                .document(followerId)
+                                                                .collection("following")
+                                                                .document(uid));
+                                                        batch.update(db.collection("users").document(followerId),
+                                                                "followingCount", FieldValue.increment(-1));
+                                                    }
 
-                                    batch.delete(db.collection("users").document(uid));
-                                    batch.commit()
-                                            .addOnSuccessListener(unused -> listener.onSuccess())
-                                            .addOnFailureListener(listener::onFailure);
-                                })
+                                                    for (DocumentSnapshot followingDoc : followingSnapshot.getDocuments()) {
+                                                        String followingId = followingDoc.getId();
+                                                        batch.delete(followingDoc.getReference());
+                                                        batch.delete(db.collection("users")
+                                                                .document(followingId)
+                                                                .collection("followers")
+                                                                .document(uid));
+                                                        batch.update(db.collection("users").document(followingId),
+                                                                "followerCount", FieldValue.increment(-1));
+                                                    }
+
+                                                    String username = userDoc.getString("username");
+                                                    if (!TextUtils.isEmpty(username)) {
+                                                        batch.delete(db.collection("usernames").document(username));
+                                                    }
+
+                                                    batch.delete(db.collection("users").document(uid));
+                                                    batch.commit()
+                                                            .addOnSuccessListener(unused -> listener.onSuccess())
+                                                            .addOnFailureListener(listener::onFailure);
+                                                })
+                                                .addOnFailureListener(listener::onFailure))
                                 .addOnFailureListener(listener::onFailure))
                 .addOnFailureListener(listener::onFailure);
     }

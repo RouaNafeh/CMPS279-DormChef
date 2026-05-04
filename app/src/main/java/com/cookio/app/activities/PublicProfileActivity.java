@@ -17,6 +17,7 @@ import com.cookio.app.adapters.PostAdapter;
 import com.cookio.app.databinding.ActivityPublicProfileBinding;
 import com.cookio.app.models.Post;
 import com.cookio.app.models.User;
+import com.cookio.app.utils.UserDisplayHelper;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -81,8 +82,8 @@ public class PublicProfileActivity extends AppCompatActivity {
         setupRecyclerView();
         setupActions();
         populateFallbackState();
-        loadUsers();
-        loadUserPosts();
+        binding.swipeRefreshLayout.setOnRefreshListener(this::refreshProfile);
+        refreshProfile();
     }
 
     private void setupRecyclerView() {
@@ -110,7 +111,10 @@ public class PublicProfileActivity extends AppCompatActivity {
         binding.tvUsername.setText(getString(R.string.profile_default_username));
         binding.tvEmail.setText("");
         binding.tvBio.setText(getString(R.string.public_profile_bio_empty));
-        binding.tvAvatarInitial.setText(resolveInitial(binding.tvUsername.getText().toString()));
+        binding.tvAvatarInitial.setText(UserDisplayHelper.resolveInitial(
+                binding.tvUsername.getText().toString(),
+                getString(R.string.profile_default_username)
+        ));
         binding.tvPostsCount.setText("0");
         binding.tvFollowersCount.setText("0");
         binding.tvFollowingCount.setText("0");
@@ -132,6 +136,7 @@ public class PublicProfileActivity extends AppCompatActivity {
             @Override
             public void onFailure(Exception e) {
                 binding.progressBar.setVisibility(View.GONE);
+                binding.swipeRefreshLayout.setRefreshing(false);
                 Toast.makeText(
                         PublicProfileActivity.this,
                         R.string.profile_load_failed,
@@ -162,6 +167,7 @@ public class PublicProfileActivity extends AppCompatActivity {
             @Override
             public void onFailure(Exception e) {
                 binding.progressBar.setVisibility(View.GONE);
+                binding.swipeRefreshLayout.setRefreshing(false);
                 Toast.makeText(
                         PublicProfileActivity.this,
                         R.string.public_profile_load_failed,
@@ -173,11 +179,18 @@ public class PublicProfileActivity extends AppCompatActivity {
     }
 
     private void renderUser(User user) {
-        String displayName = resolveDisplayName(user.getUsername(), user.getEmail());
+        String displayName = UserDisplayHelper.resolveDisplayName(
+                user.getName(),
+                user.getUsername(),
+                getString(R.string.profile_default_username)
+        );
         binding.tvUsername.setText(displayName);
-        binding.tvEmail.setText(valueOrEmpty(user.getEmail()));
+        binding.tvEmail.setText(UserDisplayHelper.resolveHandle(user.getUsername()));
         binding.tvBio.setText(resolveBio(user.getBio()));
-        binding.tvAvatarInitial.setText(resolveInitial(displayName));
+        binding.tvAvatarInitial.setText(UserDisplayHelper.resolveInitial(
+                displayName,
+                getString(R.string.profile_default_username)
+        ));
         binding.tvFollowersCount.setText(String.valueOf(Math.max(0, user.getFollowerCount())));
         binding.tvFollowingCount.setText(String.valueOf(Math.max(0, user.getFollowingCount())));
         loadProfilePhoto(user.getProfileImageUrl());
@@ -270,7 +283,11 @@ public class PublicProfileActivity extends AppCompatActivity {
                     updateFollowButton();
 
                     String myUsername = getSharedPreferences("cookio_prefs", MODE_PRIVATE)
-                            .getString("username", resolveDisplayName(currentUser.getUsername(), currentUser.getEmail()));
+                            .getString("display_name", UserDisplayHelper.resolveDisplayName(
+                                    currentUser.getName(),
+                                    currentUser.getUsername(),
+                                    getString(R.string.profile_default_username)
+                            ));
 
                     String myPhotoUrl = getSharedPreferences("cookio_prefs", MODE_PRIVATE)
                             .getString("photoUrl", currentUser.getProfileImageUrl());
@@ -356,6 +373,7 @@ public class PublicProfileActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     binding.progressBar.setVisibility(View.GONE);
+                    binding.swipeRefreshLayout.setRefreshing(false);
                     Toast.makeText(this, R.string.public_profile_posts_failed, Toast.LENGTH_SHORT).show();
                     finishPostLoading();
                 });
@@ -411,10 +429,16 @@ public class PublicProfileActivity extends AppCompatActivity {
     private void finishPostLoading() {
         postAdapter.updateData(userPosts);
         binding.progressBar.setVisibility(View.GONE);
+        binding.swipeRefreshLayout.setRefreshing(false);
 
         boolean isEmpty = userPosts.isEmpty();
         binding.emptyStateCard.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
         binding.rvPublicPosts.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
+    }
+
+    private void refreshProfile() {
+        loadUsers();
+        loadUserPosts();
     }
 
     private void loadProfilePhoto(@Nullable String profileImageUrl) {
@@ -442,6 +466,7 @@ public class PublicProfileActivity extends AppCompatActivity {
         intent.putExtra(PostDetailActivity.EXTRA_POST_IMAGE_URL, post.getImageUrl());
         intent.putExtra(PostDetailActivity.EXTRA_POST_COOK_TIME, post.getCookTime());
         intent.putExtra(PostDetailActivity.EXTRA_POST_BUDGET, post.getBudget());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_AUTHOR_NAME, post.getDisplayName());
         intent.putExtra(PostDetailActivity.EXTRA_POST_USERNAME, post.getUsername());
         intent.putExtra(PostDetailActivity.EXTRA_POST_UID, post.getUid());
         intent.putExtra(PostDetailActivity.EXTRA_POST_LIKES_COUNT, post.getLikesCount());
@@ -481,35 +506,10 @@ public class PublicProfileActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    private String resolveDisplayName(@Nullable String username, @Nullable String email) {
-        if (!TextUtils.isEmpty(username)) {
-            return username;
-        }
-
-        if (!TextUtils.isEmpty(email) && email.contains("@")) {
-            return email.substring(0, email.indexOf('@'));
-        }
-
-        return getString(R.string.profile_default_username);
-    }
-
-    private String resolveInitial(String value) {
-        if (TextUtils.isEmpty(value)) {
-            return getString(R.string.profile_default_username)
-                    .substring(0, 1)
-                    .toUpperCase(Locale.getDefault());
-        }
-        return value.substring(0, 1).toUpperCase(Locale.getDefault());
-    }
-
     private String resolveBio(@Nullable String bio) {
         if (TextUtils.isEmpty(bio)) {
             return getString(R.string.public_profile_bio_empty);
         }
         return bio;
-    }
-
-    private String valueOrEmpty(@Nullable String value) {
-        return value == null ? "" : value;
     }
 }

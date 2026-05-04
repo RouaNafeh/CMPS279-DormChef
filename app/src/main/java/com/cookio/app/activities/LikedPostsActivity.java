@@ -86,6 +86,7 @@ public class LikedPostsActivity extends AppCompatActivity {
 
         binding.btnBack.setOnClickListener(v -> navigateBack());
         setupBottomNavigation();
+        binding.swipeRefreshLayout.setOnRefreshListener(this::loadLikedPosts);
     }
 
     @Override
@@ -96,6 +97,7 @@ public class LikedPostsActivity extends AppCompatActivity {
 
     private void loadLikedPosts() {
         if (auth.getCurrentUser() == null) {
+            binding.swipeRefreshLayout.setRefreshing(false);
             Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -128,6 +130,7 @@ public class LikedPostsActivity extends AppCompatActivity {
                         return;
                     }
                     binding.progressBar.setVisibility(View.GONE);
+                    binding.swipeRefreshLayout.setRefreshing(false);
                     Toast.makeText(this, "Failed to load saved state", Toast.LENGTH_SHORT).show();
                 });
     }
@@ -197,6 +200,7 @@ public class LikedPostsActivity extends AppCompatActivity {
                         return;
                     }
                     binding.progressBar.setVisibility(View.GONE);
+                    binding.swipeRefreshLayout.setRefreshing(false);
                     Toast.makeText(this, "Failed to load liked posts", Toast.LENGTH_SHORT).show();
                 });
     }
@@ -205,6 +209,7 @@ public class LikedPostsActivity extends AppCompatActivity {
         postAdapter.updateData(likedPostsList);
         updateCount();
         binding.progressBar.setVisibility(View.GONE);
+        binding.swipeRefreshLayout.setRefreshing(false);
         binding.emptyState.setVisibility(likedPostsList.isEmpty() ? View.VISIBLE : View.GONE);
         binding.recyclerLikedPosts.setVisibility(likedPostsList.isEmpty() ? View.GONE : View.VISIBLE);
     }
@@ -255,6 +260,7 @@ public class LikedPostsActivity extends AppCompatActivity {
         intent.putExtra(PostDetailActivity.EXTRA_POST_IMAGE_URL, post.getImageUrl());
         intent.putExtra(PostDetailActivity.EXTRA_POST_COOK_TIME, post.getCookTime());
         intent.putExtra(PostDetailActivity.EXTRA_POST_BUDGET, post.getBudget());
+        intent.putExtra(PostDetailActivity.EXTRA_POST_AUTHOR_NAME, post.getDisplayName());
         intent.putExtra(PostDetailActivity.EXTRA_POST_USERNAME, post.getUsername());
         intent.putExtra(PostDetailActivity.EXTRA_POST_UID, post.getUid());
         intent.putExtra(PostDetailActivity.EXTRA_POST_LIKES_COUNT, post.getLikesCount());
@@ -296,7 +302,7 @@ public class LikedPostsActivity extends AppCompatActivity {
 
     private void setupBottomNavigation() {
         BottomNavigationView bottomNavigation = binding.bottomNavigation.bottomNavigation;
-        bottomNavigation.setSelectedItemId(R.id.nav_my_recipes);
+        bottomNavigation.getMenu().findItem(R.id.nav_my_recipes).setChecked(true);
         bottomNavigation.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_my_recipes) {
