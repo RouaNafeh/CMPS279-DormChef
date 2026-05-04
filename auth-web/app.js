@@ -23,7 +23,6 @@
   const message = document.getElementById("message");
   const resetForm = document.getElementById("resetForm");
   const newPassword = document.getElementById("newPassword");
-  const backButton = document.getElementById("backButton");
 
   const params = new URLSearchParams(window.location.search);
   const mode = params.get("mode");
@@ -32,13 +31,6 @@
   function buildCookioDeepLink() {
     const targetMode = mode || "auth";
     return `cookio://auth-complete?mode=${encodeURIComponent(targetMode)}`;
-  }
-
-  function showDone() {
-    backButton.classList.remove("hidden");
-    backButton.onclick = () => {
-      window.location.href = buildCookioDeepLink();
-    };
   }
 
   async function handleResetPassword() {
@@ -51,7 +43,6 @@
     } catch {
       title.textContent = "Link expired";
       message.textContent = "This password reset link is invalid or expired.";
-      showDone();
       return;
     }
 
@@ -62,7 +53,6 @@
         resetForm.classList.add("hidden");
         title.textContent = "Password updated";
         message.textContent = "Your password was changed successfully. You can return to Cookio and log in.";
-        showDone();
       } catch (err) {
         message.textContent = err.message || "Could not reset password.";
       }
@@ -81,14 +71,11 @@
       title.textContent = "Verification failed";
       message.textContent = "This verification link is invalid or expired.";
     }
-
-    showDone();
   }
 
   if (!mode || !oobCode) {
     title.textContent = "Invalid link";
     message.textContent = "This action link is missing required information.";
-    showDone();
   } else if (mode === "resetPassword") {
     handleResetPassword();
   } else if (mode === "verifyEmail") {
@@ -96,5 +83,4 @@
   } else {
     title.textContent = "Unsupported action";
     message.textContent = "This link type is not supported on this page.";
-    showDone();
   }
